@@ -59,7 +59,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onStockSelect }) => {
     setStockOptions(stocks);
     setSelectedStock(null);
     setSearchQuery('');
-  }, [market]);
+  }, [market, defaultStocks.kr, defaultStocks.us]);
 
   const searchStocks = useCallback(async (query: string) => {
     setLoading(true);
