@@ -8,8 +8,8 @@ if [ -z "$OPENAI_API_KEY" ]; then
     echo "Warning: OPENAI_API_KEY not set"
 fi
 
-# 백엔드 디렉토리로 이동
-cd /home/site/wwwroot/backend
+# 애플리케이션 디렉토리로 이동 (backend 내용이 루트에 배포됨)
+cd /home/site/wwwroot
 
 # 데이터베이스 초기화 (필요한 경우)
 python -c "from app.db.database import init_db; init_db()"
