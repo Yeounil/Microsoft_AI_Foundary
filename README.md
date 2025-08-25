@@ -48,8 +48,8 @@ Microsoft Azure AI Foundary와 OpenAI를 활용한 AI 기반 금융 분석 웹 �
 
 1. **프로젝트 클론**
 ```bash
-git clone <repository-url>
-cd finance-ai-analyzer
+git clone https://github.com/Yeounil/Microsoft_AI_Foundary_temp.git
+cd Microsoft_AI_Foundary_temp
 ```
 
 2. **백엔드 설정 & 실행**
