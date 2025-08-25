@@ -30,6 +30,7 @@ jobs:
     # 프론트엔드 빌드
     - name: Build React frontend
       run: |
+        cd frontend
         npm ci
         npm run build
     
@@ -37,7 +38,7 @@ jobs:
     - name: Copy frontend build to backend
       run: |
         mkdir -p backend/static
-        cp -r build/* backend/static/
+        cp -r frontend/build/* backend/static/
     
     # Python 설정
     - name: Set up Python
