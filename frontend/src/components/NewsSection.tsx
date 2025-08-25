@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -8,7 +8,6 @@ import {
   CircularProgress,
   Avatar,
   Link,
-  Stack
 } from '@mui/material';
 import {
   Article as ArticleIcon,
@@ -30,15 +29,7 @@ const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarke
   const [summaryLoading, setSummaryLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
 
-  useEffect(() => {
-    if (selectedSymbol) {
-      fetchStockNews();
-    } else {
-      fetchGeneralNews();
-    }
-  }, [selectedSymbol, selectedMarket]);
-
-  const fetchGeneralNews = async () => {
+  const fetchGeneralNews = useCallback(async () => {
     setLoading(true);
     setError('');
     
@@ -51,9 +42,9 @@ const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarke
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchStockNews = async () => {
+  const fetchStockNews = useCallback(async () => {
     if (!selectedSymbol) return;
     
     setLoading(true);
@@ -68,7 +59,15 @@ const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarke
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedSymbol]);
+
+  useEffect(() => {
+    if (selectedSymbol) {
+      fetchStockNews();
+    } else {
+      fetchGeneralNews();
+    }
+  }, [selectedSymbol, selectedMarket, fetchStockNews, fetchGeneralNews]);
 
   const handleSummarizeNews = async () => {
     setSummaryLoading(true);

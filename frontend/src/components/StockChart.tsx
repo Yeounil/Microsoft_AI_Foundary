@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   LineChart,
   Line,
@@ -49,11 +49,7 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, market }) => {
     { value: '5y', label: '5년' }
   ];
 
-  useEffect(() => {
-    fetchStockData();
-  }, [symbol, period, market]);
-
-  const fetchStockData = async () => {
+  const fetchStockData = useCallback(async () => {
     if (!symbol) return;
     
     setLoading(true);
@@ -67,7 +63,11 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, market }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [symbol, period, market]);
+
+  useEffect(() => {
+    fetchStockData();
+  }, [fetchStockData]);
 
   const formatPrice = (value: number): string => {
     if (!stockData) return value.toString();

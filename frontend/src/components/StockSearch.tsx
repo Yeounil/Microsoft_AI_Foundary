@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   TextField,
   Autocomplete,
@@ -61,16 +61,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onStockSelect }) => {
     setSearchQuery('');
   }, [market]);
 
-  useEffect(() => {
-    if (searchQuery.length > 1) {
-      searchStocks(searchQuery);
-    } else {
-      const stocks = market === 'kr' ? defaultStocks.kr : defaultStocks.us;
-      setStockOptions(stocks);
-    }
-  }, [searchQuery, market]);
-
-  const searchStocks = async (query: string) => {
+  const searchStocks = useCallback(async (query: string) => {
     setLoading(true);
     try {
       const response = await stockAPI.searchStocks(query);
@@ -85,7 +76,16 @@ const StockSearch: React.FC<StockSearchProps> = ({ onStockSelect }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [market, defaultStocks.kr, defaultStocks.us]);
+
+  useEffect(() => {
+    if (searchQuery.length > 1) {
+      searchStocks(searchQuery);
+    } else {
+      const stocks = market === 'kr' ? defaultStocks.kr : defaultStocks.us;
+      setStockOptions(stocks);
+    }
+  }, [searchQuery, market, defaultStocks.kr, defaultStocks.us, searchStocks]);
 
   const handleStockSelect = (event: any, newValue: StockOption | null) => {
     setSelectedStock(newValue);
