@@ -50,16 +50,14 @@ jobs:
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install -r backend/requirements.txt
     
     # 아티팩트 준비
     - name: Create deployment package
       run: |
         # 배포에 필요한 파일들만 포함
         mkdir -p deploy
-        cp -r backend deploy/
-        cp main.py deploy/
-        cp requirements.txt deploy/
+        cp -r backend/* deploy/
         cp startup.sh deploy/
         cp web.config deploy/
         # 불필요한 파일 제거

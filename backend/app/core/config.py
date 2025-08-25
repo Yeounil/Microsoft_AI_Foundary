@@ -14,13 +14,14 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
     
-    # OpenAI
-    openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
-    
-    # Azure OpenAI (Optional)
-    azure_openai_endpoint: Optional[str] = os.getenv("AZURE_OPENAI_ENDPOINT")
-    azure_openai_key: Optional[str] = os.getenv("AZURE_OPENAI_KEY")
+    # Azure OpenAI (Primary)
+    azure_openai_endpoint: str = os.getenv("AZURE_OPENAI_ENDPOINT", "")
+    azure_openai_key: str = os.getenv("AZURE_OPENAI_KEY", "")
     azure_openai_version: str = os.getenv("AZURE_OPENAI_VERSION", "2023-12-01-preview")
+    azure_openai_deployment: str = os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4")
+    
+    # OpenAI (Fallback)
+    openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
     
     # External APIs
     alpha_vantage_api_key: str = os.getenv("ALPHA_VANTAGE_API_KEY", "")
