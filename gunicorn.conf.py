@@ -8,9 +8,9 @@ workers = 1  # Azure Free/Basic 티어에서는 CPU 제한이 있음
 worker_class = "uvicorn.workers.UvicornWorker"
 worker_connections = 1000
 
-# 타임아웃 설정
-timeout = 120
-keepalive = 5
+# 타임아웃 설정 - Azure에서 더 긴 타임아웃 필요
+timeout = 300
+keepalive = 10
 
 # 로깅
 accesslog = "-"  # stdout으로 출력
