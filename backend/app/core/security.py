@@ -27,13 +27,19 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
     return encoded_jwt
 
-def verify_token(token: str) -> Optional[str]:
+def verify_token(token: str) -> Optional[dict]:
     """JWT 토큰 검증"""
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
-        username: str = payload.get("sub")
-        if username is None:
-            return None
-        return username
+        return payload
     except JWTError:
         return None
+
+# Supabase용 함수들 (passlib 사용)
+def get_password_hash(password: str) -> str:
+    """passlib을 사용한 비밀번호 해싱"""
+    return pwd_context.hash(password)
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """passlib을 사용한 비밀번호 검증"""
+    return pwd_context.verify(plain_password, hashed_password)

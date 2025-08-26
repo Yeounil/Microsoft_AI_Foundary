@@ -61,8 +61,9 @@ class OpenAIService:
             """
 
             if self.is_azure:
+                model_name = settings.azure_openai_deployment or "gpt-4"
                 response = self.client.chat.completions.create(
-                    model="gpt-4",  # Azure에서는 deployment name
+                    model=model_name,  # Azure에서는 deployment name
                     messages=[
                         {"role": "system", "content": "당신은 전문적인 금융 분석가입니다. 객관적이고 정확한 투자 분석을 제공합니다."},
                         {"role": "user", "content": prompt}
@@ -113,8 +114,9 @@ class OpenAIService:
             """
 
             if self.is_azure:
+                model_name = settings.azure_openai_deployment or "gpt-4"
                 response = self.client.chat.completions.create(
-                    model="gpt-4",
+                    model=model_name,
                     messages=[
                         {"role": "system", "content": "당신은 전문적인 금융 뉴스 분석가입니다."},
                         {"role": "user", "content": prompt}

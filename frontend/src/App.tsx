@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Container,
   Box,
@@ -7,12 +7,20 @@ import {
   Tab,
   ThemeProvider,
   createTheme,
-  CssBaseline
+  CssBaseline,
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  CircularProgress
 } from '@mui/material';
 import StockSearch from './components/StockSearch';
 import StockChart from './components/StockChart';
 import StockAnalysis from './components/StockAnalysis';
 import NewsSection from './components/NewsSection';
+import Login from './components/Login';
+import Register from './components/Register';
+import { authService, UserProfile } from './services/authService';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -51,6 +59,13 @@ const theme = createTheme({
 });
 
 function App() {
+  // 인증 상태 관리
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [showRegister, setShowRegister] = useState<boolean>(false);
+
+  // 기존 상태들
   const [selectedStock, setSelectedStock] = useState<{
     symbol: string;
     market: string;
@@ -58,9 +73,53 @@ function App() {
   } | null>(null);
   const [tabValue, setTabValue] = useState(0);
 
+  // 앱 시작 시 토큰 확인
+  useEffect(() => {
+    checkAuthStatus();
+    authService.setupAxiosInterceptors();
+  }, []);
+
+  const checkAuthStatus = async () => {
+    try {
+      const token = authService.getToken();
+      if (token) {
+        const isValid = await authService.verifyToken();
+        if (isValid) {
+          const userInfo = await authService.getCurrentUser();
+          setUser(userInfo);
+          setIsAuthenticated(true);
+        } else {
+          authService.logout();
+        }
+      }
+    } catch (error) {
+      console.error('Auth check failed:', error);
+      authService.logout();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogin = (token: string) => {
+    authService.saveToken(token);
+    setIsAuthenticated(true);
+    checkAuthStatus(); // 사용자 정보 로드
+  };
+
+  const handleLogout = () => {
+    authService.logout();
+    setIsAuthenticated(false);
+    setUser(null);
+    setSelectedStock(null);
+    setTabValue(0);
+  };
+
+  const handleRegisterSuccess = () => {
+    setShowRegister(false);
+  };
+
   const handleStockSelect = (symbol: string, market: string) => {
     setSelectedStock({ symbol, market });
-    // 주식이 선택되면 차트 탭으로 이동
     setTabValue(0);
   };
 
@@ -68,9 +127,63 @@ function App() {
     setTabValue(newValue);
   };
 
+  // 로딩 중
+  if (isLoading) {
+    return (
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Box 
+          display="flex" 
+          justifyContent="center" 
+          alignItems="center" 
+          minHeight="100vh"
+        >
+          <CircularProgress />
+        </Box>
+      </ThemeProvider>
+    );
+  }
+
+  // 로그인되지 않은 상태
+  if (!isAuthenticated) {
+    return (
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        {showRegister ? (
+          <Register
+            onRegisterSuccess={handleRegisterSuccess}
+            onSwitchToLogin={() => setShowRegister(false)}
+          />
+        ) : (
+          <Login
+            onLogin={handleLogin}
+            onSwitchToRegister={() => setShowRegister(true)}
+          />
+        )}
+      </ThemeProvider>
+    );
+  }
+
+  // 로그인된 상태 - 메인 앱
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      
+      {/* 상단 네비게이션 바 */}
+      <AppBar position="static">
+        <Toolbar>
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            🚀 AI 금융 분석 플랫폼
+          </Typography>
+          <Typography variant="body2" sx={{ mr: 2 }}>
+            {user?.username}님 환영합니다
+          </Typography>
+          <Button color="inherit" onClick={handleLogout}>
+            로그아웃
+          </Button>
+        </Toolbar>
+      </AppBar>
+
       <Container maxWidth="xl" sx={{ py: 4 }}>
         <StockSearch onStockSelect={handleStockSelect} />
         
