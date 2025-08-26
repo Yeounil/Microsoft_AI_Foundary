@@ -65,12 +65,19 @@ jobs:
         find deploy -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
         find deploy -name ".pytest_cache" -type d -exec rm -rf {} + 2>/dev/null || true
     
+    # Azure 로그인
+    - name: Login to Azure
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_B351699D307E43DAAD50C167914F06E5 }}
+        tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_7EF48EC848F544939736E4ACA5AB9009 }}
+        subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_CABFD744D2014A3D88FCF146EB39DE53 }}
+
     # Azure Web App 배포
     - name: Deploy to Azure Web App
-      uses: azure/webapps-deploy@v2
+      uses: azure/webapps-deploy@v3
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
-        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
         package: './deploy'
         
     # 배포 후 상태 확인
