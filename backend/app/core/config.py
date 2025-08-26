@@ -3,7 +3,10 @@ from typing import Optional
 try:
     from pydantic_settings import BaseSettings
 except ImportError:
-    from pydantic import BaseSettings
+    try:
+        from pydantic.v1 import BaseSettings
+    except ImportError:
+        from pydantic import BaseSettings
 
 class Settings(BaseSettings):
     # Database
@@ -28,6 +31,6 @@ class Settings(BaseSettings):
     news_api_key: str = os.getenv("NEWS_API_KEY", "")
     
     class Config:
-        env_file = ".env"
+        env_file = [".env", "backend/.env"]
 
 settings = Settings()
