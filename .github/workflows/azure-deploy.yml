@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 env:
-  AZURE_WEBAPP_NAME: finance-ai-analyzer    # Azure Web App 이름으로 변경 필요
+  AZURE_WEBAPP_NAME: ai-finance-app    # Azure Web App 이름
   AZURE_WEBAPP_PACKAGE_PATH: '.'
   NODE_VERSION: '18.x'
   PYTHON_VERSION: '3.11'
