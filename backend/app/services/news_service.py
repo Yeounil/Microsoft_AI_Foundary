@@ -3,9 +3,175 @@ from bs4 import BeautifulSoup
 from typing import List, Dict
 import json
 from datetime import datetime, timedelta
+import logging
 from app.core.config import settings
+from app.services.news_db_service import NewsDBService
+
+logger = logging.getLogger(__name__)
 
 class NewsService:
+    
+    @staticmethod
+    async def crawl_and_save_stock_news(symbol: str, limit: int = 10) -> List[Dict]:
+        """특정 종목의 뉴스를 크롤링하고 데이터베이스에 저장"""
+        try:
+            # News API에서 뉴스 가져오기
+            news_api_articles = await NewsService.get_stock_news_from_api(symbol, limit)
+            
+            # Naver에서 한국 종목 뉴스 가져오기 (한국 종목인 경우)
+            naver_articles = []
+            if symbol.endswith(('.KS', '.KQ')):
+                naver_articles = await NewsService.get_naver_stock_news(symbol, limit)
+            
+            # 모든 기사 통합
+            all_articles = news_api_articles + naver_articles
+            
+            # 중복 제거 (URL 기준)
+            unique_articles = []
+            seen_urls = set()
+            for article in all_articles:
+                if article["url"] not in seen_urls:
+                    unique_articles.append(article)
+                    seen_urls.add(article["url"])
+            
+            # 데이터베이스에 저장
+            if unique_articles:
+                saved_ids = await NewsDBService.save_news_articles(unique_articles)
+                logger.info(f"{symbol}: {len(saved_ids)}개 새 뉴스 저장")
+            
+            return unique_articles[:limit]
+            
+        except Exception as e:
+            logger.error(f"뉴스 크롤링 중 오류 ({symbol}): {str(e)}")
+            return []
+    
+    @staticmethod
+    async def get_stock_news_from_api(symbol: str, limit: int = 10) -> List[Dict]:
+        """News API에서 특정 종목 뉴스 가져오기"""
+        try:
+            if not settings.news_api_key:
+                return []
+            
+            # 회사명 매핑
+            company_queries = {
+                "AAPL": "Apple Inc",
+                "GOOGL": "Google Alphabet",
+                "MSFT": "Microsoft Corporation",
+                "TSLA": "Tesla Inc",
+                "NVDA": "NVIDIA Corporation",
+                "AMZN": "Amazon.com Inc",
+                "META": "Meta Platforms",
+                "005930.KS": "Samsung Electronics",
+                "000660.KS": "SK Hynix",
+                "035420.KS": "NAVER Corporation",
+                "035720.KS": "Kakao Corp"
+            }
+            
+            query = company_queries.get(symbol, symbol)
+            
+            url = "https://newsapi.org/v2/everything"
+            params = {
+                "q": query,
+                "apiKey": settings.news_api_key,
+                "language": "en",
+                "sortBy": "publishedAt",
+                "pageSize": limit,
+                "from": (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d"),
+                "domains": "bloomberg.com,reuters.com,cnbc.com,marketwatch.com,yahoo.com,investing.com"
+            }
+            
+            response = requests.get(url, params=params, timeout=10)
+            response.raise_for_status()
+            
+            data = response.json()
+            articles = []
+            
+            for article in data.get("articles", []):
+                articles.append({
+                    "symbol": symbol,
+                    "title": article.get("title", ""),
+                    "description": article.get("description", ""),
+                    "url": article.get("url", ""),
+                    "source": article.get("source", {}).get("name", ""),
+                    "author": article.get("author", ""),
+                    "published_at": article.get("publishedAt", ""),
+                    "image_url": article.get("urlToImage", ""),
+                    "language": "en",
+                    "category": "stock",
+                    "api_source": "newsapi"
+                })
+            
+            return articles
+            
+        except Exception as e:
+            logger.error(f"News API 오류 ({symbol}): {str(e)}")
+            return []
+    
+    @staticmethod
+    async def get_naver_stock_news(symbol: str, limit: int = 10) -> List[Dict]:
+        """Naver API에서 한국 종목 뉴스 가져오기"""
+        try:
+            if not settings.naver_client_id or not settings.naver_client_secret:
+                return []
+            
+            # 종목 코드에서 회사명 추출
+            company_names = {
+                "005930.KS": "삼성전자",
+                "000660.KS": "SK하이닉스",
+                "035420.KS": "네이버",
+                "035720.KS": "카카오",
+                "207940.KS": "삼성바이오로직스",
+                "006400.KS": "삼성SDI",
+                "051910.KS": "LG화학",
+                "068270.KS": "셀트리온",
+                "028260.KS": "삼성물산"
+            }
+            
+            query = company_names.get(symbol, symbol.split('.')[0])
+            
+            url = "https://openapi.naver.com/v1/search/news.json"
+            headers = {
+                "X-Naver-Client-Id": settings.naver_client_id,
+                "X-Naver-Client-Secret": settings.naver_client_secret,
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            }
+            params = {
+                "query": query,
+                "display": limit,
+                "start": 1,
+                "sort": "date"
+            }
+            
+            response = requests.get(url, headers=headers, params=params, timeout=10)
+            response.raise_for_status()
+            
+            data = response.json()
+            articles = []
+            
+            for item in data.get("items", []):
+                # HTML 태그 제거
+                title = BeautifulSoup(item.get("title", ""), "html.parser").get_text()
+                description = BeautifulSoup(item.get("description", ""), "html.parser").get_text()
+                
+                articles.append({
+                    "symbol": symbol,
+                    "title": title,
+                    "description": description,
+                    "url": item.get("link", ""),
+                    "source": "네이버뉴스",
+                    "author": "",
+                    "published_at": item.get("pubDate", ""),
+                    "image_url": "",
+                    "language": "ko",
+                    "category": "stock",
+                    "api_source": "naver"
+                })
+            
+            return articles
+            
+        except Exception as e:
+            logger.error(f"Naver API 오류 ({symbol}): {str(e)}")
+            return []
     
     @staticmethod
     def get_financial_news(query: str = "finance", limit: int = 10) -> List[Dict]:

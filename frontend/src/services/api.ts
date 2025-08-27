@@ -81,8 +81,25 @@ export const newsAPI = {
     return response.data;
   },
 
-  getStockNews: async (symbol: string, limit: number = 5): Promise<NewsResponse> => {
-    const response = await api.get(`/api/v1/news/stock/${symbol}?limit=${limit}`);
+  getStockNews: async (symbol: string, limit: number = 5, forceCrawl: boolean = false): Promise<NewsResponse> => {
+    const response = await api.get(`/api/v1/news/stock/${symbol}?limit=${limit}&force_crawl=${forceCrawl}`);
+    return response.data;
+  },
+
+  crawlStockNews: async (symbol: string, limit: number = 10): Promise<NewsResponse & { message: string; crawled_count: number }> => {
+    const response = await api.post(`/api/v1/news/stock/${symbol}/crawl?limit=${limit}`);
+    return response.data;
+  },
+
+  analyzeStockWithNews: async (symbol: string, analysisDays: number = 7, newsLimit: number = 20): Promise<{
+    symbol: string;
+    analysis_period_days: number;
+    total_news_analyzed: number;
+    ai_analysis: string;
+    related_news: NewsResponse['articles'];
+    generated_at: string;
+  }> => {
+    const response = await api.post(`/api/v1/news/stock/${symbol}/analyze?analysis_days=${analysisDays}&news_limit=${newsLimit}`);
     return response.data;
   },
 

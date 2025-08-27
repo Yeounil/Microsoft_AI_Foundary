@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     alpha_vantage_api_key: str = os.getenv("ALPHA_VANTAGE_API_KEY", "")
     news_api_key: str = os.getenv("NEWS_API_KEY", "")
     
+    # Naver API
+    naver_client_id: str = os.getenv("NAVER_CLIENT_ID", "")
+    naver_client_secret: str = os.getenv("NAVER_CLIENT_SECRET", "")
+    
     class Config:
         env_file = ".env"
         extra = "ignore"

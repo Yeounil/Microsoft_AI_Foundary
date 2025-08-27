@@ -13,7 +13,9 @@ import {
 import {
   Article as ArticleIcon,
   Schedule as ScheduleIcon,
-  TrendingUp as TrendingUpIcon
+  TrendingUp as TrendingUpIcon,
+  Refresh as RefreshIcon,
+  Psychology as PsychologyIcon
 } from '@mui/icons-material';
 import { newsAPI } from '../services/api';
 import { NewsArticle, NewsSummary } from '../types/api';
@@ -26,8 +28,12 @@ interface NewsSectionProps {
 const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarket }) => {
   const [news, setNews] = useState<NewsArticle[]>([]);
   const [aiSummary, setAiSummary] = useState<string>('');
+  const [aiAnalysis, setAiAnalysis] = useState<string>('');
+  const [relatedNews, setRelatedNews] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [summaryLoading, setSummaryLoading] = useState<boolean>(false);
+  const [analysisLoading, setAnalysisLoading] = useState<boolean>(false);
+  const [crawlingLoading, setCrawlingLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
 
   useEffect(() => {
@@ -92,6 +98,51 @@ const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarke
     }
   };
 
+  const handleAnalyzeWithNews = async () => {
+    if (!selectedSymbol) return;
+    
+    setAnalysisLoading(true);
+    setError('');
+    
+    try {
+      console.log('🔍 뉴스 분석 시작:', selectedSymbol);
+      const response = await newsAPI.analyzeStockWithNews(selectedSymbol, 7, 20);
+      console.log('📊 분석 응답 받음:', response);
+      
+      if (response && response.ai_analysis) {
+        setAiAnalysis(response.ai_analysis);
+        setRelatedNews(response.related_news || []);
+        console.log('✅ 분석 완료');
+      } else {
+        throw new Error('응답 데이터가 올바르지 않습니다.');
+      }
+    } catch (err: any) {
+      console.error('❌ 뉴스 분석 오류:', err);
+      console.error('❌ 응답 상세:', err.response?.data);
+      setError(`뉴스 기반 AI 분석 오류: ${err.response?.data?.detail || err.message}`);
+    } finally {
+      setAnalysisLoading(false);
+    }
+  };
+
+  const handleCrawlNews = async () => {
+    if (!selectedSymbol) return;
+    
+    setCrawlingLoading(true);
+    setError('');
+    
+    try {
+      await newsAPI.crawlStockNews(selectedSymbol, 10);
+      // 크롤링 후 뉴스 목록 새로고침
+      await fetchStockNews();
+    } catch (err: any) {
+      setError('뉴스 크롤링 중 오류가 발생했습니다.');
+      console.error('뉴스 크롤링 오류:', err);
+    } finally {
+      setCrawlingLoading(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     try {
       return new Date(dateString).toLocaleDateString('ko-KR', {
@@ -121,15 +172,84 @@ const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarke
           <ArticleIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
           {selectedSymbol ? `${selectedSymbol} 관련 뉴스` : '금융 뉴스'}
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={summaryLoading ? <CircularProgress size={20} /> : <TrendingUpIcon />}
-          onClick={handleSummarizeNews}
-          disabled={summaryLoading || news.length === 0}
-        >
-          AI 요약
-        </Button>
+        <Stack direction="row" spacing={1}>
+          {selectedSymbol && (
+            <>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={crawlingLoading ? <CircularProgress size={16} /> : <RefreshIcon />}
+                onClick={handleCrawlNews}
+                disabled={crawlingLoading}
+              >
+                뉴스 업데이트
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={analysisLoading ? <CircularProgress size={20} /> : <PsychologyIcon />}
+                onClick={handleAnalyzeWithNews}
+                disabled={analysisLoading}
+                sx={{ bgcolor: 'secondary.main' }}
+              >
+                뉴스 기반 AI 분석
+              </Button>
+            </>
+          )}
+          <Button
+            variant="contained"
+            startIcon={summaryLoading ? <CircularProgress size={20} /> : <TrendingUpIcon />}
+            onClick={handleSummarizeNews}
+            disabled={summaryLoading || news.length === 0}
+          >
+            AI 요약
+          </Button>
+        </Stack>
       </Box>
+
+      {aiAnalysis && (
+        <Card sx={{ mb: 3, backgroundColor: 'secondary.main', color: 'secondary.contrastText' }}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              🧠 뉴스 기반 AI 종목 분석
+            </Typography>
+            <Typography variant="body1" sx={{ whiteSpace: 'pre-line', mb: 2 }}>
+              {aiAnalysis}
+            </Typography>
+            
+            {relatedNews.length > 0 && (
+              <>
+                <Typography variant="h6" gutterBottom sx={{ mt: 3, mb: 2 }}>
+                  📰 분석에 활용된 주요 뉴스
+                </Typography>
+                <Box sx={{ display: 'grid', gap: 1 }}>
+                  {relatedNews.slice(0, 5).map((article, index) => (
+                    <Card key={index} sx={{ bgcolor: 'rgba(255,255,255,0.1)' }}>
+                      <CardContent sx={{ py: 1 }}>
+                        <Typography variant="subtitle2" sx={{ color: 'inherit', mb: 0.5 }}>
+                          {article.title}
+                        </Typography>
+                        <Box display="flex" justifyContent="space-between" alignItems="center">
+                          <Typography variant="caption" sx={{ color: 'inherit', opacity: 0.8 }}>
+                            {article.source} • {formatDate(article.published_at)}
+                          </Typography>
+                          <Link
+                            href={article.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            sx={{ color: 'inherit', fontSize: '0.75rem' }}
+                          >
+                            원문보기
+                          </Link>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </Box>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {aiSummary && (
         <Card sx={{ mb: 3, backgroundColor: 'primary.main', color: 'primary.contrastText' }}>
@@ -150,60 +270,83 @@ const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarke
         </Typography>
       )}
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }, gap: 2 }}>
-        {news.map((article, index) => (
-          <Box key={index}>
-            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-              <CardContent sx={{ flex: 1 }}>
+      <Box 
+        sx={{ 
+          maxHeight: '600px', 
+          overflowY: 'auto',
+          pr: 1,
+          '&::-webkit-scrollbar': {
+            width: '8px',
+          },
+          '&::-webkit-scrollbar-track': {
+            background: 'rgba(0,0,0,0.1)',
+            borderRadius: '4px',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            background: 'rgba(0,0,0,0.3)',
+            borderRadius: '4px',
+            '&:hover': {
+              background: 'rgba(0,0,0,0.5)',
+            },
+          },
+        }}
+      >
+        <Stack spacing={2}>
+          {news.map((article, index) => (
+            <Card key={index} sx={{ display: 'flex', flexDirection: 'column' }}>
+              <CardContent>
                 <Box display="flex" alignItems="center" gap={1} sx={{ mb: 1 }}>
-                  <Avatar sx={{ width: 24, height: 24, fontSize: '0.75rem' }}>
+                  <Avatar sx={{ width: 28, height: 28, fontSize: '0.8rem' }}>
                     {article.source.charAt(0).toUpperCase()}
                   </Avatar>
                   <Typography variant="caption" color="text.secondary">
                     {article.source}
                   </Typography>
-                </Box>
-
-                <Typography variant="h6" component="h3" sx={{ mb: 1 }} noWrap>
-                  {article.title}
-                </Typography>
-
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{
-                    mb: 2,
-                    display: '-webkit-box',
-                    '-webkit-line-clamp': 3,
-                    '-webkit-box-orient': 'vertical',
-                    overflow: 'hidden'
-                  }}
-                >
-                  {article.description}
-                </Typography>
-
-                <Box display="flex" justifyContent="space-between" alignItems="center">
-                  <Box display="flex" alignItems="center" gap={0.5}>
-                    <ScheduleIcon sx={{ fontSize: 16 }} color="action" />
+                  <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <ScheduleIcon sx={{ fontSize: 14 }} color="action" />
                     <Typography variant="caption" color="text.secondary">
                       {formatDate(article.published_at)}
                     </Typography>
                   </Box>
-                  
+                </Box>
+
+                <Typography variant="h6" component="h3" sx={{ mb: 1.5, lineHeight: 1.3 }}>
+                  {article.title}
+                </Typography>
+
+                {article.description && (
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: 2, lineHeight: 1.5 }}
+                  >
+                    {article.description}
+                  </Typography>
+                )}
+
+                <Box display="flex" justifyContent="space-between" alignItems="center">
+                  <Box />
                   <Link
                     href={article.url}
                     target="_blank"
                     rel="noopener noreferrer"
                     underline="hover"
-                    variant="caption"
+                    variant="body2"
+                    sx={{ 
+                      color: 'primary.main',
+                      fontWeight: 500,
+                      '&:hover': {
+                        textDecoration: 'underline',
+                      }
+                    }}
                   >
-                    원문 보기
+                    원문 보기 →
                   </Link>
                 </Box>
               </CardContent>
             </Card>
-          </Box>
-        ))}
+          ))}
+        </Stack>
       </Box>
 
       {news.length === 0 && !loading && (

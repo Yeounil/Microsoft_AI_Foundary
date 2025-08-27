@@ -56,7 +56,33 @@ CREATE TABLE user_profiles (
 
 -- 추가 테이블들 (AI 분석 기능을 위해 필요한 테이블들)
 
--- 6. ai_analysis_history 테이블 (AI 분석 결과 저장)
+-- 6. news_articles 테이블 (크롤링한 뉴스 데이터 저장)
+CREATE TABLE news_articles (
+    id SERIAL PRIMARY KEY,
+    symbol VARCHAR, -- 관련 종목 심볼 (NULL 가능 - 일반 금융뉴스의 경우)
+    title VARCHAR NOT NULL,
+    description TEXT,
+    content TEXT, -- 전체 기사 내용 (AI 분석용)
+    url VARCHAR UNIQUE NOT NULL, -- 중복 체크용 고유 URL
+    source VARCHAR,
+    author VARCHAR,
+    published_at TIMESTAMP WITH TIME ZONE,
+    image_url VARCHAR,
+    language VARCHAR DEFAULT 'en', -- 'en', 'ko'
+    category VARCHAR DEFAULT 'finance', -- 'finance', 'stock', 'market' 등
+    api_source VARCHAR, -- 'newsapi', 'naver', 'manual' 등 출처 구분
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 인덱스 생성
+CREATE INDEX idx_news_articles_symbol ON news_articles (symbol);
+CREATE INDEX idx_news_articles_url ON news_articles (url);
+CREATE INDEX idx_news_articles_published_at ON news_articles (published_at DESC);
+CREATE INDEX idx_news_articles_category ON news_articles (category);
+CREATE INDEX idx_news_articles_api_source ON news_articles (api_source);
+
+-- 7. ai_analysis_history 테이블 (AI 분석 결과 저장)
 CREATE TABLE ai_analysis_history (
     id SERIAL PRIMARY KEY,
     user_id VARCHAR NOT NULL,
@@ -71,7 +97,7 @@ CREATE TABLE ai_analysis_history (
 CREATE INDEX idx_ai_analysis_history_symbol ON ai_analysis_history (symbol);
 CREATE INDEX idx_ai_analysis_history_type ON ai_analysis_history (analysis_type);
 
--- 7. user_favorites 테이블 (관심 종목 관리)
+-- 8. user_favorites 테이블 (관심 종목 관리)
 CREATE TABLE user_favorites (
     id SERIAL PRIMARY KEY,
     user_id VARCHAR NOT NULL,

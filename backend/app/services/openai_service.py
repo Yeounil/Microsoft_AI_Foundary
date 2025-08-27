@@ -140,6 +140,89 @@ class OpenAIService:
         except Exception as e:
             raise Exception(f"뉴스 요약 생성 오류: {str(e)}")
     
+    async def analyze_stock_with_news(self, symbol: str, news_articles: list) -> str:
+        """뉴스 데이터를 기반으로 한 종목 심층 분석"""
+        try:
+            if not news_articles:
+                return "분석할 뉴스가 없습니다."
+            
+            # 뉴스 데이터 준비
+            recent_news = sorted(news_articles, key=lambda x: x.get('published_at', ''), reverse=True)[:10]
+            
+            news_summary = "\n\n".join([
+                f"[{article.get('published_at', '')[:10]}] {article.get('source', '')}:\n"
+                f"제목: {article.get('title', '')}\n"
+                f"내용: {article.get('description', '')[:200]}..."
+                for article in recent_news
+            ])
+            
+            prompt = f"""
+            {symbol} 종목에 대한 최신 뉴스를 바탕으로 종합적인 투자 분석을 수행해주세요.
+
+            **분석 대상:** {symbol}
+            **뉴스 분석 기간:** 최근 7일
+            **분석 뉴스 수:** {len(recent_news)}개
+
+            **관련 최신 뉴스:**
+            {news_summary}
+
+            다음 항목에 따라 상세한 분석을 제공해주세요:
+
+            ## 1. 뉴스 기반 핵심 이슈 분석
+            - 가장 중요한 뉴스와 그 영향
+            - 긍정적/부정적 요인 분석
+
+            ## 2. 기업 펀더멘털 분석
+            - 뉴스에서 나타난 재무상태 변화
+            - 사업 전략 및 성장 동력
+
+            ## 3. 시장 환경 및 경쟁력
+            - 업계 트렌드와 기업의 위치
+            - 경쟁사 대비 강점/약점
+
+            ## 4. 주가 영향 요인 분석
+            - 단기적 주가 모멘텀 요인
+            - 중장기적 가치 평가 요소
+
+            ## 5. 투자 의견
+            - 투자 등급 (매수/보유/매도)
+            - 목표 주가 범위 (근거와 함께)
+            - 투자 시 주의사항
+
+            ## 6. 리스크 요인
+            - 주요 위험 요소
+            - 모니터링 포인트
+
+            **중요:** 이 분석은 투자 의사결정의 참고자료이며, 실제 투자 시에는 추가적인 분석과 전문가 상담이 필요합니다.
+            """
+
+            if self.is_azure:
+                model_name = settings.azure_openai_deployment or "gpt-4"
+                response = self.client.chat.completions.create(
+                    model=model_name,
+                    messages=[
+                        {"role": "system", "content": "당신은 20년 경력의 전문 증권 애널리스트입니다. 뉴스 기반 종목 분석에 특화되어 있으며, 객관적이고 실용적인 투자 인사이트를 제공합니다."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    max_tokens=3000,
+                    temperature=0.6
+                )
+            else:
+                response = self.client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[
+                        {"role": "system", "content": "당신은 20년 경력의 전문 증권 애널리스트입니다. 뉴스 기반 종목 분석에 특화되어 있으며, 객관적이고 실용적인 투자 인사이트를 제공합니다."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    max_tokens=3000,
+                    temperature=0.6
+                )
+            
+            return response.choices[0].message.content
+            
+        except Exception as e:
+            raise Exception(f"뉴스 기반 주식 분석 생성 오류: {str(e)}")
+    
     def _format_price_data(self, price_data: list) -> str:
         """가격 데이터를 텍스트로 포맷팅"""
         if not price_data:
