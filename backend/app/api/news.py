@@ -1,8 +1,10 @@
 from fastapi import APIRouter, HTTPException, Query
 from datetime import datetime
 from app.services.news_service import NewsService
-from app.services.news_db_service import NewsDBService
+from app.services.sqlite_news_service import SQLiteNewsService
 from app.services.openai_service import OpenAIService
+from app.services.supabase_ai_analysis_history_service import SupabaseAIAnalysisHistoryService
+from app.services.stock_service import StockService
 
 router = APIRouter()
 
@@ -32,7 +34,7 @@ async def get_financial_news(
 @router.get("/stock/{symbol}")
 async def get_stock_news(
     symbol: str,
-    limit: int = Query(5, description="가져올 뉴스 개수"),
+    limit: int = Query(10, description="가져올 뉴스 개수"),
     force_crawl: bool = Query(False, description="강제 크롤링 여부")
 ):
     """특정 주식 관련 뉴스 (DB에서 가져오기 + 옵션으로 크롤링)"""
@@ -42,12 +44,12 @@ async def get_stock_news(
             news = await NewsService.crawl_and_save_stock_news(symbol, limit * 2)
         else:
             # DB에서 가져오기
-            news = await NewsDBService.get_latest_news_by_symbol(symbol, limit)
+            news = await SQLiteNewsService.get_latest_news_by_symbol(symbol, limit)
             
             # DB에 뉴스가 부족한 경우 크롤링
             if len(news) < limit // 2:
                 crawled_news = await NewsService.crawl_and_save_stock_news(symbol, limit)
-                news = await NewsDBService.get_latest_news_by_symbol(symbol, limit)
+                news = await SQLiteNewsService.get_latest_news_by_symbol(symbol, limit)
         
         return {
             "symbol": symbol,
@@ -80,7 +82,7 @@ async def crawl_stock_news(
 @router.post("/summarize")
 async def summarize_news(
     query: str = Query("finance", description="검색 키워드"),
-    limit: int = Query(5, description="요약할 뉴스 개수"),
+    limit: int = Query(10, description="요약할 뉴스 개수"),
     lang: str = Query("en", description="언어")
 ):
     """뉴스 AI 요약"""
@@ -114,35 +116,87 @@ async def summarize_news(
 async def analyze_stock_with_news(
     symbol: str,
     analysis_days: int = Query(7, description="분석할 뉴스 기간 (일)"),
-    news_limit: int = Query(20, description="분석에 사용할 최대 뉴스 개수")
+    news_limit: int = Query(20, description="분석에 사용할 최대 뉴스 개수"),
+    market: str = Query("us", description="시장 구분 (us: 미국, kr: 한국)")
 ):
-    """종목 뉴스 기반 AI 분석"""
+    """종목 뉴스 기반 AI 분석 (과거 분석 데이터 활용)"""
     try:
-        print(f"[DEBUG] 분석 시작: {symbol}, days={analysis_days}, limit={news_limit}")
+        print(f"[DEBUG] 분석 시작: {symbol}, market={market}, days={analysis_days}, limit={news_limit}")
+        
+        # AI 분석 히스토리 서비스 초기화 (Supabase 버전)
+        history_service = SupabaseAIAnalysisHistoryService()
+        
+        # 과거 분석 데이터 조회
+        historical_analysis = await history_service.get_analysis_summary_for_ai(symbol, market)
+        print(f"[DEBUG] 과거 분석 데이터 조회: {'있음' if historical_analysis else '없음'}")
         
         # 분석용 뉴스 데이터 가져오기
-        news = await NewsDBService.get_news_for_analysis(symbol, analysis_days, news_limit)
+        news = await SQLiteNewsService.get_news_for_analysis(symbol, analysis_days, news_limit)
         print(f"[DEBUG] 조회된 뉴스 개수: {len(news)}")
         
         # 뉴스가 부족한 경우 크롤링
-        if len(news) < 5:
-            await NewsService.crawl_and_save_stock_news(symbol, 10)
-            news = await NewsDBService.get_news_for_analysis(symbol, analysis_days, news_limit)
+        if len(news) < 10:
+            await NewsService.crawl_and_save_stock_news(symbol, 20)
+            news = await SQLiteNewsService.get_news_for_analysis(symbol, analysis_days, news_limit)
         
         if not news:
             raise HTTPException(status_code=404, detail=f"{symbol} 관련 뉴스를 찾을 수 없습니다.")
         
-        # OpenAI로 종합 분석 생성
+        # 현재 주가 정보 가져오기
+        try:
+            if market.lower() == "kr":
+                stock_data = StockService.get_korean_stock_data(symbol, "1d")
+            else:
+                stock_data = StockService.get_stock_data(symbol, "1d")
+            current_price = stock_data.get("current_price", None)
+            company_name = stock_data.get("company_name", symbol)
+        except:
+            current_price = None
+            company_name = symbol
+            
+        # OpenAI로 종합 분석 생성 (과거 분석 포함)
         openai_service = OpenAIService()
-        analysis_result = await openai_service.analyze_stock_with_news(symbol, news)
+        analysis_result = await openai_service.analyze_stock_with_news(symbol, news, historical_analysis)
         
-        # 사용자에게 보여줄 최신 뉴스 5개 선별
-        display_news = sorted(news, key=lambda x: x.get('published_at', ''), reverse=True)[:5]
+        # 분석 결과를 히스토리에 저장
+        try:
+            # 참조된 뉴스 소스 정보 준비
+            news_sources = [
+                {
+                    "title": article.get("title", ""),
+                    "source": article.get("source", ""),
+                    "published_at": article.get("published_at", ""),
+                    "url": article.get("url", "")
+                }
+                for article in news[:10]  # 상위 10개만 저장
+            ]
+            
+            await history_service.save_analysis(
+                symbol=symbol,
+                market=market,
+                company_name=company_name,
+                analysis_content=analysis_result,
+                analysis_prompt=f"뉴스 기반 분석 (뉴스 {len(news)}개, 기간 {analysis_days}일)",
+                referenced_news_sources=news_sources,
+                stock_price=current_price,
+                analysis_period=f"{analysis_days}d",
+                analysis_interval="news_based"
+            )
+            print(f"[DEBUG] 분석 결과 저장 완료")
+        except Exception as save_error:
+            print(f"[WARNING] 분석 결과 저장 실패: {save_error}")
+        
+        # 사용자에게 보여줄 최신 뉴스 10개 선별
+        display_news = sorted(news, key=lambda x: x.get('published_at', ''), reverse=True)[:10]
         
         return {
             "symbol": symbol,
+            "market": market,
+            "company_name": company_name,
             "analysis_period_days": analysis_days,
             "total_news_analyzed": len(news),
+            "has_historical_data": historical_analysis is not None,
+            "current_price": current_price,
             "ai_analysis": analysis_result,
             "related_news": display_news,
             "generated_at": datetime.now().isoformat()
@@ -154,17 +208,17 @@ async def analyze_stock_with_news(
 @router.post("/stock/{symbol}/summarize")
 async def summarize_stock_news(
     symbol: str,
-    limit: int = Query(5, description="요약할 뉴스 개수")
+    limit: int = Query(10, description="요약할 뉴스 개수")
 ):
     """특정 주식 관련 뉴스 AI 요약 (기존 호환성 유지)"""
     try:
         # DB에서 최신 뉴스 가져오기
-        news = await NewsDBService.get_latest_news_by_symbol(symbol, limit)
+        news = await SQLiteNewsService.get_latest_news_by_symbol(symbol, limit)
         
         # 뉴스가 없으면 크롤링
         if not news:
             await NewsService.crawl_and_save_stock_news(symbol, limit)
-            news = await NewsDBService.get_latest_news_by_symbol(symbol, limit)
+            news = await SQLiteNewsService.get_latest_news_by_symbol(symbol, limit)
         
         if not news:
             raise HTTPException(status_code=404, detail=f"{symbol} 관련 뉴스가 없습니다.")

@@ -42,7 +42,7 @@ const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarke
     } else {
       fetchGeneralNews();
     }
-  }, [selectedSymbol, selectedMarket]);
+  }, [selectedSymbol, selectedMarket]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchGeneralNews = async () => {
     setLoading(true);

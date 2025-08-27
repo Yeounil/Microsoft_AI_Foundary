@@ -18,6 +18,7 @@ import StockSearch from './components/StockSearch';
 import StockChart from './components/StockChart';
 import StockAnalysis from './components/StockAnalysis';
 import NewsSection from './components/NewsSection';
+import RecommendedNews from './components/RecommendedNews';
 import Login from './components/Login';
 import Register from './components/Register';
 import { authService, UserProfile } from './services/authService';
@@ -197,6 +198,7 @@ function App() {
             <Tab label="차트" />
             <Tab label="AI 분석" />
             <Tab label="뉴스" />
+            <Tab label="추천 뉴스" />
           </Tabs>
 
           <TabPanel value={tabValue} index={0}>
@@ -231,6 +233,10 @@ function App() {
               selectedSymbol={selectedStock?.symbol}
               selectedMarket={selectedStock?.market}
             />
+          </TabPanel>
+
+          <TabPanel value={tabValue} index={3}>
+            <RecommendedNews />
           </TabPanel>
         </Paper>
       </Container>

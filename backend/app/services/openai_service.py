@@ -140,13 +140,13 @@ class OpenAIService:
         except Exception as e:
             raise Exception(f"뉴스 요약 생성 오류: {str(e)}")
     
-    async def analyze_stock_with_news(self, symbol: str, news_articles: list) -> str:
-        """뉴스 데이터를 기반으로 한 종목 심층 분석"""
+    async def analyze_stock_with_news(self, symbol: str, news_articles: list, historical_analysis: str = None) -> str:
+        """뉴스 데이터와 과거 분석을 기반으로 한 종목 심층 분석"""
         try:
             if not news_articles:
                 return "분석할 뉴스가 없습니다."
             
-            # 뉴스 데이터 준비
+            # 뉴스 데이터 준비 (10개로 증가)
             recent_news = sorted(news_articles, key=lambda x: x.get('published_at', ''), reverse=True)[:10]
             
             news_summary = "\n\n".join([
@@ -156,8 +156,23 @@ class OpenAIService:
                 for article in recent_news
             ])
             
+            # 과거 분석 정보 포함 여부에 따른 프롬프트 구성
+            historical_section = ""
+            if historical_analysis:
+                historical_section = f"""
+            
+            **과거 분석 참고 자료:**
+            {historical_analysis}
+            
+            ⚠️ **중요 지침:** 위 과거 분석 데이터는 참고 자료입니다. 다음 사항을 준수하세요:
+            - 과거 분석의 내용을 비판적으로 검토하고 새로운 정보와 비교 분석하세요
+            - 과거 예측이 틀렸다면 그 이유를 분석하고 개선점을 제시하세요
+            - 시장 상황 변화를 반영하여 기존 분석을 업데이트하세요
+            - 과거 분석에만 의존하지 말고 최신 뉴스와 균형있게 판단하세요
+            """
+
             prompt = f"""
-            {symbol} 종목에 대한 최신 뉴스를 바탕으로 종합적인 투자 분석을 수행해주세요.
+            {symbol} 종목에 대한 최신 뉴스와 과거 분석을 바탕으로 종합적인 투자 분석을 수행해주세요.
 
             **분석 대상:** {symbol}
             **뉴스 분석 기간:** 최근 7일
@@ -165,43 +180,58 @@ class OpenAIService:
 
             **관련 최신 뉴스:**
             {news_summary}
+            
+            {historical_section}
 
             다음 항목에 따라 상세한 분석을 제공해주세요:
 
             ## 1. 뉴스 기반 핵심 이슈 분석
             - 가장 중요한 뉴스와 그 영향
             - 긍정적/부정적 요인 분석
+            - 과거 분석 대비 변화된 점
 
             ## 2. 기업 펀더멘털 분석
             - 뉴스에서 나타난 재무상태 변화
             - 사업 전략 및 성장 동력
+            - 과거 예측의 정확성 검토
 
             ## 3. 시장 환경 및 경쟁력
             - 업계 트렌드와 기업의 위치
             - 경쟁사 대비 강점/약점
+            - 이전 분석 이후 경쟁 환경 변화
 
             ## 4. 주가 영향 요인 분석
             - 단기적 주가 모멘텀 요인
             - 중장기적 가치 평가 요소
+            - 과거 분석의 주가 예측 검토
 
-            ## 5. 투자 의견
+            ## 5. 투자 의견 (과거 분석과의 비교)
             - 투자 등급 (매수/보유/매도)
             - 목표 주가 범위 (근거와 함께)
+            - 이전 투자 의견 대비 변화 사유
             - 투자 시 주의사항
 
             ## 6. 리스크 요인
             - 주요 위험 요소
+            - 새로 발견된 리스크
             - 모니터링 포인트
+
+            ## 7. 분석 정확성 향상
+            - 과거 분석의 성공/실패 요인
+            - 개선된 분석 방법론
+            - 향후 모니터링 강화 포인트
 
             **중요:** 이 분석은 투자 의사결정의 참고자료이며, 실제 투자 시에는 추가적인 분석과 전문가 상담이 필요합니다.
             """
+
+            system_message = "당신은 20년 경력의 전문 증권 애널리스트입니다. 뉴스 기반 종목 분석에 특화되어 있으며, 과거 분석 결과를 비판적으로 검토하고 새로운 정보와 결합하여 더 정확한 투자 인사이트를 제공합니다. 과거 데이터에 맹목적으로 의존하지 않고, 항상 최신 정보를 우선시하며 균형 잡힌 분석을 수행합니다."
 
             if self.is_azure:
                 model_name = settings.azure_openai_deployment or "gpt-4"
                 response = self.client.chat.completions.create(
                     model=model_name,
                     messages=[
-                        {"role": "system", "content": "당신은 20년 경력의 전문 증권 애널리스트입니다. 뉴스 기반 종목 분석에 특화되어 있으며, 객관적이고 실용적인 투자 인사이트를 제공합니다."},
+                        {"role": "system", "content": system_message},
                         {"role": "user", "content": prompt}
                     ],
                     max_tokens=3000,
@@ -211,7 +241,7 @@ class OpenAIService:
                 response = self.client.chat.completions.create(
                     model="gpt-4",
                     messages=[
-                        {"role": "system", "content": "당신은 20년 경력의 전문 증권 애널리스트입니다. 뉴스 기반 종목 분석에 특화되어 있으며, 객관적이고 실용적인 투자 인사이트를 제공합니다."},
+                        {"role": "system", "content": system_message},
                         {"role": "user", "content": prompt}
                     ],
                     max_tokens=3000,

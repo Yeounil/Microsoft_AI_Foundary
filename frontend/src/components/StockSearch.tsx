@@ -9,9 +9,16 @@ import {
   Select,
   MenuItem,
   SelectChangeEvent,
-  CircularProgress
+  CircularProgress,
+  IconButton,
+  Tooltip,
+  Alert
 } from '@mui/material';
-import { stockAPI } from '../services/api';
+import {
+  Favorite,
+  FavoriteBorder
+} from '@mui/icons-material';
+import { stockAPI, recommendationAPI } from '../services/api';
 
 interface StockSearchProps {
   onStockSelect: (symbol: string, market: string) => void;
@@ -22,12 +29,24 @@ interface StockOption {
   name: string;
 }
 
+interface UserInterest {
+  symbol: string;
+  market: string;
+  company_name?: string;
+}
+
 const StockSearch: React.FC<StockSearchProps> = ({ onStockSelect }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [stockOptions, setStockOptions] = useState<StockOption[]>([]);
   const [selectedStock, setSelectedStock] = useState<StockOption | null>(null);
   const [market, setMarket] = useState<string>('us');
   const [loading, setLoading] = useState<boolean>(false);
+  
+  // 관심 종목 관련 상태
+  const [userInterests, setUserInterests] = useState<UserInterest[]>([]);
+  const [favoriteLoading, setFavoriteLoading] = useState<string>(''); // 현재 처리 중인 종목
+  const [alertMessage, setAlertMessage] = useState<string>('');
+  const [alertSeverity, setAlertSeverity] = useState<'success' | 'error'>('success');
 
   // 기본 주식 목록
   const defaultStocks = {
@@ -53,13 +72,18 @@ const StockSearch: React.FC<StockSearchProps> = ({ onStockSelect }) => {
     ]
   };
 
+  // 컴포넌트 마운트 시 사용자 관심 종목 로드
+  useEffect(() => {
+    loadUserInterests();
+  }, []);
+
   useEffect(() => {
     // 시장 변경시 기본 주식 목록 로드
     const stocks = market === 'kr' ? defaultStocks.kr : defaultStocks.us;
     setStockOptions(stocks);
     setSelectedStock(null);
     setSearchQuery('');
-  }, [market]);
+  }, [market]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (searchQuery.length > 1) {
@@ -68,7 +92,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onStockSelect }) => {
       const stocks = market === 'kr' ? defaultStocks.kr : defaultStocks.us;
       setStockOptions(stocks);
     }
-  }, [searchQuery, market]);
+  }, [searchQuery, market]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const searchStocks = async (query: string) => {
     setLoading(true);
@@ -98,14 +122,80 @@ const StockSearch: React.FC<StockSearchProps> = ({ onStockSelect }) => {
     setMarket(event.target.value);
   };
 
+  // 사용자 관심 종목 로드
+  const loadUserInterests = async () => {
+    try {
+      const response = await recommendationAPI.getUserInterests();
+      setUserInterests(response.interests || []);
+    } catch (error) {
+      console.error('관심 종목 로드 오류:', error);
+    }
+  };
+
+  // 종목이 관심 목록에 있는지 확인
+  const isInFavorites = (symbol: string, market: string): boolean => {
+    return userInterests.some(
+      interest => interest.symbol === symbol && interest.market === market
+    );
+  };
+
+  // 관심 종목 추가/제거 토글
+  const toggleFavorite = async (stock: StockOption) => {
+    const stockKey = `${stock.symbol}-${market}`;
+    setFavoriteLoading(stockKey);
+    
+    try {
+      const isFavorited = isInFavorites(stock.symbol, market);
+      
+      if (isFavorited) {
+        // 관심 종목에서 제거
+        await recommendationAPI.removeUserInterest(stock.symbol, market);
+        setAlertMessage(`${stock.symbol} (${stock.name})이 관심 목록에서 제거되었습니다.`);
+        setAlertSeverity('success');
+      } else {
+        // 관심 종목에 추가
+        await recommendationAPI.addUserInterest({
+          symbol: stock.symbol,
+          market: market,
+          company_name: stock.name,
+          priority: 2 // 검색을 통한 추가는 중간 우선순위
+        });
+        setAlertMessage(`${stock.symbol} (${stock.name})이 관심 목록에 추가되었습니다.`);
+        setAlertSeverity('success');
+      }
+      
+      // 관심 종목 목록 새로고침
+      await loadUserInterests();
+      
+    } catch (error: any) {
+      console.error('관심 종목 토글 오류:', error);
+      setAlertMessage(error.response?.data?.detail || '관심 종목 설정 중 오류가 발생했습니다.');
+      setAlertSeverity('error');
+    } finally {
+      setFavoriteLoading('');
+      
+      // 3초 후 알림 메시지 자동 제거
+      setTimeout(() => {
+        setAlertMessage('');
+      }, 3000);
+    }
+  };
+
   return (
     <Box sx={{ mb: 3 }}>
       <Typography variant="h4" component="h1" gutterBottom align="center">
         AI 금융 분석기
       </Typography>
       <Typography variant="body1" color="text.secondary" align="center" sx={{ mb: 3 }}>
-        주식을 검색하고 AI 분석을 받아보세요
+        주식을 검색하고 AI 분석을 받아보세요 • ❤️ 클릭으로 관심 종목 설정
       </Typography>
+      
+      {/* 알림 메시지 */}
+      {alertMessage && (
+        <Alert severity={alertSeverity} sx={{ mb: 2 }}>
+          {alertMessage}
+        </Alert>
+      )}
       
       <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
         <FormControl sx={{ minWidth: 120 }}>
@@ -153,18 +243,53 @@ const StockSearch: React.FC<StockSearchProps> = ({ onStockSelect }) => {
               />
             );
           }}
-          renderOption={(props, option) => (
-            <Box component="li" {...props}>
-              <Box>
-                <Typography variant="body1" fontWeight="bold">
-                  {option.symbol}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {option.name}
-                </Typography>
+          renderOption={(props, option) => {
+            const stockKey = `${option.symbol}-${market}`;
+            const isFavorited = isInFavorites(option.symbol, market);
+            const isLoading = favoriteLoading === stockKey;
+            
+            return (
+              <Box 
+                component="li" 
+                {...props}
+                sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  width: '100%'
+                }}
+              >
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="body1" fontWeight="bold">
+                    {option.symbol}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {option.name}
+                  </Typography>
+                </Box>
+                
+                <Tooltip title={isFavorited ? "관심 종목에서 제거" : "관심 종목에 추가"}>
+                  <IconButton
+                    onClick={(e) => {
+                      e.stopPropagation(); // 옵션 선택 방지
+                      toggleFavorite(option);
+                    }}
+                    disabled={isLoading}
+                    size="small"
+                    sx={{ ml: 1 }}
+                  >
+                    {isLoading ? (
+                      <CircularProgress size={20} />
+                    ) : isFavorited ? (
+                      <Favorite color="error" />
+                    ) : (
+                      <FavoriteBorder color="action" />
+                    )}
+                  </IconButton>
+                </Tooltip>
               </Box>
-            </Box>
-          )}
+            );
+          }}
         />
       </Box>
     </Box>

@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 class StockService:
     
     @staticmethod
-    def get_stock_data(symbol: str, period: str = "1y") -> Dict:
+    def get_stock_data(symbol: str, period: str = "1y", interval: str = "1d") -> Dict:
         """주식 데이터 가져오기"""
         try:
             # yfinance를 사용해 주식 데이터 가져오기
@@ -15,14 +15,22 @@ class StockService:
             # 기본 정보
             info = stock.info
             
-            # 주가 데이터
-            hist = stock.history(period=period)
+            # 주가 데이터 - interval 파라미터 추가
+            hist = stock.history(period=period, interval=interval)
             
             # 데이터프레임을 딕셔너리로 변환
             price_data = []
             for date, row in hist.iterrows():
+                # interval에 따라 날짜 형식을 다르게 처리
+                if interval in ['1m', '2m', '5m', '15m', '30m', '60m', '90m']:
+                    # 분 단위일 때는 시간까지 표시
+                    date_str = date.strftime("%Y-%m-%d %H:%M")
+                else:
+                    # 일 단위일 때는 날짜만 표시
+                    date_str = date.strftime("%Y-%m-%d")
+                
                 price_data.append({
-                    "date": date.strftime("%Y-%m-%d"),
+                    "date": date_str,
                     "open": round(row["Open"], 2),
                     "high": round(row["High"], 2),
                     "low": round(row["Low"], 2),
@@ -45,7 +53,7 @@ class StockService:
             raise Exception(f"Error fetching stock data: {str(e)}")
     
     @staticmethod
-    def get_korean_stock_data(symbol: str, period: str = "1y") -> Dict:
+    def get_korean_stock_data(symbol: str, period: str = "1y", interval: str = "1d") -> Dict:
         """한국 주식 데이터 가져오기"""
         try:
             # 한국 주식의 경우 .KS 또는 .KQ 접미사 추가
@@ -57,12 +65,20 @@ class StockService:
             
             stock = yf.Ticker(kr_symbol)
             info = stock.info
-            hist = stock.history(period=period)
+            hist = stock.history(period=period, interval=interval)
             
             price_data = []
             for date, row in hist.iterrows():
+                # interval에 따라 날짜 형식을 다르게 처리
+                if interval in ['1m', '2m', '5m', '15m', '30m', '60m', '90m']:
+                    # 분 단위일 때는 시간까지 표시
+                    date_str = date.strftime("%Y-%m-%d %H:%M")
+                else:
+                    # 일 단위일 때는 날짜만 표시
+                    date_str = date.strftime("%Y-%m-%d")
+                
                 price_data.append({
-                    "date": date.strftime("%Y-%m-%d"),
+                    "date": date_str,
                     "open": round(row["Open"], 0),
                     "high": round(row["High"], 0),
                     "low": round(row["Low"], 0),

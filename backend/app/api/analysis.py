@@ -8,15 +8,16 @@ router = APIRouter()
 async def analyze_stock(
     symbol: str,
     market: str = Query("us", description="시장 구분 (us: 미국, kr: 한국)"),
-    period: str = Query("1y", description="분석 기간")
+    period: str = Query("1y", description="분석 기간"),
+    interval: str = Query("1d", description="데이터 간격")
 ):
     """주식 AI 분석"""
     try:
         # 주식 데이터 가져오기
         if market.lower() == "kr":
-            stock_data = StockService.get_korean_stock_data(symbol, period)
+            stock_data = StockService.get_korean_stock_data(symbol, period, interval)
         else:
-            stock_data = StockService.get_stock_data(symbol, period)
+            stock_data = StockService.get_stock_data(symbol, period, interval)
         
         # OpenAI 분석 서비스
         openai_service = OpenAIService()

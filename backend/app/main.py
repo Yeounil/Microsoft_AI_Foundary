@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api import auth, stocks, news, analysis
-from app.api import auth_supabase, analysis_supabase, news_supabase, test_supabase
+from app.api import auth, stocks, news, analysis, recommendations
+from app.api import auth_supabase, analysis_supabase, news_supabase
 
 app = FastAPI(
     title="Finance AI Analyzer with Supabase",
@@ -28,7 +28,9 @@ app.include_router(analysis.router, prefix="/api/v1/analysis", tags=["analysis-l
 app.include_router(auth_supabase.router, prefix="/api/v2/auth", tags=["authentication"])
 app.include_router(analysis_supabase.router, prefix="/api/v2/analysis", tags=["analysis"])
 app.include_router(news_supabase.router, prefix="/api/v2/news", tags=["news"])
-app.include_router(test_supabase.router, prefix="/api/v2/test", tags=["supabase-test"])
+
+# News Recommendation API routes
+app.include_router(recommendations.router, prefix="/api/v1/recommendations", tags=["recommendations"])
 
 @app.get("/")
 async def root():

@@ -63,13 +63,13 @@ export const stockAPI = {
     return response.data;
   },
 
-  getStockData: async (symbol: string, period: string = '1y', market: string = 'us'): Promise<StockData> => {
-    const response = await api.get(`/api/v1/stocks/${symbol}?period=${period}&market=${market}`);
+  getStockData: async (symbol: string, period: string = '1y', market: string = 'us', interval: string = '1d'): Promise<StockData> => {
+    const response = await api.get(`/api/v1/stocks/${symbol}?period=${period}&market=${market}&interval=${interval}`);
     return response.data;
   },
 
-  getChartData: async (symbol: string, period: string = '1y', market: string = 'us') => {
-    const response = await api.get(`/api/v1/stocks/${symbol}/chart?period=${period}&market=${market}`);
+  getChartData: async (symbol: string, period: string = '1y', market: string = 'us', interval: string = '1d') => {
+    const response = await api.get(`/api/v1/stocks/${symbol}/chart?period=${period}&market=${market}&interval=${interval}`);
     return response.data;
   }
 };
@@ -116,13 +116,67 @@ export const newsAPI = {
 
 // 분석 API
 export const analysisAPI = {
-  analyzeStock: async (symbol: string, market: string = 'us', period: string = '1y'): Promise<StockAnalysis> => {
-    const response = await api.post(`/api/v1/analysis/stock/${symbol}?market=${market}&period=${period}`);
+  analyzeStock: async (symbol: string, market: string = 'us', period: string = '1y', interval: string = '1d'): Promise<StockAnalysis> => {
+    const response = await api.post(`/api/v1/analysis/stock/${symbol}?market=${market}&period=${period}&interval=${interval}`);
     return response.data;
   },
 
   getMarketSummary: async () => {
     const response = await api.get('/api/v1/analysis/market-summary');
+    return response.data;
+  }
+};
+
+// 뉴스 추천 API
+export const recommendationAPI = {
+  getRecommendedNews: async (limit: number = 10, daysBack: number = 7) => {
+    const response = await api.get(`/api/v1/recommendations/news?limit=${limit}&days_back=${daysBack}`);
+    return response.data;
+  },
+
+  getUserInterests: async () => {
+    const response = await api.get('/api/v1/recommendations/interests');
+    return response.data;
+  },
+
+  addUserInterest: async (interest: {
+    symbol: string;
+    market: string;
+    company_name?: string;
+    priority: number;
+  }) => {
+    const response = await api.post('/api/v1/recommendations/interests', interest);
+    return response.data;
+  },
+
+  removeUserInterest: async (symbol: string, market: string) => {
+    const response = await api.delete(`/api/v1/recommendations/interests/${symbol}?market=${market}`);
+    return response.data;
+  },
+
+  trackNewsInteraction: async (interaction: {
+    news_url: string;
+    action: string;
+    news_title?: string;
+    symbol?: string;
+    interaction_time?: number;
+  }) => {
+    const response = await api.post('/api/v1/recommendations/interactions', interaction);
+    return response.data;
+  },
+
+  getSymbolRelatedNews: async (symbol: string, market: string = 'us', limit: number = 10) => {
+    const response = await api.get(`/api/v1/recommendations/news/${symbol}?market=${market}&limit=${limit}`);
+    return response.data;
+  },
+
+  autoAddInterestFromNews: async (symbol: string, market: string = 'us') => {
+    const response = await api.post(`/api/v1/recommendations/news/${symbol}/auto-interest?market=${market}`);
+    return response.data;
+  },
+
+  getTrendingNews: async (limit: number = 20, hours: number = 24) => {
+    const response = await api.get(`/api/v1/recommendations/news/trending?limit=${limit}&hours=${hours}`);
     return response.data;
   }
 };

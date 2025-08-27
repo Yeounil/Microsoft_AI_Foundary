@@ -5,7 +5,7 @@ import json
 from datetime import datetime, timedelta
 import logging
 from app.core.config import settings
-from app.services.news_db_service import NewsDBService
+from app.services.sqlite_news_service import SQLiteNewsService
 
 logger = logging.getLogger(__name__)
 
@@ -15,16 +15,23 @@ class NewsService:
     async def crawl_and_save_stock_news(symbol: str, limit: int = 10) -> List[Dict]:
         """특정 종목의 뉴스를 크롤링하고 데이터베이스에 저장"""
         try:
+            # 각 소스당 최대 개수 계산
+            per_source_limit = max(3, limit // 3)
+            
             # News API에서 뉴스 가져오기
-            news_api_articles = await NewsService.get_stock_news_from_api(symbol, limit)
+            news_api_articles = await NewsService.get_stock_news_from_api(symbol, per_source_limit)
+            
+            # Yahoo Finance에서 뉴스 가져오기
+            yahoo_articles = await NewsService.get_yahoo_finance_news(symbol, per_source_limit)
             
             # Naver에서 한국 종목 뉴스 가져오기 (한국 종목인 경우)
             naver_articles = []
-            if symbol.endswith(('.KS', '.KQ')):
-                naver_articles = await NewsService.get_naver_stock_news(symbol, limit)
+            if symbol.endswith(('.KS', '.KQ')) or any(korean_char in symbol for korean_char in ['삼성', '네이버', '카카오']):
+                naver_articles = await NewsService.get_naver_stock_news(symbol, per_source_limit)
             
             # 모든 기사 통합
-            all_articles = news_api_articles + naver_articles
+            all_articles = news_api_articles + yahoo_articles + naver_articles
+            print(f"[DEBUG] 뉴스 소스별 수집: News API({len(news_api_articles)}), Yahoo({len(yahoo_articles)}), Naver({len(naver_articles)})")
             
             # 중복 제거 (URL 기준)
             unique_articles = []
@@ -36,7 +43,7 @@ class NewsService:
             
             # 데이터베이스에 저장
             if unique_articles:
-                saved_ids = await NewsDBService.save_news_articles(unique_articles)
+                saved_ids = await SQLiteNewsService.save_news_articles(unique_articles)
                 logger.info(f"{symbol}: {len(saved_ids)}개 새 뉴스 저장")
             
             return unique_articles[:limit]
@@ -44,6 +51,71 @@ class NewsService:
         except Exception as e:
             logger.error(f"뉴스 크롤링 중 오류 ({symbol}): {str(e)}")
             return []
+    
+    @staticmethod
+    async def get_yahoo_finance_news(symbol: str, limit: int = 5) -> List[Dict]:
+        """Yahoo Finance에서 특정 종목 뉴스 가져오기"""
+        try:
+            import asyncio
+            import aiohttp
+            
+            # Yahoo Finance 뉴스 URL
+            base_symbol = symbol.replace('.KS', '').replace('.KQ', '')
+            yahoo_url = f"https://finance.yahoo.com/quote/{base_symbol}/news"
+            
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                try:
+                    async with session.get(yahoo_url, headers=headers, timeout=10) as response:
+                        if response.status == 200:
+                            html = await response.text()
+                            soup = BeautifulSoup(html, 'html.parser')
+                            
+                            articles = []
+                            # Yahoo Finance 뉴스 아티클 선택자
+                            news_items = soup.find_all(['h3', 'h2'], limit=limit*2)
+                            
+                            for item in news_items[:limit]:
+                                try:
+                                    # 제목과 링크 추출
+                                    link_elem = item.find('a')
+                                    if link_elem and link_elem.get('href'):
+                                        title = link_elem.get_text(strip=True)
+                                        href = link_elem.get('href')
+                                        
+                                        # 상대 URL을 절대 URL로 변환
+                                        if href.startswith('/'):
+                                            full_url = f"https://finance.yahoo.com{href}"
+                                        else:
+                                            full_url = href
+                                        
+                                        if title and full_url:
+                                            articles.append({
+                                                "title": title,
+                                                "description": title[:100] + "...",
+                                                "url": full_url,
+                                                "source": "Yahoo Finance",
+                                                "published_at": datetime.now().isoformat(),
+                                                "symbol": symbol
+                                            })
+                                except Exception as item_error:
+                                    continue
+                            
+                            logger.info(f"Yahoo Finance: {symbol}에 대한 {len(articles)}개 뉴스 수집")
+                            return articles[:limit]
+                            
+                except asyncio.TimeoutError:
+                    logger.warning(f"Yahoo Finance 요청 타임아웃: {symbol}")
+                except Exception as req_error:
+                    logger.error(f"Yahoo Finance 요청 오류: {req_error}")
+                    
+        except Exception as e:
+            logger.error(f"Yahoo Finance 뉴스 수집 오류 ({symbol}): {str(e)}")
+        
+        return []
     
     @staticmethod
     async def get_stock_news_from_api(symbol: str, limit: int = 10) -> List[Dict]:
