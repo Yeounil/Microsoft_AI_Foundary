@@ -7,10 +7,6 @@ import {
   Button,
   Chip,
   CircularProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   IconButton,
   Paper,
   Stack,
@@ -22,7 +18,6 @@ import {
   BookmarkBorder,
   ThumbUp,
   ThumbDown,
-  OpenInNew,
   AccessTime
 } from '@mui/icons-material';
 import { recommendationAPI } from '../services/api';
@@ -54,10 +49,6 @@ const RecommendedNews: React.FC = () => {
   const [userInterests, setUserInterests] = useState<UserInterest[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
-  
-  // 뉴스 원문 보기 상태
-  const [selectedNewsUrl, setSelectedNewsUrl] = useState<string>('');
-  const [newsDialogOpen, setNewsDialogOpen] = useState<boolean>(false);
 
   useEffect(() => {
     loadRecommendedNews();
@@ -122,9 +113,10 @@ const RecommendedNews: React.FC = () => {
   };
 
   const handleViewOriginalNews = (url: string, title: string, symbol?: string) => {
-    setSelectedNewsUrl(url);
-    setNewsDialogOpen(true);
+    // 뉴스 상호작용 추적
     handleNewsInteraction(url, 'view', title, symbol);
+    // 새 창에서 해당 뉴스 URL로 직접 이동
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   const formatDate = (dateString: string) => {
@@ -316,51 +308,6 @@ const RecommendedNews: React.FC = () => {
         </Box>
       )}
 
-      {/* 뉴스 원문 다이얼로그 */}
-      <Dialog 
-        open={newsDialogOpen} 
-        onClose={() => setNewsDialogOpen(false)}
-        maxWidth="lg"
-        fullWidth
-      >
-        <DialogTitle>
-          뉴스 원문 보기
-          <IconButton
-            component="a"
-            href={selectedNewsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            sx={{ ml: 'auto' }}
-          >
-            <OpenInNew />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ height: '70vh', border: '1px solid #ddd' }}>
-            <iframe
-              src={selectedNewsUrl}
-              style={{
-                width: '100%',
-                height: '100%',
-                border: 'none'
-              }}
-              title="뉴스 원문"
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setNewsDialogOpen(false)}>닫기</Button>
-          <Button
-            component="a"
-            href={selectedNewsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            variant="contained"
-          >
-            새 창에서 열기
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 };

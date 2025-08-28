@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   LineChart,
   Line,
@@ -18,8 +18,14 @@ import {
   FormControl,
   InputLabel,
   CircularProgress,
-  Stack
+  Stack,
+  IconButton,
+  Switch,
+  FormControlLabel
 } from '@mui/material';
+import {
+  Refresh as RefreshIcon
+} from '@mui/icons-material';
 import { StockData } from '../types/api';
 import { stockAPI } from '../services/api';
 
@@ -34,6 +40,11 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, market }) => {
   const [interval, setInterval] = useState<string>('1d');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  
+  // 새로고침 관련 상태
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [autoRefresh, setAutoRefresh] = useState<boolean>(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const periodOptions = [
     { value: '1d', label: '1일' },
@@ -89,25 +100,70 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, market }) => {
     }
   };
 
-  useEffect(() => {
-    fetchStockData();
-  }, [symbol, period, interval, market]);
-
-  const fetchStockData = async () => {
+  const fetchStockData = useCallback(async (isRefresh: boolean = false) => {
     if (!symbol) return;
     
-    setLoading(true);
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     setError('');
     
     try {
       const data = await stockAPI.getStockData(symbol, period, market, interval);
       setStockData(data);
+      setLastUpdated(new Date());
     } catch (err: any) {
       setError(err.response?.data?.detail || '데이터를 가져오는 중 오류가 발생했습니다.');
     } finally {
-      setLoading(false);
+      if (isRefresh) {
+        setRefreshing(false);
+      } else {
+        setLoading(false);
+      }
     }
+  }, [symbol, period, market, interval]);
+
+  // 수동 새로고침 핸들러
+  const handleRefresh = useCallback(() => {
+    if (refreshing || loading) return;
+    fetchStockData(true);
+  }, [fetchStockData, refreshing, loading]);
+
+  // 자동 새로고침 토글 핸들러
+  const handleAutoRefreshToggle = () => {
+    setAutoRefresh(!autoRefresh);
   };
+
+  useEffect(() => {
+    fetchStockData();
+  }, [fetchStockData]);
+
+  // 자동 새로고침 Effect
+  useEffect(() => {
+    let intervalId: number;
+    
+    if (autoRefresh && symbol) {
+      // 30초마다 자동 새로고침
+      intervalId = window.setInterval(() => {
+        handleRefresh();
+      }, 30000);
+    }
+    
+    return () => {
+      if (intervalId) {
+        window.clearInterval(intervalId);
+      }
+    };
+  }, [autoRefresh, symbol, handleRefresh]);
+
+  // 컴포넌트 언마운트 시 자동 새로고침 정리
+  useEffect(() => {
+    return () => {
+      setAutoRefresh(false);
+    };
+  }, []);
 
   const formatPrice = (value: number): string => {
     if (!stockData) return value.toString();
@@ -142,7 +198,8 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, market }) => {
 
   const getChangeColor = () => {
     const change = calculateChange();
-    return change.value >= 0 ? 'success.main' : 'error.main';
+    // 한국 주식 시장 전통: 상승(빨간색), 하락(파란색)
+    return change.value >= 0 ? '#FF1744' : '#2196F3'; // 빨간색 상승, 파란색 하락
   };
 
   if (loading) {
@@ -197,40 +254,79 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, market }) => {
             <Typography variant="body2" color="text.secondary">
               심볼: {stockData.symbol} | 전일종가: {formatPrice(stockData.previous_close)}
             </Typography>
+            {lastUpdated && (
+              <Typography variant="caption" color="text.secondary" display="block">
+                마지막 업데이트: {lastUpdated.toLocaleTimeString('ko-KR')}
+              </Typography>
+            )}
           </Box>
           
           <Box>
-            <Box display="flex" gap={2} justifyContent="flex-end" flexWrap="wrap">
-              <FormControl size="small" sx={{ minWidth: 100 }}>
-                <InputLabel>기간</InputLabel>
-                <Select
-                  value={period}
-                  label="기간"
-                  onChange={(e) => handlePeriodChange(e.target.value)}
+            <Stack direction="column" spacing={2} alignItems="flex-end">
+              {/* 새로고침 컨트롤 */}
+              <Box display="flex" alignItems="center" gap={1}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={autoRefresh}
+                      onChange={handleAutoRefreshToggle}
+                      size="small"
+                      color="primary"
+                    />
+                  }
+                  label="자동 새로고침"
+                  sx={{ fontSize: '0.875rem' }}
+                />
+                <IconButton
+                  onClick={handleRefresh}
+                  disabled={refreshing || loading}
+                  color="primary"
+                  size="small"
+                  sx={{
+                    animation: refreshing ? 'spin 1s linear infinite' : 'none',
+                    '@keyframes spin': {
+                      '0%': { transform: 'rotate(0deg)' },
+                      '100%': { transform: 'rotate(360deg)' },
+                    },
+                  }}
                 >
-                  {periodOptions.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+                  <RefreshIcon />
+                </IconButton>
+              </Box>
               
-              <FormControl size="small" sx={{ minWidth: 100 }}>
-                <InputLabel>간격</InputLabel>
-                <Select
-                  value={interval}
-                  label="간격"
-                  onChange={(e) => setInterval(e.target.value)}
-                >
-                  {getValidIntervalOptions(period).map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
+              {/* 기간 및 간격 컨트롤 */}
+              <Box display="flex" gap={2} flexWrap="wrap">
+                <FormControl size="small" sx={{ minWidth: 100 }}>
+                  <InputLabel>기간</InputLabel>
+                  <Select
+                    value={period}
+                    label="기간"
+                    onChange={(e) => handlePeriodChange(e.target.value)}
+                  >
+                    {periodOptions.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                
+                <FormControl size="small" sx={{ minWidth: 100 }}>
+                  <InputLabel>간격</InputLabel>
+                  <Select
+                    value={interval}
+                    label="간격"
+                    onChange={(e) => setInterval(e.target.value)}
+                  >
+                    {getValidIntervalOptions(period).map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Box>
+            </Stack>
           </Box>
         </Stack>
 
@@ -256,7 +352,7 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, market }) => {
               <Line 
                 type="monotone" 
                 dataKey="close" 
-                stroke="#8884d8" 
+                stroke="#4CAF50"
                 strokeWidth={2}
                 dot={false}
               />

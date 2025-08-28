@@ -14,7 +14,9 @@ import {
   Toolbar,
   Typography,
   Button,
-  CircularProgress
+  CircularProgress,
+  Alert,
+  Snackbar
 } from '@mui/material';
 import StockSearch from './components/StockSearch';
 import StockChart from './components/StockChart';
@@ -135,6 +137,11 @@ function App() {
   } | null>(null);
   const [tabValue, setTabValue] = useState(0);
 
+  // Alert 상태
+  const [alertOpen, setAlertOpen] = useState<boolean>(false);
+  const [alertMessage, setAlertMessage] = useState<string>('');
+  const [alertSeverity, setAlertSeverity] = useState<'success' | 'error'>('success');
+
   // 앱 시작 시 토큰 확인
   useEffect(() => {
     checkAuthStatus();
@@ -194,6 +201,20 @@ function App() {
   const handleGoHome = () => {
     setSelectedStock(null);
     setViewMode('landing');
+  };
+
+  const handleAlert = (message: string, severity: 'success' | 'error') => {
+    setAlertMessage(message);
+    setAlertSeverity(severity);
+    setAlertOpen(true);
+    // 3초 후 자동 닫기
+    setTimeout(() => {
+      setAlertOpen(false);
+    }, 3000);
+  };
+
+  const handleAlertClose = () => {
+    setAlertOpen(false);
   };
 
   const handleNewsButtonClick = () => {
@@ -262,32 +283,65 @@ function App() {
       <CssBaseline />
       
       <AppBar position="sticky">
-        <Toolbar sx={{ height: '80px', py: 0 }}>
-          <Box onClick={handleGoHome} sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-                        <img src={logo} alt="AI Financial Analysis Logo" style={{ height: '45px', width: '165px', marginRight: '20px' }} />
+        <Toolbar sx={{ height: '80px', py: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {/* 로고 영역 */}
+          <Box 
+            onClick={handleGoHome} 
+            sx={{ 
+              cursor: 'pointer', 
+              display: 'flex', 
+              alignItems: 'center',
+              flexShrink: 0,
+              width: '185px'
+            }}
+          >
+            <img src={logo} alt="I NEED RED Logo" style={{ height: '45px', width: 'auto' }} />
           </Box>
           
-          <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', px: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%', maxWidth: '700px' }}>
+          {/* 중앙 검색 영역 */}
+          <Box sx={{ 
+            flex: 1,
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            mx: 3,
+            mt: 3
+          }}>
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 2, 
+              width: '100%', 
+              maxWidth: '600px'
+            }}>
               <Box sx={{ flex: 1 }}>
-                <StockSearch onStockSelect={handleStockSelect} />
+                <StockSearch onStockSelect={handleStockSelect} onAlert={handleAlert} />
               </Box>
               <Button 
                 variant="outlined" 
                 color="secondary" 
                 onClick={handleNewsButtonClick}
                 size="medium"
+                sx={{ flexShrink: 0, whiteSpace: 'nowrap', mt: -2 }}
               >
                 관심 뉴스
               </Button>
             </Box>
           </Box>
 
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', minWidth: '200px', gap: 1 }}>
-            <Typography variant="body2" sx={{ mr: 1 }}>
+          {/* 사용자 정보 영역 */}
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'flex-end', 
+            alignItems: 'center', 
+            gap: 1,
+            flexShrink: 0,
+            minWidth: '200px'
+          }}>
+            <Typography variant="body2" sx={{ mr: 1, whiteSpace: 'nowrap' }}>
               {user?.username}님, 환영합니다!
             </Typography>
-            <Button variant="outlined" color="secondary" onClick={handleLogout}>
+            <Button variant="outlined" color="secondary" onClick={handleLogout} sx={{ whiteSpace: 'nowrap' }}>
               로그아웃
             </Button>
           </Box>
@@ -344,6 +398,19 @@ function App() {
           </Container>
         )}
       </main>
+
+      {/* 관심 종목 알림 */}
+      <Snackbar 
+        open={alertOpen} 
+        autoHideDuration={3000} 
+        onClose={handleAlertClose}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        sx={{ mt: 10 }}
+      >
+        <Alert onClose={handleAlertClose} severity={alertSeverity} sx={{ width: '100%' }}>
+          {alertMessage}
+        </Alert>
+      </Snackbar>
       
     </ThemeProvider>
   );

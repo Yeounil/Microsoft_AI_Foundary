@@ -66,8 +66,30 @@ const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarke
     setError('');
     
     try {
-      const response = await newsAPI.getStockNews(selectedSymbol, 8);
+      // 먼저 기존 DB에서 많은 뉴스를 가져오기
+      const response = await newsAPI.getStockNews(selectedSymbol, 20, false);
+      console.log(`[DEBUG] ${selectedSymbol} 뉴스 로딩:`, response.articles.length, '개');
+      
+      // 소스별 분포 로그
+      const sourceCount = response.articles.reduce((acc: any, article: any) => {
+        const source = article.api_source || article.source || 'unknown';
+        acc[source] = (acc[source] || 0) + 1;
+        return acc;
+      }, {});
+      console.log('[DEBUG] 뉴스 소스 분포:', sourceCount);
+      
       setNews(response.articles);
+      
+      // 뉴스가 부족한 경우 자동으로 크롤링 (백엔드에서 자동 처리됨)
+      if (response.articles.length < 10) {
+        console.log('[DEBUG] 뉴스가 부족하여 자동 크롤링 시도...');
+        // 백엔드에서 자동으로 크롤링하고 업데이트된 결과를 다시 가져옴
+        const updatedResponse = await newsAPI.getStockNews(selectedSymbol, 20, false);
+        if (updatedResponse.articles.length > response.articles.length) {
+          setNews(updatedResponse.articles);
+          console.log('[DEBUG] 크롤링 후 업데이트된 뉴스:', updatedResponse.articles.length, '개');
+        }
+      }
     } catch (err: any) {
       setError('주식 뉴스를 가져오는 중 오류가 발생했습니다.');
       console.error('주식 뉴스 로딩 오류:', err);
@@ -132,7 +154,10 @@ const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarke
     setError('');
     
     try {
-      await newsAPI.crawlStockNews(selectedSymbol, 10);
+      console.log(`[DEBUG] ${selectedSymbol} 뉴스 크롤링 시작...`);
+      const crawlResult = await newsAPI.crawlStockNews(selectedSymbol, 20);
+      console.log('[DEBUG] 크롤링 결과:', crawlResult.crawled_count, '개 새 뉴스');
+      
       // 크롤링 후 뉴스 목록 새로고침
       await fetchStockNews();
     } catch (err: any) {
@@ -181,6 +206,15 @@ const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarke
                 startIcon={crawlingLoading ? <CircularProgress size={16} /> : <RefreshIcon />}
                 onClick={handleCrawlNews}
                 disabled={crawlingLoading}
+                sx={{
+                  color: '#2196F3',
+                  borderColor: '#2196F3',
+                  '&:hover': {
+                    borderColor: '#1976D2',
+                    backgroundColor: 'rgba(33, 150, 243, 0.04)',
+                    color: '#1976D2'
+                  }
+                }}
               >
                 뉴스 업데이트
               </Button>
@@ -189,7 +223,14 @@ const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarke
                 startIcon={analysisLoading ? <CircularProgress size={20} /> : <PsychologyIcon />}
                 onClick={handleAnalyzeWithNews}
                 disabled={analysisLoading}
-                sx={{ bgcolor: 'secondary.main' }}
+                sx={{ 
+                  bgcolor: 'secondary.main',
+                  color: '#FFFFFF',
+                  '&:hover': {
+                    bgcolor: 'secondary.dark',
+                    color: '#FFFFFF'
+                  }
+                }}
               >
                 뉴스 기반 AI 분석
               </Button>
@@ -212,7 +253,7 @@ const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarke
             <Typography variant="h6" gutterBottom>
               🧠 뉴스 기반 AI 종목 분석
             </Typography>
-            <Typography variant="body1" sx={{ whiteSpace: 'pre-line', mb: 2, color: '#000000' }}>
+            <Typography variant="body1" sx={{ whiteSpace: 'pre-line', mb: 2, color: '#FFFFFF' }}>
               {aiAnalysis}
             </Typography>
             

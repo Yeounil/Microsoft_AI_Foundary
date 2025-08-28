@@ -11,8 +11,7 @@ import {
   SelectChangeEvent,
   CircularProgress,
   IconButton,
-  Tooltip,
-  Alert
+  Tooltip
 } from '@mui/material';
 import {
   Favorite,
@@ -22,6 +21,7 @@ import { stockAPI, recommendationAPI } from '../services/api';
 
 interface StockSearchProps {
   onStockSelect: (symbol: string, market: string, companyName: string) => void;
+  onAlert?: (message: string, severity: 'success' | 'error') => void;
 }
 
 interface StockOption {
@@ -35,7 +35,7 @@ interface UserInterest {
   company_name?: string;
 }
 
-const StockSearch: React.FC<StockSearchProps> = ({ onStockSelect }) => {
+const StockSearch: React.FC<StockSearchProps> = ({ onStockSelect, onAlert }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [stockOptions, setStockOptions] = useState<StockOption[]>([]);
   const [selectedStock, setSelectedStock] = useState<StockOption | null>(null);
@@ -45,8 +45,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onStockSelect }) => {
   // 관심 종목 관련 상태
   const [userInterests, setUserInterests] = useState<UserInterest[]>([]);
   const [favoriteLoading, setFavoriteLoading] = useState<string>(''); // 현재 처리 중인 종목
-  const [alertMessage, setAlertMessage] = useState<string>('');
-  const [alertSeverity, setAlertSeverity] = useState<'success' | 'error'>('success');
 
   // 기본 주식 목록
   const defaultStocks = {
@@ -150,8 +148,9 @@ const StockSearch: React.FC<StockSearchProps> = ({ onStockSelect }) => {
       if (isFavorited) {
         // 관심 종목에서 제거
         await recommendationAPI.removeUserInterest(stock.symbol, market);
-        setAlertMessage(`${stock.symbol} (${stock.name})이 관심 목록에서 제거되었습니다.`);
-        setAlertSeverity('success');
+        if (onAlert) {
+          onAlert(`${stock.symbol} (${stock.name})이 관심 목록에서 제거되었습니다.`, 'success');
+        }
       } else {
         // 관심 종목에 추가
         await recommendationAPI.addUserInterest({
@@ -160,8 +159,9 @@ const StockSearch: React.FC<StockSearchProps> = ({ onStockSelect }) => {
           company_name: stock.name,
           priority: 2
         });
-        setAlertMessage(`${stock.symbol} (${stock.name})이 관심 목록에 추가되었습니다.`);
-        setAlertSeverity('success');
+        if (onAlert) {
+          onAlert(`${stock.symbol} (${stock.name})이 관심 목록에 추가되었습니다.`, 'success');
+        }
       }
       
       // 관심 종목 목록 새로고침
@@ -169,27 +169,16 @@ const StockSearch: React.FC<StockSearchProps> = ({ onStockSelect }) => {
       
     } catch (error: any) {
       console.error('관심 종목 토글 오류:', error);
-      setAlertMessage(error.response?.data?.detail || '관심 종목 설정 중 오류가 발생했습니다.');
-      setAlertSeverity('error');
+      if (onAlert) {
+        onAlert(error.response?.data?.detail || '관심 종목 설정 중 오류가 발생했습니다.', 'error');
+      }
     } finally {
       setFavoriteLoading('');
-      
-      // 3초 후 알림 메시지 자동 제거
-      setTimeout(() => {
-        setAlertMessage('');
-      }, 3000);
     }
   };
 
   return (
     <Box sx={{ mb: 3 }}>
-      {/* 알림 메시지 */}
-      {alertMessage && (
-        <Alert severity={alertSeverity} sx={{ mb: 2 }}>
-          {alertMessage}
-        </Alert>
-      )}
-      
       <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
         <FormControl sx={{ minWidth: 120 }}>
           <InputLabel id="market-select-label">시장</InputLabel>

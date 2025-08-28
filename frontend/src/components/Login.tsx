@@ -10,6 +10,7 @@ import {
   CircularProgress
 } from '@mui/material';
 import { authService } from '../services/authService';
+import logo from '../assets/myLogo.png';
 
 interface LoginProps {
   onLogin: (token: string) => void;
@@ -78,9 +79,9 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToRegister }) => {
         }}
       >
         <Paper elevation={3} sx={{ padding: 4, width: '100%', borderRadius: 3 }}>
-          <Typography component="h1" variant="h4" align="center" gutterBottom sx={{ fontWeight: 700, color: 'secondary.main' }}>
-            💰 AI Financial Analysis
-          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+            <img src={logo} alt="I NEED RED Logo" style={{ height: '60px', width: 'auto' }} />
+          </Box>
           <Typography variant="h6" align="center" color="text.secondary" gutterBottom>
             로그인
           </Typography>
