@@ -1,37 +1,74 @@
 # FastAPI and web server
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-python-multipart==0.0.6
+fastapi
+uvicorn[standard]
+python-multipart
 
 # Authentication and security
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
-pydantic==2.5.1
-pydantic-settings==2.1.0
+python-jose[cryptography]
+passlib[bcrypt]
+pydantic
+pydantic-settings
 
 # Database
-sqlalchemy==2.0.23
-alembic==1.12.1
-psycopg2-binary==2.9.9
-supabase==2.18.1
+sqlalchemy
+alembic
+psycopg2-binary
+supabase
 
 # Configuration and environment
-python-dotenv==1.0.0
+python-dotenv
 
 # HTTP requests and web scraping
-requests==2.31.0
-httpx==0.25.2
-beautifulsoup4==4.12.2
-lxml==4.9.3
+requests
+httpx
+beautifulsoup4
+lxml
 
 # AI/ML and analysis
-openai==1.3.7
+openai
+# FastAPI and web server
+fastapi
+uvicorn[standard]
+python-multipart
+
+# Authentication and security
+python-jose[cryptography]
+passlib[bcrypt]
+pydantic
+pydantic-settings
+
+# Database
+sqlalchemy
+alembic
+psycopg2-binary
+supabase
+
+# Configuration and environment
+python-dotenv
+
+# HTTP requests and web scraping
+requests
+httpx
+beautifulsoup4
+lxml
+
+# AI/ML and analysis
+openai
 
 # Financial data
-yfinance==0.2.28
-pandas==2.1.3
-numpy==1.25.2
+yfinance
+pandas
+numpy
 
 # Utilities
-pytz==2023.3
-python-dateutil==2.8.2
+pytz
+python-dateutil
+
+# Financial data
+yfinance
+pandas
+numpy
+
+# Utilities
+pytz
+python-dateutil

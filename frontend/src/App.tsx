@@ -353,7 +353,7 @@ function App() {
           <>
             <LandingPage />
             <Container maxWidth="lg" sx={{ py: 4 }} data-news-section>
-              <RecommendedNews />
+              <RecommendedNews onStockSelect={handleStockSelect} />
             </Container>
           </>
         )}
