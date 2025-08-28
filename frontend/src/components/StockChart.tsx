@@ -112,6 +112,9 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, market }) => {
     
     try {
       const data = await stockAPI.getStockData(symbol, period, market, interval);
+
+      // The date string from the API is used directly.
+      // The formatDate function will handle parsing and timezone conversion.
       setStockData(data);
       setLastUpdated(new Date());
     } catch (err: any) {
@@ -165,6 +168,30 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, market }) => {
     };
   }, []);
 
+  // Calculate year reference lines
+  const { yearReferenceLines, yearStartDatesSet } = React.useMemo(() => {
+    if (!stockData || !stockData.price_data || stockData.price_data.length === 0) {
+      return { yearReferenceLines: [], yearStartDatesSet: new Set() };
+    }
+
+    const lines: { year: number; date: string }[] = [];
+    const yearStarts = new Set<string>(); // To store YYYY-MM-DD strings of year starts
+    let currentYear = -1;
+
+    stockData.price_data.forEach((dataPoint) => {
+      const date = new Date(dataPoint.date);
+      const year = date.getFullYear();
+      const dateString = date.toISOString().split('T')[0]; // Get YYYY-MM-DD string
+
+      if (year !== currentYear) {
+        lines.push({ year, date: dateString });
+        yearStarts.add(dateString); // Add to set
+        currentYear = year;
+      }
+    });
+    return { yearReferenceLines: lines, yearStartDatesSet: yearStarts };
+  }, [stockData]);
+
   const formatPrice = (value: number): string => {
     if (!stockData) return value.toString();
     
@@ -177,13 +204,16 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, market }) => {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
+    const timeZone = market === 'us' ? 'Asia/Seoul' : undefined;
+
     if (['1m', '2m', '5m', '15m', '30m', '60m', '90m'].includes(interval)) {
-      return date.toLocaleDateString('ko-KR') + ' ' + date.toLocaleTimeString('ko-KR', { 
+      return date.toLocaleDateString('ko-KR', { timeZone }) + ' ' + date.toLocaleTimeString('ko-KR', { 
+        timeZone,
         hour: '2-digit', 
         minute: '2-digit' 
       });
     } else {
-      return date.toLocaleDateString('ko-KR');
+      return date.toLocaleDateString('ko-KR', { timeZone });
     }
   };
 
