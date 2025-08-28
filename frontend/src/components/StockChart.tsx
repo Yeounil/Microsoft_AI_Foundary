@@ -59,43 +59,60 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, market }) => {
 
   const getValidIntervalOptions = (selectedPeriod: string) => {
     const allIntervals = [
-      { value: '1m', label: '1분', maxPeriod: '1d' },
-      { value: '2m', label: '2분', maxPeriod: '1d' },
-      { value: '5m', label: '5분', maxPeriod: '5d' },
-      { value: '15m', label: '15분', maxPeriod: '5d' },
-      { value: '30m', label: '30분', maxPeriod: '1mo' },
-      { value: '60m', label: '1시간', maxPeriod: '1mo' },
-      { value: '90m', label: '90분', maxPeriod: '1mo' },
-      { value: '1d', label: '1일', maxPeriod: '10y' },
-      { value: '5d', label: '5일', maxPeriod: '10y' },
-      { value: '1wk', label: '1주', maxPeriod: '10y' },
-      { value: '1mo', label: '1월', maxPeriod: '10y' }
+      { value: '1m', label: '1분' },
+      { value: '5m', label: '5분' },
+      { value: '15m', label: '15분' },
+      { value: '30m', label: '30분' },
+      { value: '60m', label: '1시간' },
+      { value: '90m', label: '90분' },
+      { value: '1d', label: '1일' },
+      { value: '5d', label: '5일' },
+      { value: '1wk', label: '1주' },
+      { value: '1mo', label: '1개월' },
+      { value: '3mo', label: '3개월' }
     ];
 
-    if (['1mo', '3mo', '6mo', '1y', '2y', '5y'].includes(selectedPeriod)) {
-      return allIntervals.filter(interval => 
-        ['1d', '5d', '1wk', '1mo'].includes(interval.value)
-      );
-    }
+    const getIntervals = (values: string[]) => allIntervals.filter(i => values.includes(i.value));
 
-    return allIntervals.filter(interval => {
-      if (selectedPeriod === '1d') return ['1m', '2m', '5m', '15m', '30m', '60m', '90m'].includes(interval.value);
-      if (selectedPeriod === '5d') return ['5m', '15m', '30m', '60m', '90m', '1d'].includes(interval.value);
-      return true;
-    });
+    switch (selectedPeriod) {
+      case '1d':
+        return getIntervals(['1m', '5m', '15m', '30m', '60m']);
+      case '5d':
+        return getIntervals(['5m', '15m', '60m', '1d']);
+      case '1mo':
+        return getIntervals(['30m', '60m', '90m', '1d']);
+      case '3mo':
+      case '6mo':
+      case '1y':
+        return getIntervals(['1d', '5d', '1wk', '1mo']);
+      case '2y':
+        return getIntervals(['1d', '1wk', '1mo', '3mo']);
+      case '5y':
+        return getIntervals(['1d', '1mo', '3mo']);
+      default:
+        return getIntervals(['1d', '5d', '1wk', '1mo']);
+    }
   };
 
   const handlePeriodChange = (newPeriod: string) => {
     setPeriod(newPeriod);
     const validIntervals = getValidIntervalOptions(newPeriod);
-    
+
+    // If current interval is not in the new list of valid intervals, set a new default.
     if (!validIntervals.some(option => option.value === interval)) {
-      if (['1mo', '3mo', '6mo', '1y', '2y', '5y'].includes(newPeriod)) {
-        setInterval('1d');
-      } else if (newPeriod === '1d') {
-        setInterval('15m');
-      } else {
-        setInterval('1d');
+      switch (newPeriod) {
+        case '1d':
+          setInterval('15m');
+          break;
+        case '5d':
+          setInterval('15m');
+          break;
+        case '1mo':
+          setInterval('60m');
+          break;
+        default: // For 3mo, 6mo, 1y, etc.
+          setInterval('1d');
+          break;
       }
     }
   };
