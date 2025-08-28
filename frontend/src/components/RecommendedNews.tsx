@@ -10,7 +10,12 @@ import {
   IconButton,
   Paper,
   Stack,
-  Badge
+  Badge,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle
 } from '@mui/material';
 import {
   Recommend as RecommendIcon,
@@ -42,11 +47,16 @@ interface UserInterest {
   created_at?: string;
 }
 
-const RecommendedNews: React.FC = () => {
+interface RecommendedNewsProps {
+  onStockSelect: (symbol: string, market: string, companyName: string) => void;
+}
+
+const RecommendedNews: React.FC<RecommendedNewsProps> = ({ onStockSelect }) => {
   const [recommendedNews, setRecommendedNews] = useState<RecommendedNewsItem[]>([]);
   const [userInterests, setUserInterests] = useState<UserInterest[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const [interestToDelete, setInterestToDelete] = useState<UserInterest | null>(null);
 
   useEffect(() => {
     loadRecommendedNews();
@@ -77,6 +87,11 @@ const RecommendedNews: React.FC = () => {
     }
   };
 
+  const handleInterestClick = (interest: UserInterest) => {
+    const market = interest.interest.includes('.KS') ? 'kr' : 'us';
+    onStockSelect(interest.interest, market, ''); // companyName is optional
+  };
+
   const handleNewsInteraction = async (
     newsUrl: string, 
     action: string, 
@@ -97,13 +112,20 @@ const RecommendedNews: React.FC = () => {
   };
 
   const handleRemoveInterest = async (interest: UserInterest) => {
-    try {
-      await recommendationSupabaseAPI.removeUserInterestById(interest.id);
-      loadUserInterests();
-      loadRecommendedNews();
-    } catch (err: any) {
-      setError(err.response?.data?.detail || '관심 종목 제거 중 오류가 발생했습니다.');
+    setInterestToDelete(interest);
+  };
+
+  const handleConfirmRemoveInterest = async () => {
+    if (interestToDelete) {
+      try {
+        await recommendationSupabaseAPI.removeUserInterestById(interestToDelete.id);
+        loadUserInterests();
+        loadRecommendedNews();
+      } catch (err: any) {
+        setError(err.response?.data?.detail || '관심 종목 제거 중 오류가 발생했습니다.');
+      }
     }
+    setInterestToDelete(null);
   };
 
   const handleViewOriginalNews = (url: string, title: string, symbol?: string) => {
@@ -175,8 +197,9 @@ const RecommendedNews: React.FC = () => {
                 label={interest.interest}
                 color={getInterestColor(index)}
                 variant="outlined"
+                onClick={() => handleInterestClick(interest)}
                 onDelete={() => handleRemoveInterest(interest)}
-                size="small"
+                size="medium"
               />
             ))
           ) : (
@@ -186,6 +209,23 @@ const RecommendedNews: React.FC = () => {
           )}
         </Box>
       </Paper>
+
+      {/* 삭제 확인 다이얼로그 */}
+      <Dialog
+        open={interestToDelete !== null}
+        onClose={() => setInterestToDelete(null)}
+      >
+        <DialogTitle>관심 종목 삭제</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            정말로 '{interestToDelete?.interest}'을(를) 관심 종목에서 삭제하시겠습니까?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setInterestToDelete(null)}>취소</Button>
+          <Button onClick={handleConfirmRemoveInterest} color="error">삭제</Button>
+        </DialogActions>
+      </Dialog>
 
       {/* 에러 메시지 */}
       {error && (
