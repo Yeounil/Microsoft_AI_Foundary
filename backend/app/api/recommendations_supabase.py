@@ -179,52 +179,159 @@ async def get_interest_statistics(
 @router.get("/news/recommended")
 async def get_recommended_news_by_interests(
     limit: int = Query(10, description="추천 뉴스 개수"),
+    fast_mode: bool = Query(True, description="빠른 모드 사용 여부 (DB 기반)"),
     current_user: dict = Depends(get_current_user)
 ):
-    """관심사 기반 추천 뉴스 (Supabase)"""
+    """AI 기반 관심사 추천 뉴스 (빠른 모드)"""
     try:
-        interest_service = SupabaseUserInterestService()
-        user_interests = await interest_service.get_user_interests_for_recommendation(current_user["user_id"])
+        # 빠른 모드 (기본값) - DB에서 사전 분석된 뉴스 사용
+        if fast_mode:
+            from app.services.fast_recommendation_service import FastRecommendationService
+            
+            fast_service = FastRecommendationService()
+            result = await fast_service.get_personalized_recommendations(
+                current_user["user_id"], limit
+            )
+            return result
         
-        if not user_interests:
-            return {
-                "user_id": current_user["user_id"],
-                "message": "관심사를 먼저 추가해주세요.",
-                "recommendations": []
-            }
+        # 기존 실시간 모드 (폴백)
+        from app.services.ai_news_recommendation_service import AINewsRecommendationService
         
-        # 관심사 기반 뉴스 추천 (간단한 버전)
-        # 실제 구현에서는 뉴스 서비스와 연동
-        from app.services.sqlite_news_service import SQLiteNewsService
-        
-        all_news = []
-        for interest in user_interests:
-            # 관심사를 종목 심볼로 간주하고 뉴스 검색
-            try:
-                news = await SQLiteNewsService.get_latest_news_by_symbol(interest, limit=5)
-                for article in news:
-                    article['matched_interest'] = interest
-                    article['recommendation_reason'] = f"관심사 '{interest}' 관련"
-                all_news.extend(news)
-            except:
-                # 특정 관심사 뉴스 조회 실패해도 계속 진행
-                continue
-        
-        # 중복 제거 및 제한
-        seen_urls = set()
-        unique_news = []
-        for article in all_news:
-            if article.get('url') not in seen_urls and len(unique_news) < limit:
-                seen_urls.add(article.get('url'))
-                unique_news.append(article)
-        
-        return {
-            "user_id": current_user["user_id"],
-            "user_interests": user_interests,
-            "total_recommendations": len(unique_news),
-            "recommendations": unique_news,
-            "generated_at": datetime.now().isoformat()
-        }
+        ai_service = AINewsRecommendationService()
+        result = await ai_service.get_ai_personalized_recommendations(
+            current_user["user_id"], limit
+        )
+        result["recommendation_type"] = "realtime"
+        return result
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"추천 뉴스 조회 오류: {str(e)}")
+
+@router.get("/news/ai-sentiment")
+async def get_ai_market_sentiment(
+    symbols: List[str] = Query(..., description="분석할 종목 심볼들"),
+    days_back: int = Query(3, description="분석 기간 (일)"),
+    current_user: dict = Depends(get_current_user)
+):
+    """AI 기반 시장 감정 분석"""
+    try:
+        from app.services.ai_news_recommendation_service import AINewsRecommendationService
+        
+        ai_service = AINewsRecommendationService()
+        result = await ai_service.get_ai_market_sentiment_analysis(symbols, days_back)
+        
+        return result
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI 감정 분석 오류: {str(e)}")
+
+@router.get("/news/ai-insights/{symbol}")
+async def get_ai_stock_insights(
+    symbol: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """특정 종목에 대한 AI 인사이트"""
+    try:
+        from app.services.ai_news_recommendation_service import AINewsRecommendationService
+        
+        ai_service = AINewsRecommendationService()
+        result = await ai_service.generate_ai_news_insights(
+            current_user["user_id"], symbol
+        )
+        
+        return result
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI 인사이트 생성 오류: {str(e)}")
+
+@router.post("/news/auto-collect")
+async def trigger_auto_news_collection(
+    force_refresh: bool = Query(False, description="강제 새로고침 여부"),
+    current_user: dict = Depends(get_current_user)
+):
+    """사용자 관심사 기반 자동 뉴스 수집 트리거"""
+    try:
+        from app.services.ai_news_recommendation_service import AINewsRecommendationService
+        
+        # 사용자 관심사 조회
+        interest_service = SupabaseUserInterestService()
+        user_interests = await interest_service.get_user_interests_for_recommendation(
+            current_user["user_id"]
+        )
+        
+        if not user_interests:
+            return {
+                "message": "관심사를 먼저 추가해주세요.",
+                "collected_count": 0
+            }
+        
+        # AI 서비스로 뉴스 수집
+        ai_service = AINewsRecommendationService()
+        news_data = await ai_service._collect_and_analyze_news(user_interests, 50)
+        
+        return {
+            "message": "자동 뉴스 수집 완료",
+            "user_interests": user_interests,
+            "collected_count": len(news_data),
+            "collection_time": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"자동 뉴스 수집 오류: {str(e)}")
+
+@router.post("/news/background-collect")
+async def trigger_background_news_collection(
+    limit_per_symbol: int = Query(20, description="종목당 수집할 뉴스 개수"),
+    current_user: dict = Depends(get_current_user)
+):
+    """백그라운드 뉴스 수집 (인기 종목 기반)"""
+    try:
+        from app.services.background_news_collector import BackgroundNewsCollector
+        
+        collector = BackgroundNewsCollector()
+        result = await collector.collect_popular_symbols_news(limit_per_symbol)
+        
+        return {
+            "message": "백그라운드 뉴스 수집 완료",
+            "collection_result": result
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"백그라운드 뉴스 수집 오류: {str(e)}")
+
+@router.get("/news/trending")
+async def get_trending_news(
+    limit: int = Query(10, description="트렌딩 뉴스 개수"),
+    current_user: dict = Depends(get_current_user)
+):
+    """트렌딩 뉴스 조회 (적합 점수 기반)"""
+    try:
+        from app.services.fast_recommendation_service import FastRecommendationService
+        
+        fast_service = FastRecommendationService()
+        result = await fast_service.get_trending_news(limit)
+        
+        return result
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"트렌딩 뉴스 조회 오류: {str(e)}")
+
+@router.post("/news/cleanup")
+async def cleanup_old_news(
+    days_old: int = Query(7, description="삭제할 뉴스의 기준일 (일)"),
+    current_user: dict = Depends(get_current_user)
+):
+    """오래된 뉴스 정리"""
+    try:
+        from app.services.background_news_collector import BackgroundNewsCollector
+        
+        collector = BackgroundNewsCollector()
+        result = await collector.cleanup_old_news(days_old)
+        
+        return {
+            "message": f"{days_old}일 이전 뉴스 정리 완료",
+            "cleanup_result": result
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"뉴스 정리 오류: {str(e)}")

@@ -5,7 +5,7 @@ import json
 from datetime import datetime, timedelta
 import logging
 from app.core.config import settings
-from app.services.sqlite_news_service import SQLiteNewsService
+from app.services.news_db_service import NewsDBService
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ class NewsService:
             
             # 데이터베이스에 저장
             if unique_articles:
-                saved_ids = await SQLiteNewsService.save_news_articles(unique_articles)
+                saved_ids = await NewsDBService.save_news_articles(unique_articles)
                 logger.info(f"{symbol}: {len(saved_ids)}개 새 뉴스 저장")
             
             return unique_articles[:limit]
