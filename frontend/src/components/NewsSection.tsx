@@ -207,13 +207,12 @@ const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarke
                 onClick={handleCrawlNews}
                 disabled={crawlingLoading}
                 sx={{
-                  color: '#2196F3',
-                  borderColor: '#2196F3',
+                  color: '#FFCA28',
+                  borderColor: '#FFCA28',
                   '&:hover': {
-                    borderColor: '#1976D2',
-                    backgroundColor: 'rgba(33, 150, 243, 0.04)',
-                    color: '#1976D2'
-                  }
+                    borderColor: '#FFC107',
+                    backgroundColor: 'rgba(255, 202, 40, 0.08)',
+                  },
                 }}
               >
                 뉴스 업데이트
@@ -223,13 +222,12 @@ const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarke
                 startIcon={analysisLoading ? <CircularProgress size={20} /> : <PsychologyIcon />}
                 onClick={handleAnalyzeWithNews}
                 disabled={analysisLoading}
-                sx={{ 
-                  bgcolor: 'secondary.main',
-                  color: '#FFFFFF',
+                sx={{
+                  backgroundColor: '#FFCA28',
+                  color: '#3C1E1E',
                   '&:hover': {
-                    bgcolor: 'secondary.dark',
-                    color: '#FFFFFF'
-                  }
+                    backgroundColor: '#FFC107',
+                  },
                 }}
               >
                 뉴스 기반 AI 분석
@@ -248,12 +246,12 @@ const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarke
       </Box>
 
       {aiAnalysis && (
-        <Card sx={{ mb: 3, backgroundColor: '#000000', color: '#FFFFFF' }}>
+        <Card sx={{ mb: 3, backgroundColor: '#FFF8E1', color: '#333' }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
               🧠 뉴스 기반 AI 종목 분석
             </Typography>
-            <Typography variant="body1" sx={{ whiteSpace: 'pre-line', mb: 2, color: '#FFFFFF' }}>
+            <Typography variant="body1" sx={{ whiteSpace: 'pre-line', mb: 2, color: 'inherit' }}>
               {aiAnalysis}
             </Typography>
             
@@ -264,7 +262,7 @@ const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarke
                 </Typography>
                 <Box sx={{ display: 'grid', gap: 1 }}>
                   {relatedNews.slice(0, 5).map((article, index) => (
-                    <Card key={index} sx={{ bgcolor: 'rgba(255,255,255,0.1)' }}>
+                    <Card key={index} sx={{ bgcolor: 'rgba(0,0,0,0.05)' }}>
                       <CardContent sx={{ py: 1 }}>
                         <Typography variant="subtitle2" sx={{ color: 'inherit', mb: 0.5 }}>
                           {article.title}

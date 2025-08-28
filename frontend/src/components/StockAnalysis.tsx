@@ -92,7 +92,18 @@ const StockAnalysis: React.FC<StockAnalysisProps> = ({ symbol, market, companyNa
             startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <AssessmentIcon />}
             onClick={handleAnalyze}
             disabled={loading || !symbol}
-            color="secondary"
+            sx={{
+              backgroundColor: '#FFCA28',
+              color: '#3C1E1E',
+              '&:hover': {
+                backgroundColor: '#FFC110',
+              },
+              // 로딩 중일 때도 스타일 유지
+              '&.Mui-disabled': {
+                backgroundColor: 'rgba(255, 202, 40, 0.5)',
+                color: 'rgba(60, 30, 30, 0.5)',
+              },
+            }}
           >
             {loading ? '분석 중...' : 'AI 분석 시작'}
           </Button>
@@ -135,7 +146,7 @@ const StockAnalysis: React.FC<StockAnalysisProps> = ({ symbol, market, companyNa
               </Typography>
             </Box>
 
-            <Card variant="outlined" sx={{ backgroundColor: 'background.paper', p: 2 }}>
+            <Card variant="outlined" sx={{ backgroundColor: '#FFF8E1', p: 2 }}>
               <Typography variant="h6" gutterBottom color="primary">
                 📊 AI 분석 보고서
               </Typography>

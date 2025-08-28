@@ -318,11 +318,19 @@ function App() {
                 <StockSearch onStockSelect={handleStockSelect} onAlert={handleAlert} />
               </Box>
               <Button 
-                variant="outlined" 
-                color="secondary" 
+                variant="contained"
                 onClick={handleNewsButtonClick}
                 size="medium"
-                sx={{ flexShrink: 0, whiteSpace: 'nowrap', mt: -2 }}
+                sx={{
+                  flexShrink: 0,
+                  whiteSpace: 'nowrap',
+                  mt: -2,
+                  backgroundColor: '#FFCA28', // A shade between light yellow and yellow
+                  color: '#3C1E1E', // Dark text for contrast
+                  '&:hover': {
+                    backgroundColor: '#FFC107', // Darker shade on hover
+                  },
+                }}
               >
                 관심 뉴스
               </Button>
