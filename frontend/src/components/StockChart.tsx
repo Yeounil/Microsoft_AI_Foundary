@@ -6,7 +6,9 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer
+  ResponsiveContainer,
+  ReferenceLine,
+  Label
 } from 'recharts';
 import {
   Box,
@@ -224,28 +226,26 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, market }) => {
     const timeZone = market === 'us' ? 'Asia/Seoul' : undefined;
 
     if (['1m', '2m', '5m', '15m', '30m', '60m', '90m'].includes(interval)) {
-      const datePart = date.toLocaleDateString('ko-KR', { timeZone });
+      // M.D HH:mm format
+      const monthDay = new Intl.DateTimeFormat('ko-KR', {
+        timeZone,
+        month: 'numeric',
+        day: 'numeric'
+      }).format(date).replace(/\s/g, '').slice(0, -1); // M.D
+
       const timePart = date.toLocaleTimeString('ko-KR', {
         hour: '2-digit',
         minute: '2-digit',
         timeZone
       });
-      return `${datePart} ${timePart}`;
-    }
-
-    if (yearStartDatesSet.has(date.getTime())) {
-      // YYYY.M.D format
-      const year = new Intl.DateTimeFormat('en-US', { timeZone, year: 'numeric' }).format(date);
-      const month = new Intl.DateTimeFormat('en-US', { timeZone, month: 'numeric' }).format(date);
-      const day = new Intl.DateTimeFormat('en-US', { timeZone, day: 'numeric' }).format(date);
-      return `${year}.${month}.${day}`;
+      return `${monthDay} ${timePart}`;
     } else {
-      // M.D format
+      // M.D format for longer intervals
       return new Intl.DateTimeFormat('ko-KR', {
         timeZone,
         month: 'numeric',
         day: 'numeric'
-      }).format(date).replace(/\s/g, '').slice(0, -1); // Remove spaces and trailing dot
+      }).format(date).replace(/\s/g, '').slice(0, -1);
     }
   };
 
@@ -418,6 +418,24 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, market }) => {
                 strokeWidth={2}
                 dot={false}
               />
+              {yearReferenceLines.map(line => (
+                <ReferenceLine
+                  key={line.date}
+                  x={line.date}
+                  stroke="#2196F3" // Blue color
+                  strokeWidth={2}    // Increased thickness
+                  strokeDasharray="4 4"
+                >
+                  <Label
+                    value={line.year}
+                    position="insideBottom"
+                    fill="#333"
+                    fontSize={12}
+                    fontWeight="bold"
+                    offset={10}
+                  />
+                </ReferenceLine>
+              ))}
             </LineChart>
           </ResponsiveContainer>
         </Box>
