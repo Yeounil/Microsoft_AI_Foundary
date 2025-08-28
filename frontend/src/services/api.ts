@@ -33,7 +33,7 @@ if (token) {
   setAuthToken(token);
 }
 
-// 인증 API
+// 인증 API (Legacy SQLite)
 export const authAPI = {
   login: async (data: LoginRequest): Promise<AuthResponse> => {
     const response = await api.post('/api/v1/auth/login', data);
@@ -52,6 +52,29 @@ export const authAPI = {
 
   verifyToken: async (): Promise<{ valid: boolean; username: string }> => {
     const response = await api.get('/api/v1/auth/verify');
+    return response.data;
+  }
+};
+
+// 인증 API (Supabase)
+export const authSupabaseAPI = {
+  login: async (data: LoginRequest): Promise<AuthResponse> => {
+    const response = await api.post('/api/v2/auth/login', data);
+    return response.data;
+  },
+
+  register: async (data: RegisterRequest): Promise<User> => {
+    const response = await api.post('/api/v2/auth/register', data);
+    return response.data;
+  },
+
+  getCurrentUser: async (): Promise<User> => {
+    const response = await api.get('/api/v2/auth/me');
+    return response.data;
+  },
+
+  verifyToken: async (): Promise<{ valid: boolean; username: string }> => {
+    const response = await api.get('/api/v2/auth/verify');
     return response.data;
   }
 };
@@ -127,7 +150,7 @@ export const analysisAPI = {
   }
 };
 
-// 뉴스 추천 API
+// 뉴스 추천 API (Legacy SQLite)
 export const recommendationAPI = {
   getRecommendedNews: async (limit: number = 10, daysBack: number = 7) => {
     const response = await api.get(`/api/v1/recommendations/news?limit=${limit}&days_back=${daysBack}`);
@@ -177,6 +200,49 @@ export const recommendationAPI = {
 
   getTrendingNews: async (limit: number = 20, hours: number = 24) => {
     const response = await api.get(`/api/v1/recommendations/news/trending?limit=${limit}&hours=${hours}`);
+    return response.data;
+  }
+};
+
+// 뉴스 추천 API (Supabase)
+export const recommendationSupabaseAPI = {
+  getUserInterests: async () => {
+    const response = await api.get('/api/v2/recommendations/interests');
+    return response.data;
+  },
+
+  addUserInterest: async (interest: { interest: string }) => {
+    const response = await api.post('/api/v2/recommendations/interests', interest);
+    return response.data;
+  },
+
+  removeUserInterestById: async (interestId: number) => {
+    const response = await api.delete(`/api/v2/recommendations/interests/${interestId}`);
+    return response.data;
+  },
+
+  removeUserInterestBySymbol: async (interest: string) => {
+    const response = await api.delete(`/api/v2/recommendations/interests/symbol/${interest}`);
+    return response.data;
+  },
+
+  updateUserInterest: async (interestId: number, interest: string) => {
+    const response = await api.put(`/api/v2/recommendations/interests/${interestId}`, { interest });
+    return response.data;
+  },
+
+  getUserInterestsForRecommendations: async () => {
+    const response = await api.get('/api/v2/recommendations/interests/for-recommendations');
+    return response.data;
+  },
+
+  getInterestStatistics: async () => {
+    const response = await api.get('/api/v2/recommendations/interests/statistics');
+    return response.data;
+  },
+
+  getRecommendedNewsByInterests: async (limit: number = 10) => {
+    const response = await api.get(`/api/v2/recommendations/news/recommended?limit=${limit}`);
     return response.data;
   }
 };

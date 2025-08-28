@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { setAuthToken } from './api';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
 
@@ -26,6 +27,14 @@ export interface UserProfile {
 }
 
 class AuthService {
+  constructor() {
+    // 앱 시작 시 기존 토큰을 api.ts에도 설정
+    const existingToken = this.getToken();
+    if (existingToken) {
+      setAuthToken(existingToken);
+    }
+  }
+
   // 로그인
   async login(username: string, password: string): Promise<LoginResponse> {
     const response = await axios.post(`${AUTH_API_URL}/login`, {
@@ -82,6 +91,8 @@ class AuthService {
   // 토큰 저장
   saveToken(token: string): void {
     localStorage.setItem('token', token);
+    // api.ts의 axios 인스턴스에도 토큰 설정
+    setAuthToken(token);
   }
 
   // 토큰 조회
@@ -92,6 +103,8 @@ class AuthService {
   // 로그아웃 (토큰 삭제)
   logout(): void {
     localStorage.removeItem('token');
+    // api.ts의 axios 인스턴스에서도 토큰 제거
+    setAuthToken('');
   }
 
   // 로그인 상태 확인

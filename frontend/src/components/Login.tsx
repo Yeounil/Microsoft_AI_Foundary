@@ -48,7 +48,8 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToRegister }) => {
       const response = await authService.login(formData.username, formData.password);
       
       if (response.access_token) {
-        localStorage.setItem('token', response.access_token);
+        // authService를 통해 토큰 저장 (api.ts에도 자동으로 설정됨)
+        authService.saveToken(response.access_token);
         onLogin(response.access_token);
       } else {
         setError('Login failed.');

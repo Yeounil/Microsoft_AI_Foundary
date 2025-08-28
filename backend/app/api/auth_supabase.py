@@ -21,15 +21,14 @@ class Token(BaseModel):
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> Dict[str, Any]:
     """JWT 토큰에서 현재 사용자 정보 추출"""
     try:
-        payload = verify_token(credentials.credentials)
-        username: str = payload.get("sub")
+        username = verify_token(credentials.credentials)
         if username is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid authentication credentials",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-    except jwt.PyJWTError:
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials",

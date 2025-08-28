@@ -75,3 +75,21 @@ export interface AuthResponse {
   access_token: string;
   token_type: string;
 }
+
+// Supabase용 추가 타입들
+export interface SupabaseUserInterest {
+  id: number;
+  user_id: string;
+  interest: string;
+  created_at?: string;
+}
+
+export interface SupabaseInterestRequest {
+  interest: string;
+}
+
+export interface SupabaseUser {
+  id: string;
+  username: string;
+  email: string;
+}

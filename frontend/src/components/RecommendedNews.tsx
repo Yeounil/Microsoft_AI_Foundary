@@ -20,7 +20,7 @@ import {
   ThumbDown,
   AccessTime
 } from '@mui/icons-material';
-import { recommendationAPI } from '../services/api';
+import { recommendationSupabaseAPI } from '../services/api';
 
 interface RecommendedNewsItem {
   id?: number;
@@ -37,11 +37,9 @@ interface RecommendedNewsItem {
 
 interface UserInterest {
   id: number;
-  symbol: string;
-  market: string;
-  company_name: string;
-  priority: number;
-  created_at: string;
+  user_id: string;
+  interest: string;
+  created_at?: string;
 }
 
 const RecommendedNews: React.FC = () => {
@@ -60,7 +58,7 @@ const RecommendedNews: React.FC = () => {
     setError('');
     
     try {
-      const data = await recommendationAPI.getRecommendedNews(10, 7);
+      const data = await recommendationSupabaseAPI.getRecommendedNewsByInterests(10);
       setRecommendedNews(data.recommendations || []);
     } catch (err: any) {
       setError(err.response?.data?.detail || '추천 뉴스를 가져오는 중 오류가 발생했습니다.');
@@ -72,7 +70,7 @@ const RecommendedNews: React.FC = () => {
 
   const loadUserInterests = async () => {
     try {
-      const data = await recommendationAPI.getUserInterests();
+      const data = await recommendationSupabaseAPI.getUserInterests();
       setUserInterests(data.interests || []);
     } catch (err: any) {
       console.error('관심 종목 로딩 오류:', err);
@@ -86,13 +84,9 @@ const RecommendedNews: React.FC = () => {
     symbol?: string
   ) => {
     try {
-      await recommendationAPI.trackNewsInteraction({
-        news_url: newsUrl,
-        action,
-        news_title: newsTitle,
-        symbol,
-        interaction_time: action === 'view' ? 30 : 0
-      });
+      // Supabase에서는 뉴스 상호작용 추적을 아직 구현하지 않았으므로 주석 처리
+      // 나중에 필요시 Supabase API에서 구현
+      console.log(`뉴스 상호작용: ${action} - ${newsTitle}`);
       
       if (action === 'like' || action === 'dislike') {
         setTimeout(() => loadRecommendedNews(), 1000);
@@ -104,7 +98,7 @@ const RecommendedNews: React.FC = () => {
 
   const handleRemoveInterest = async (interest: UserInterest) => {
     try {
-      await recommendationAPI.removeUserInterest(interest.symbol, interest.market);
+      await recommendationSupabaseAPI.removeUserInterestById(interest.id);
       loadUserInterests();
       loadRecommendedNews();
     } catch (err: any) {
@@ -133,10 +127,11 @@ const RecommendedNews: React.FC = () => {
     }
   };
 
-  const getPriorityColor = (priority: number) => {
-    switch (priority) {
-      case 1: return 'error';
-      case 2: return 'warning';
+  const getInterestColor = (index: number) => {
+    // Supabase에서는 priority가 없으므로 인덱스 기반으로 색상 결정
+    switch (index % 3) {
+      case 0: return 'error';
+      case 1: return 'warning';
       default: return 'info';
     }
   };
@@ -174,11 +169,11 @@ const RecommendedNews: React.FC = () => {
         </Typography>
         <Box display="flex" flexWrap="wrap" gap={1}>
           {userInterests.length > 0 ? (
-            userInterests.map((interest) => (
+            userInterests.map((interest, index) => (
               <Chip
-                key={`${interest.symbol}-${interest.market}`}
-                label={`${interest.symbol} (${interest.company_name || interest.symbol})`}
-                color={getPriorityColor(interest.priority)}
+                key={interest.id}
+                label={interest.interest}
+                color={getInterestColor(index)}
                 variant="outlined"
                 onDelete={() => handleRemoveInterest(interest)}
                 size="small"

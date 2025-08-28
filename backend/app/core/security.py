@@ -27,11 +27,12 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
     return encoded_jwt
 
-def verify_token(token: str) -> Optional[dict]:
-    """JWT 토큰 검증"""
+def verify_token(token: str) -> Optional[str]:
+    """JWT 토큰 검증하여 username 반환"""
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
-        return payload
+        username: str = payload.get("sub")
+        return username
     except JWTError:
         return None
 

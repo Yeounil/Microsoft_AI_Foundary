@@ -17,7 +17,7 @@ import {
   Favorite,
   FavoriteBorder
 } from '@mui/icons-material';
-import { stockAPI, recommendationAPI } from '../services/api';
+import { stockAPI, recommendationSupabaseAPI } from '../services/api';
 
 interface StockSearchProps {
   onStockSelect: (symbol: string, market: string, companyName: string) => void;
@@ -30,9 +30,10 @@ interface StockOption {
 }
 
 interface UserInterest {
-  symbol: string;
-  market: string;
-  company_name?: string;
+  id: number;
+  user_id: string;
+  interest: string;
+  created_at?: string;
 }
 
 const StockSearch: React.FC<StockSearchProps> = ({ onStockSelect, onAlert }) => {
@@ -120,24 +121,24 @@ const StockSearch: React.FC<StockSearchProps> = ({ onStockSelect, onAlert }) => 
     setMarket(event.target.value);
   };
 
-  // 사용자 관심 종목 로드
+  // 사용자 관심 종목 로드 (Supabase)
   const loadUserInterests = async () => {
     try {
-      const response = await recommendationAPI.getUserInterests();
+      const response = await recommendationSupabaseAPI.getUserInterests();
       setUserInterests(response.interests || []);
     } catch (error) {
       console.error('관심 종목 로드 오류:', error);
     }
   };
 
-  // 종목이 관심 목록에 있는지 확인
+  // 종목이 관심 목록에 있는지 확인 (Supabase - interest 필드로 심볼 확인)
   const isInFavorites = (symbol: string, market: string): boolean => {
     return userInterests.some(
-      interest => interest.symbol === symbol && interest.market === market
+      interest => interest.interest === symbol
     );
   };
 
-  // 관심 종목 추가/제거 토글
+  // 관심 종목 추가/제거 토글 (Supabase)
   const toggleFavorite = async (stock: StockOption) => {
     const stockKey = `${stock.symbol}-${market}`;
     setFavoriteLoading(stockKey);
@@ -146,18 +147,15 @@ const StockSearch: React.FC<StockSearchProps> = ({ onStockSelect, onAlert }) => 
       const isFavorited = isInFavorites(stock.symbol, market);
       
       if (isFavorited) {
-        // 관심 종목에서 제거
-        await recommendationAPI.removeUserInterest(stock.symbol, market);
+        // 관심 종목에서 제거 - Supabase는 심볼로 제거
+        await recommendationSupabaseAPI.removeUserInterestBySymbol(stock.symbol);
         if (onAlert) {
           onAlert(`${stock.symbol} (${stock.name})이 관심 목록에서 제거되었습니다.`, 'success');
         }
       } else {
-        // 관심 종목에 추가
-        await recommendationAPI.addUserInterest({
-          symbol: stock.symbol,
-          market: market,
-          company_name: stock.name,
-          priority: 2
+        // 관심 종목에 추가 - Supabase는 단순히 interest 필드만 필요
+        await recommendationSupabaseAPI.addUserInterest({
+          interest: stock.symbol
         });
         if (onAlert) {
           onAlert(`${stock.symbol} (${stock.name})이 관심 목록에 추가되었습니다.`, 'success');
