@@ -174,23 +174,23 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, market }) => {
       return { yearReferenceLines: [], yearStartDatesSet: new Set() };
     }
 
+    const timeZone = market === 'us' ? 'Asia/Seoul' : undefined;
     const lines: { year: number; date: string }[] = [];
-    const yearStarts = new Set<string>(); // To store YYYY-MM-DD strings of year starts
+    const yearStarts = new Set<number>(); // Set of timestamps
     let currentYear = -1;
 
     stockData.price_data.forEach((dataPoint) => {
       const date = new Date(dataPoint.date);
-      const year = date.getFullYear();
-      const dateString = date.toISOString().split('T')[0]; // Get YYYY-MM-DD string
+      const year = parseInt(new Intl.DateTimeFormat('en-US', { year: 'numeric', timeZone }).format(date), 10);
 
       if (year !== currentYear) {
-        lines.push({ year, date: dateString });
-        yearStarts.add(dateString); // Add to set
+        lines.push({ year, date: dataPoint.date });
+        yearStarts.add(date.getTime()); // Add timestamp to set
         currentYear = year;
       }
     });
     return { yearReferenceLines: lines, yearStartDatesSet: yearStarts };
-  }, [stockData]);
+  }, [stockData, market]);
 
   const formatPrice = (value: number): string => {
     if (!stockData) return value.toString();
@@ -207,13 +207,28 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, market }) => {
     const timeZone = market === 'us' ? 'Asia/Seoul' : undefined;
 
     if (['1m', '2m', '5m', '15m', '30m', '60m', '90m'].includes(interval)) {
-      return date.toLocaleDateString('ko-KR', { timeZone }) + ' ' + date.toLocaleTimeString('ko-KR', { 
-        timeZone,
-        hour: '2-digit', 
-        minute: '2-digit' 
+      const datePart = date.toLocaleDateString('ko-KR', { timeZone });
+      const timePart = date.toLocaleTimeString('ko-KR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone
       });
+      return `${datePart} ${timePart}`;
+    }
+
+    if (yearStartDatesSet.has(date.getTime())) {
+      // YYYY.M.D format
+      const year = new Intl.DateTimeFormat('en-US', { timeZone, year: 'numeric' }).format(date);
+      const month = new Intl.DateTimeFormat('en-US', { timeZone, month: 'numeric' }).format(date);
+      const day = new Intl.DateTimeFormat('en-US', { timeZone, day: 'numeric' }).format(date);
+      return `${year}.${month}.${day}`;
     } else {
-      return date.toLocaleDateString('ko-KR', { timeZone });
+      // M.D format
+      return new Intl.DateTimeFormat('ko-KR', {
+        timeZone,
+        month: 'numeric',
+        day: 'numeric'
+      }).format(date).replace(/\s/g, '').slice(0, -1); // Remove spaces and trailing dot
     }
   };
 
