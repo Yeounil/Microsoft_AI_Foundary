@@ -42,7 +42,7 @@ const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarke
     } else {
       fetchGeneralNews();
     }
-  }, [selectedSymbol, selectedMarket]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedSymbol, selectedMarket]);
 
   const fetchGeneralNews = async () => {
     setLoading(true);
@@ -207,12 +207,12 @@ const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarke
       </Box>
 
       {aiAnalysis && (
-        <Card sx={{ mb: 3, backgroundColor: 'secondary.main', color: 'secondary.contrastText' }}>
+        <Card sx={{ mb: 3, backgroundColor: '#000000', color: '#FFFFFF' }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
               🧠 뉴스 기반 AI 종목 분석
             </Typography>
-            <Typography variant="body1" sx={{ whiteSpace: 'pre-line', mb: 2 }}>
+            <Typography variant="body1" sx={{ whiteSpace: 'pre-line', mb: 2, color: '#000000' }}>
               {aiAnalysis}
             </Typography>
             
@@ -252,12 +252,12 @@ const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarke
       )}
 
       {aiSummary && (
-        <Card sx={{ mb: 3, backgroundColor: 'primary.main', color: 'primary.contrastText' }}>
+        <Card sx={{ mb: 3, backgroundColor: 'primary.main', color: '#000000' }}>
           <CardContent>
-            <Typography variant="h6" gutterBottom>
+            <Typography variant="h6" gutterBottom sx={{ color: '#000000' }}>
               🤖 AI 뉴스 요약
             </Typography>
-            <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
+            <Typography variant="body1" sx={{ whiteSpace: 'pre-line', color: '#000000' }}>
               {aiSummary}
             </Typography>
           </CardContent>
@@ -310,7 +310,7 @@ const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarke
                   </Box>
                 </Box>
 
-                <Typography variant="h6" component="h3" sx={{ mb: 1.5, lineHeight: 1.3 }}>
+                <Typography variant="h6" component="h3" sx={{ mb: 1.5, lineHeight: 1.3, color: '#000000' }}>
                   {article.title}
                 </Typography>
 

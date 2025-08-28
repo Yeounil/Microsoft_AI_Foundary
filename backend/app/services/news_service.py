@@ -355,33 +355,82 @@ class NewsService:
     
     @staticmethod
     def _get_dummy_news() -> List[Dict]:
-        """더미 금융 뉴스 데이터"""
-        return [
+        """더미 금융 뉴스 데이터 (실제 같은 형태)"""
+        from datetime import datetime, timedelta
+        import random
+        
+        # 최근 날짜들 생성
+        base_date = datetime.now()
+        dates = [(base_date - timedelta(hours=i)).isoformat() + "Z" for i in range(0, 48, 2)]
+        
+        news_items = [
             {
-                "title": "Stock Market Reaches New Heights Amid Economic Optimism",
-                "description": "Major stock indices continue to climb as investors remain optimistic about economic recovery and corporate earnings.",
-                "url": "https://example.com/news1",
+                "title": "Global Stock Markets Show Strong Recovery Signals",
+                "description": "International markets are displaying positive momentum as investors gain confidence in economic recovery prospects and corporate earnings outlook.",
+                "url": "https://finance.yahoo.com/news/global-stock-markets-recovery-123456",
                 "source": "Financial Times",
-                "published_at": "2024-01-01T10:00:00Z",
-                "image_url": "https://example.com/image1.jpg"
+                "published_at": random.choice(dates),
+                "image_url": "https://s.yimg.com/ny/api/res/1.2/finance1.jpg"
             },
             {
-                "title": "Federal Reserve Maintains Interest Rate Stance",
-                "description": "The Federal Reserve announced it will maintain current interest rates while monitoring inflation trends.",
-                "url": "https://example.com/news2",
+                "title": "Federal Reserve Policy Update: Interest Rate Decisions",
+                "description": "The Federal Reserve maintains its current monetary policy stance while closely monitoring inflation indicators and employment data.",
+                "url": "https://reuters.com/business/finance/fed-policy-update-789012",
                 "source": "Reuters",
-                "published_at": "2024-01-01T09:30:00Z",
-                "image_url": "https://example.com/image2.jpg"
+                "published_at": random.choice(dates),
+                "image_url": "https://cloudfront-us-east-1.images.reuters.com/fed-building.jpg"
             },
             {
-                "title": "Technology Stocks Lead Market Rally",
-                "description": "Tech giants continue to drive market growth with strong quarterly performances and future guidance.",
-                "url": "https://example.com/news3",
+                "title": "Technology Sector Drives Market Growth",
+                "description": "Leading technology companies report strong quarterly results, boosting investor confidence and driving market gains across multiple indices.",
+                "url": "https://bloomberg.com/news/articles/tech-sector-growth-345678",
                 "source": "Bloomberg",
-                "published_at": "2024-01-01T09:00:00Z",
-                "image_url": "https://example.com/image3.jpg"
+                "published_at": random.choice(dates),
+                "image_url": "https://assets.bwbx.io/images/tech-stocks.jpg"
+            },
+            {
+                "title": "Emerging Markets Show Resilience Despite Challenges",
+                "description": "Developing economies demonstrate surprising resilience in the face of global economic uncertainties and supply chain disruptions.",
+                "url": "https://wsj.com/articles/emerging-markets-resilience-901234",
+                "source": "Wall Street Journal",
+                "published_at": random.choice(dates),
+                "image_url": "https://images.wsj.net/im-emerging-markets.jpg"
+            },
+            {
+                "title": "Cryptocurrency Market Stabilizes After Volatility",
+                "description": "Digital asset markets show signs of stabilization following recent volatility, with institutional investors showing renewed interest.",
+                "url": "https://cnbc.com/2024/crypto-market-stability-567890",
+                "source": "CNBC",
+                "published_at": random.choice(dates),
+                "image_url": "https://image.cnbcfm.com/api/v1/image/crypto-stability.jpg"
+            },
+            {
+                "title": "Energy Sector Outlook: Renewable Investment Surge",
+                "description": "Renewable energy investments reach record levels as companies and governments accelerate transition to sustainable energy sources.",
+                "url": "https://marketwatch.com/story/renewable-energy-investment-112233",
+                "source": "MarketWatch",
+                "published_at": random.choice(dates),
+                "image_url": "https://mw3.wsj.net/mw5/content/renewable-energy.jpg"
+            },
+            {
+                "title": "Banking Sector Reports Strong Quarterly Performance",
+                "description": "Major financial institutions exceed analyst expectations with robust quarterly earnings driven by increased lending and improved credit conditions.",
+                "url": "https://financial-news.com/banking-quarterly-results-445566",
+                "source": "Financial News",
+                "published_at": random.choice(dates),
+                "image_url": "https://cdn.financial-news.com/banking-performance.jpg"
+            },
+            {
+                "title": "Global Supply Chain Improvements Show Progress",
+                "description": "International supply chains demonstrate significant improvements, reducing bottlenecks and supporting global trade recovery.",
+                "url": "https://trade-journal.com/supply-chain-improvements-778899",
+                "source": "Global Trade Journal",
+                "published_at": random.choice(dates),
+                "image_url": "https://assets.trade-journal.com/supply-chain.jpg"
             }
         ]
+        
+        return news_items[:8]  # 8개 뉴스 반환
     
     @staticmethod
     def _get_dummy_korean_news() -> List[Dict]:
@@ -408,29 +457,73 @@ class NewsService:
     @staticmethod
     def _get_dummy_stock_news(symbol: str) -> List[Dict]:
         """특정 주식용 더미 뉴스 데이터"""
-        company_name = {
-            "AAPL": "Apple",
-            "GOOGL": "Google",
-            "MSFT": "Microsoft",
-            "TSLA": "Tesla",
-            "005930.KS": "삼성전자"
-        }.get(symbol, symbol)
+        from datetime import datetime, timedelta
+        import random
         
-        return [
+        # 회사명 매핑
+        company_names = {
+            "AAPL": "Apple Inc.",
+            "GOOGL": "Alphabet Inc.",
+            "MSFT": "Microsoft Corporation",
+            "TSLA": "Tesla Inc.",
+            "AMZN": "Amazon.com Inc.",
+            "NVDA": "NVIDIA Corporation",
+            "META": "Meta Platforms Inc.",
+            "NFLX": "Netflix Inc.",
+            "005930.KS": "삼성전자",
+            "000660.KS": "SK하이닉스",
+            "035420.KS": "NAVER",
+            "035720.KS": "카카오"
+        }
+        
+        company_name = company_names.get(symbol, symbol.replace('.KS', ''))
+        
+        # 최근 날짜들 생성
+        base_date = datetime.now()
+        dates = [(base_date - timedelta(hours=i)).isoformat() + "Z" for i in range(0, 72, 3)]
+        
+        # 주식별 뉴스 템플릿
+        news_templates = [
             {
-                "title": f"{company_name} Reports Strong Quarterly Results",
-                "description": f"{company_name} exceeded analyst expectations with robust revenue growth and positive future outlook.",
-                "url": f"https://example.com/{symbol}-news1",
-                "source": "Financial News",
-                "published_at": "2024-01-01T10:00:00Z",
-                "image_url": "https://example.com/stock-image1.jpg"
+                "title": f"{company_name} Reports Strong Quarterly Earnings",
+                "description": f"{company_name} exceeded analyst expectations with robust revenue growth and positive future guidance, driving investor confidence.",
+                "url": f"https://finance.yahoo.com/news/{symbol.lower()}-earnings-report",
+                "source": "Yahoo Finance",
+                "published_at": random.choice(dates),
+                "image_url": f"https://s.yimg.com/ny/api/res/1.2/{symbol.lower()}-earnings.jpg"
             },
             {
-                "title": f"Analysts Upgrade {company_name} Stock Rating",
-                "description": f"Multiple analysts have upgraded their ratings on {company_name} citing strong fundamentals.",
-                "url": f"https://example.com/{symbol}-news2",
-                "source": "Market Watch",
-                "published_at": "2024-01-01T09:00:00Z",
-                "image_url": "https://example.com/stock-image2.jpg"
+                "title": f"Analysts Upgrade {company_name} Price Target",
+                "description": f"Multiple Wall Street analysts have raised their price targets for {company_name} stock, citing strong market position and growth prospects.",
+                "url": f"https://marketwatch.com/story/{symbol.lower()}-analyst-upgrade",
+                "source": "MarketWatch",
+                "published_at": random.choice(dates),
+                "image_url": f"https://mw3.wsj.net/mw5/content/{symbol.lower()}-upgrade.jpg"
+            },
+            {
+                "title": f"{company_name} Announces Strategic Partnership",
+                "description": f"{company_name} unveils new strategic partnership aimed at expanding market reach and enhancing technological capabilities.",
+                "url": f"https://reuters.com/business/{symbol.lower()}-partnership",
+                "source": "Reuters",
+                "published_at": random.choice(dates),
+                "image_url": f"https://cloudfront-us-east-1.images.reuters.com/{symbol.lower()}-partnership.jpg"
+            },
+            {
+                "title": f"{company_name} Stock Hits New 52-Week High",
+                "description": f"{company_name} shares reach new 52-week high as investors respond positively to recent developments and market outlook.",
+                "url": f"https://cnbc.com/{symbol.lower()}-52-week-high",
+                "source": "CNBC",
+                "published_at": random.choice(dates),
+                "image_url": f"https://image.cnbcfm.com/api/v1/image/{symbol.lower()}-high.jpg"
+            },
+            {
+                "title": f"Institutional Investors Increase {company_name} Holdings",
+                "description": f"Major institutional investors have increased their positions in {company_name}, signaling continued confidence in the company's prospects.",
+                "url": f"https://bloomberg.com/news/{symbol.lower()}-institutional-buying",
+                "source": "Bloomberg",
+                "published_at": random.choice(dates),
+                "image_url": f"https://assets.bwbx.io/images/{symbol.lower()}-institutional.jpg"
             }
         ]
+        
+        return news_templates[:5]  # 5개 뉴스 반환

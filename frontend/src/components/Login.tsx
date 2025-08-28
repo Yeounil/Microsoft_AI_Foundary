@@ -36,7 +36,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToRegister }) => {
     e.preventDefault();
     
     if (!formData.username || !formData.password) {
-      setError('모든 필드를 입력해주세요.');
+      setError('All fields are required.');
       return;
     }
 
@@ -47,21 +47,20 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToRegister }) => {
       const response = await authService.login(formData.username, formData.password);
       
       if (response.access_token) {
-        // 토큰을 localStorage에 저장
         localStorage.setItem('token', response.access_token);
         onLogin(response.access_token);
       } else {
-        setError('로그인에 실패했습니다.');
+        setError('Login failed.');
       }
     } catch (error: any) {
       console.error('Login error:', error);
       
       if (error.response?.status === 401) {
-        setError('사용자명 또는 비밀번호가 잘못되었습니다.');
+        setError('Invalid username or password.');
       } else if (error.response?.data?.detail) {
         setError(error.response.data.detail);
       } else {
-        setError('로그인 중 오류가 발생했습니다. 다시 시도해주세요.');
+        setError('An error occurred during login. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -78,16 +77,16 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToRegister }) => {
           alignItems: 'center',
         }}
       >
-        <Paper elevation={3} sx={{ padding: 4, width: '100%' }}>
-          <Typography component="h1" variant="h4" align="center" gutterBottom>
-            🚀 AI 금융 분석
+        <Paper elevation={3} sx={{ padding: 4, width: '100%', borderRadius: 3 }}>
+          <Typography component="h1" variant="h4" align="center" gutterBottom sx={{ fontWeight: 700, color: 'secondary.main' }}>
+            💰 AI Financial Analysis
           </Typography>
           <Typography variant="h6" align="center" color="text.secondary" gutterBottom>
             로그인
           </Typography>
           
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
               {error}
             </Alert>
           )}
@@ -98,7 +97,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToRegister }) => {
               required
               fullWidth
               id="username"
-              label="사용자명"
+              label="Username"
               name="username"
               autoComplete="username"
               autoFocus
@@ -111,7 +110,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToRegister }) => {
               required
               fullWidth
               name="password"
-              label="비밀번호"
+              label="Password"
               type="password"
               id="password"
               autoComplete="current-password"
@@ -124,10 +123,11 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToRegister }) => {
               type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 3, mb: 2 }}
+              color="primary"
+              sx={{ mt: 3, mb: 2, py: 1.5, fontWeight: 600 }}
               disabled={loading}
             >
-              {loading ? <CircularProgress size={24} /> : '로그인'}
+              {loading ? <CircularProgress size={24} color="inherit" /> : 'Login'}
             </Button>
             
             <Button
@@ -136,7 +136,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToRegister }) => {
               onClick={onSwitchToRegister}
               disabled={loading}
             >
-              회원가입
+              계정이 없으신가요? 회원가입
             </Button>
           </Box>
         </Paper>

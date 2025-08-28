@@ -116,8 +116,8 @@ export const newsAPI = {
 
 // 분석 API
 export const analysisAPI = {
-  analyzeStock: async (symbol: string, market: string = 'us', period: string = '1y', interval: string = '1d'): Promise<StockAnalysis> => {
-    const response = await api.post(`/api/v1/analysis/stock/${symbol}?market=${market}&period=${period}&interval=${interval}`);
+  analyzeStock: async (symbol: string, market: string = 'us', period: string = '1y'): Promise<StockAnalysis> => {
+    const response = await api.post(`/api/v1/analysis/stock/${symbol}?market=${market}&period=${period}`);
     return response.data;
   },
 

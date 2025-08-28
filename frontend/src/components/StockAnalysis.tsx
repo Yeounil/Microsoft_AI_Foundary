@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -6,19 +6,14 @@ import {
   Button,
   Box,
   CircularProgress,
-  Chip,
-  IconButton,
-  Tooltip,
-  Alert
+  Chip
 } from '@mui/material';
 import {
   Psychology as PsychologyIcon,
   TrendingUp as TrendingUpIcon,
-  Assessment as AssessmentIcon,
-  Favorite,
-  FavoriteBorder
+  Assessment as AssessmentIcon
 } from '@mui/icons-material';
-import { analysisAPI, recommendationAPI } from '../services/api';
+import { analysisAPI } from '../services/api';
 import { StockAnalysis as StockAnalysisType } from '../types/api';
 
 interface StockAnalysisProps {
@@ -31,66 +26,6 @@ const StockAnalysis: React.FC<StockAnalysisProps> = ({ symbol, market, companyNa
   const [analysis, setAnalysis] = useState<StockAnalysisType | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
-  
-  // 관심 종목 관련 상태
-  const [isInFavorites, setIsInFavorites] = useState<boolean>(false);
-  const [favoriteLoading, setFavoriteLoading] = useState<boolean>(false);
-  const [alertMessage, setAlertMessage] = useState<string>('');
-
-  useEffect(() => {
-    checkIfInFavorites();
-  }, [symbol, market]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // 관심 종목 상태 확인
-  const checkIfInFavorites = async () => {
-    if (!symbol) return;
-    
-    try {
-      const response = await recommendationAPI.getUserInterests();
-      const interests = response.interests || [];
-      const found = interests.some(
-        (interest: any) => interest.symbol === symbol && interest.market === market
-      );
-      setIsInFavorites(found);
-    } catch (error) {
-      console.error('관심 종목 상태 확인 오류:', error);
-    }
-  };
-
-  // 관심 종목 토글
-  const toggleFavorite = async () => {
-    if (!symbol) return;
-    
-    setFavoriteLoading(true);
-    
-    try {
-      if (isInFavorites) {
-        await recommendationAPI.removeUserInterest(symbol, market);
-        setAlertMessage(`${companyName || symbol}이 관심 목록에서 제거되었습니다.`);
-      } else {
-        await recommendationAPI.addUserInterest({
-          symbol: symbol,
-          market: market,
-          company_name: companyName || symbol,
-          priority: 2
-        });
-        setAlertMessage(`${companyName || symbol}이 관심 목록에 추가되었습니다.`);
-      }
-      
-      setIsInFavorites(!isInFavorites);
-      
-    } catch (error: any) {
-      console.error('관심 종목 토글 오류:', error);
-      setAlertMessage(error.response?.data?.detail || '관심 종목 설정 중 오류가 발생했습니다.');
-    } finally {
-      setFavoriteLoading(false);
-      
-      // 3초 후 알림 메시지 제거
-      setTimeout(() => {
-        setAlertMessage('');
-      }, 3000);
-    }
-  };
 
   const handleAnalyze = async () => {
     if (!symbol) return;
@@ -99,7 +34,7 @@ const StockAnalysis: React.FC<StockAnalysisProps> = ({ symbol, market, companyNa
     setError('');
     
     try {
-      const result = await analysisAPI.analyzeStock(symbol, market, '1y', '15m');
+      const result = await analysisAPI.analyzeStock(symbol, market, '1y');
       setAnalysis(result);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'AI 분석 중 오류가 발생했습니다.');
@@ -147,39 +82,11 @@ const StockAnalysis: React.FC<StockAnalysisProps> = ({ symbol, market, companyNa
   return (
     <Card>
       <CardContent>
-        {/* 알림 메시지 */}
-        {alertMessage && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            {alertMessage}
-          </Alert>
-        )}
-        
         <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-          <Box display="flex" alignItems="center" gap={0.5}>
-            <Typography variant="h5" component="h2">
-              <PsychologyIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-              AI 투자 분석
-            </Typography>
-            <Typography variant="body1" sx={{ mx: 1 }}>
-              - {companyName}
-            </Typography>
-            <Tooltip title={isInFavorites ? "관심 종목에서 제거" : "관심 종목에 추가"}>
-              <IconButton
-                onClick={toggleFavorite}
-                disabled={favoriteLoading}
-                color={isInFavorites ? "error" : "default"}
-                size="small"
-              >
-                {favoriteLoading ? (
-                  <CircularProgress size={18} />
-                ) : isInFavorites ? (
-                  <Favorite fontSize="small" />
-                ) : (
-                  <FavoriteBorder fontSize="small" />
-                )}
-              </IconButton>
-            </Tooltip>
-          </Box>
+          <Typography variant="h5" component="h2">
+            <PsychologyIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+            AI 투자 분석
+          </Typography>
           <Button
             variant="contained"
             startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <AssessmentIcon />}

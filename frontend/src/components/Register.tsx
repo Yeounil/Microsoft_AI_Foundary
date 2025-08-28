@@ -38,27 +38,27 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchToLogin 
 
   const validateForm = () => {
     if (!formData.username || !formData.email || !formData.password || !formData.confirmPassword) {
-      setError('모든 필드를 입력해주세요.');
+      setError('All fields are required.');
       return false;
     }
 
     if (formData.username.length < 3) {
-      setError('사용자명은 3자 이상이어야 합니다.');
+      setError('Username must be at least 3 characters long.');
       return false;
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      setError('올바른 이메일 형식을 입력해주세요.');
+      setError('Please enter a valid email address.');
       return false;
     }
 
     if (formData.password.length < 6) {
-      setError('비밀번호는 6자 이상이어야 합니다.');
+      setError('Password must be at least 6 characters long.');
       return false;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError('비밀번호가 일치하지 않습니다.');
+      setError('Passwords do not match.');
       return false;
     }
 
@@ -84,9 +84,8 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchToLogin 
       );
       
       if (response.message || response.user) {
-        setSuccess('회원가입이 완료되었습니다! 로그인해주세요.');
+        setSuccess('Registration successful! Please log in.');
         
-        // 3초 후 로그인 화면으로 이동
         setTimeout(() => {
           onRegisterSuccess();
         }, 2000);
@@ -96,14 +95,14 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchToLogin 
       
       if (error.response?.data?.detail) {
         if (error.response.data.detail.includes('Username already registered')) {
-          setError('이미 사용 중인 사용자명입니다.');
+          setError('Username is already taken.');
         } else if (error.response.data.detail.includes('Email already registered')) {
-          setError('이미 사용 중인 이메일입니다.');
+          setError('Email is already registered.');
         } else {
           setError(error.response.data.detail);
         }
       } else {
-        setError('회원가입 중 오류가 발생했습니다. 다시 시도해주세요.');
+        setError('An error occurred during registration. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -120,22 +119,22 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchToLogin 
           alignItems: 'center',
         }}
       >
-        <Paper elevation={3} sx={{ padding: 4, width: '100%' }}>
-          <Typography component="h1" variant="h4" align="center" gutterBottom>
-            🚀 AI 금융 분석
+        <Paper elevation={3} sx={{ padding: 4, width: '100%', borderRadius: 3 }}>
+          <Typography component="h1" variant="h4" align="center" gutterBottom sx={{ fontWeight: 700, color: 'secondary.main' }}>
+            💰 AI Financial Analysis
           </Typography>
           <Typography variant="h6" align="center" color="text.secondary" gutterBottom>
-            회원가입
+            Register
           </Typography>
           
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
               {error}
             </Alert>
           )}
 
           {success && (
-            <Alert severity="success" sx={{ mb: 2 }}>
+            <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }}>
               {success}
             </Alert>
           )}
@@ -146,14 +145,14 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchToLogin 
               required
               fullWidth
               id="username"
-              label="사용자명"
+              label="Username"
               name="username"
               autoComplete="username"
               autoFocus
               value={formData.username}
               onChange={handleChange}
               disabled={loading}
-              helperText="3자 이상의 영문, 숫자 조합"
+              helperText="At least 3 characters"
             />
             
             <TextField
@@ -161,14 +160,13 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchToLogin 
               required
               fullWidth
               id="email"
-              label="이메일"
+              label="Email Address"
               name="email"
               type="email"
               autoComplete="email"
               value={formData.email}
               onChange={handleChange}
               disabled={loading}
-              helperText="예: user@example.com"
             />
             
             <TextField
@@ -176,14 +174,14 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchToLogin 
               required
               fullWidth
               name="password"
-              label="비밀번호"
+              label="Password"
               type="password"
               id="password"
               autoComplete="new-password"
               value={formData.password}
               onChange={handleChange}
               disabled={loading}
-              helperText="6자 이상 입력"
+              helperText="At least 6 characters"
             />
             
             <TextField
@@ -191,23 +189,23 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchToLogin 
               required
               fullWidth
               name="confirmPassword"
-              label="비밀번호 확인"
+              label="Confirm Password"
               type="password"
               id="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
               disabled={loading}
-              helperText="위와 동일한 비밀번호 입력"
             />
             
             <Button
               type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 3, mb: 2 }}
+              color="primary"
+              sx={{ mt: 3, mb: 2, py: 1.5, fontWeight: 600 }}
               disabled={loading}
             >
-              {loading ? <CircularProgress size={24} /> : '회원가입'}
+              {loading ? <CircularProgress size={24} color="inherit" /> : 'Register'}
             </Button>
             
             <Button

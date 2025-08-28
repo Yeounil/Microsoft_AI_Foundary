@@ -55,8 +55,6 @@ const RecommendedNews: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   
-  // 관심 종목 관리 상태 (제거됨 - 이제 StockSearch에서 관리)
-  
   // 뉴스 원문 보기 상태
   const [selectedNewsUrl, setSelectedNewsUrl] = useState<string>('');
   const [newsDialogOpen, setNewsDialogOpen] = useState<boolean>(false);
@@ -105,7 +103,6 @@ const RecommendedNews: React.FC = () => {
         interaction_time: action === 'view' ? 30 : 0
       });
       
-      // 상호작용 후 추천 뉴스 갱신
       if (action === 'like' || action === 'dislike') {
         setTimeout(() => loadRecommendedNews(), 1000);
       }
@@ -114,13 +111,11 @@ const RecommendedNews: React.FC = () => {
     }
   };
 
-  // handleAddInterest 함수 제거됨 (StockSearch에서 처리)
-
   const handleRemoveInterest = async (interest: UserInterest) => {
     try {
       await recommendationAPI.removeUserInterest(interest.symbol, interest.market);
       loadUserInterests();
-      loadRecommendedNews(); // 관심 종목 제거 후 추천 뉴스 갱신
+      loadRecommendedNews();
     } catch (err: any) {
       setError(err.response?.data?.detail || '관심 종목 제거 중 오류가 발생했습니다.');
     }
@@ -320,8 +315,6 @@ const RecommendedNews: React.FC = () => {
           </Typography>
         </Box>
       )}
-
-      {/* 관심 종목 추가 다이얼로그 제거됨 - 이제 StockSearch에서 하트 버튼으로 처리 */}
 
       {/* 뉴스 원문 다이얼로그 */}
       <Dialog 

@@ -21,7 +21,7 @@ import {
 import { stockAPI, recommendationAPI } from '../services/api';
 
 interface StockSearchProps {
-  onStockSelect: (symbol: string, market: string) => void;
+  onStockSelect: (symbol: string, market: string, companyName: string) => void;
 }
 
 interface StockOption {
@@ -83,7 +83,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onStockSelect }) => {
     setStockOptions(stocks);
     setSelectedStock(null);
     setSearchQuery('');
-  }, [market]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [market]);
 
   useEffect(() => {
     if (searchQuery.length > 1) {
@@ -92,7 +92,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onStockSelect }) => {
       const stocks = market === 'kr' ? defaultStocks.kr : defaultStocks.us;
       setStockOptions(stocks);
     }
-  }, [searchQuery, market]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [searchQuery, market]);
 
   const searchStocks = async (query: string) => {
     setLoading(true);
@@ -114,7 +114,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onStockSelect }) => {
   const handleStockSelect = (event: any, newValue: StockOption | null) => {
     setSelectedStock(newValue);
     if (newValue) {
-      onStockSelect(newValue.symbol, market);
+      onStockSelect(newValue.symbol, market, newValue.name);
     }
   };
 
@@ -158,7 +158,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onStockSelect }) => {
           symbol: stock.symbol,
           market: market,
           company_name: stock.name,
-          priority: 2 // 검색을 통한 추가는 중간 우선순위
+          priority: 2
         });
         setAlertMessage(`${stock.symbol} (${stock.name})이 관심 목록에 추가되었습니다.`);
         setAlertSeverity('success');
@@ -183,13 +183,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onStockSelect }) => {
 
   return (
     <Box sx={{ mb: 3 }}>
-      <Typography variant="h4" component="h1" gutterBottom align="center">
-        AI 금융 분석기
-      </Typography>
-      <Typography variant="body1" color="text.secondary" align="center" sx={{ mb: 3 }}>
-        주식을 검색하고 AI 분석을 받아보세요 • ❤️ 클릭으로 관심 종목 설정
-      </Typography>
-      
       {/* 알림 메시지 */}
       {alertMessage && (
         <Alert severity={alertSeverity} sx={{ mb: 2 }}>
@@ -271,7 +264,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onStockSelect }) => {
                 <Tooltip title={isFavorited ? "관심 종목에서 제거" : "관심 종목에 추가"}>
                   <IconButton
                     onClick={(e) => {
-                      e.stopPropagation(); // 옵션 선택 방지
+                      e.stopPropagation();
                       toggleFavorite(option);
                     }}
                     disabled={isLoading}

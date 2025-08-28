@@ -17,6 +17,7 @@ async def get_financial_news(
 ):
     """금융 뉴스 가져오기"""
     try:
+        # 동기 함수 호출 (await 제거)
         if lang.lower() == "kr":
             news = NewsService.get_korean_financial_news(limit)
         else:
@@ -24,13 +25,16 @@ async def get_financial_news(
         
         # 뉴스 조회 기록 추가 (각 뉴스 기사별로)
         data_service = SupabaseDataService()
-        for article in news[:5]:  # 상위 5개 기사만 기록
-            if article.get('url'):
-                await data_service.add_news_history(
-                    user_id=current_user['id'],
-                    article_url=article['url'],
-                    title=article.get('title', '')
-                )
+        try:
+            for article in news[:5]:  # 상위 5개 기사만 기록
+                if article.get('url'):
+                    await data_service.add_news_history(
+                        user_id=current_user['id'],
+                        article_url=article['url'],
+                        title=article.get('title', '')
+                    )
+        except Exception as log_error:
+            print(f"뉴스 기록 로그 실패: {log_error}")
         
         return {
             "query": query,
@@ -50,21 +54,26 @@ async def get_stock_news(
 ):
     """특정 주식 관련 뉴스"""
     try:
+        # 동기 함수 호출 (await 제거)
         news = NewsService.get_stock_related_news(symbol, limit)
         
         # 활동 로그
         data_service = SupabaseDataService()
-        await data_service.log_user_activity(
-            user_id=current_user['id'],
-            activity_type="stock_news_fetch",
-            details={
-                "symbol": symbol,
-                "articles_count": len(news)
-            }
-        )
+        try:
+            await data_service.log_user_activity(
+                user_id=current_user['id'],
+                activity_type="stock_news_fetch",
+                details={
+                    "symbol": symbol,
+                    "articles_count": len(news)
+                }
+            )
+        except Exception as log_error:
+            print(f"활동 로그 실패: {log_error}")
         
         return {
-            "symbol": symbol,
+            "query": symbol,
+            "language": "en",
             "total_count": len(news),
             "articles": news
         }
@@ -81,7 +90,7 @@ async def summarize_news(
 ):
     """뉴스 AI 요약 (Supabase 저장)"""
     try:
-        # 뉴스 가져오기
+        # 뉴스 가져오기 (동기 함수 호출)
         if lang.lower() == "kr":
             news = NewsService.get_korean_financial_news(limit)
         else:
@@ -138,7 +147,7 @@ async def summarize_stock_news(
 ):
     """특정 주식 관련 뉴스 AI 요약 (Supabase 저장)"""
     try:
-        # 해당 주식 뉴스 가져오기
+        # 해당 주식 뉴스 가져오기 (동기 함수 호출)
         news = NewsService.get_stock_related_news(symbol, limit)
         
         if not news:

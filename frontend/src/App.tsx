@@ -1,3 +1,5 @@
+import logo from './assets/myLogo.png';
+
 import React, { useState, useEffect } from 'react';
 import {
   Container,
@@ -21,6 +23,7 @@ import NewsSection from './components/NewsSection';
 import RecommendedNews from './components/RecommendedNews';
 import Login from './components/Login';
 import Register from './components/Register';
+import LandingPage from './components/LandingPage';
 import { authService, UserProfile } from './services/authService';
 
 interface TabPanelProps {
@@ -48,13 +51,70 @@ function TabPanel(props: TabPanelProps) {
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#1976d2',
+      main: '#FEE500', // Kakao Yellow
     },
     secondary: {
-      main: '#dc004e',
+      main: '#3C1E1E', // Kakao Brown
     },
     background: {
-      default: '#f5f5f5',
+      default: '#FFFFFF', // White background
+    },
+    text: {
+      primary: '#333333',
+      secondary: '#555555',
+    },
+  },
+  typography: {
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    h4: {
+      fontWeight: 700,
+    },
+    h5: {
+      fontWeight: 600,
+    },
+    h6: {
+      fontWeight: 600,
+    },
+  },
+  components: {
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          backgroundColor: 'rgba(255, 255, 255, 1.0)',
+          backdropFilter: 'blur(10px)',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
+          color: '#333333',
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+        },
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+        },
+        containedPrimary: {
+          color: '#3C1E1E',
+          '&:hover': {
+            backgroundColor: '#FEE500',
+            opacity: 0.9,
+          },
+        },
+      },
+    },
+    MuiTab: {
+      styleOverrides: {
+        root: {
+          fontWeight: 600,
+        },
+      },
     },
   },
 });
@@ -66,7 +126,8 @@ function App() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [showRegister, setShowRegister] = useState<boolean>(false);
 
-  // 기존 상태들
+  // 뷰 모드 및 선택된 주식 상태
+  const [viewMode, setViewMode] = useState<'landing' | 'dashboard'>('landing');
   const [selectedStock, setSelectedStock] = useState<{
     symbol: string;
     market: string;
@@ -104,7 +165,7 @@ function App() {
   const handleLogin = (token: string) => {
     authService.saveToken(token);
     setIsAuthenticated(true);
-    checkAuthStatus(); // 사용자 정보 로드
+    checkAuthStatus();
   };
 
   const handleLogout = () => {
@@ -112,6 +173,7 @@ function App() {
     setIsAuthenticated(false);
     setUser(null);
     setSelectedStock(null);
+    setViewMode('landing');
     setTabValue(0);
   };
 
@@ -119,13 +181,42 @@ function App() {
     setShowRegister(false);
   };
 
-  const handleStockSelect = (symbol: string, market: string) => {
-    setSelectedStock({ symbol, market });
+  const handleStockSelect = (symbol: string, market: string, companyName?: string) => {
+    setSelectedStock({ symbol, market, companyName });
     setTabValue(0);
+    setViewMode('dashboard');
   };
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
+  };
+  
+  const handleGoHome = () => {
+    setSelectedStock(null);
+    setViewMode('landing');
+  };
+
+  const handleNewsButtonClick = () => {
+    if (viewMode === 'landing') {
+      // 메인 화면에 있으면 뉴스 섹션으로 스크롤
+      setTimeout(() => {
+        const newsSection = document.querySelector('[data-news-section]');
+        if (newsSection) {
+          newsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    } else {
+      // 메인 화면이 아니면 메인 화면으로 이동
+      setSelectedStock(null);
+      setViewMode('landing');
+      // 메인 화면 로드 후 뉴스 섹션으로 스크롤
+      setTimeout(() => {
+        const newsSection = document.querySelector('[data-news-section]');
+        if (newsSection) {
+          newsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 300);
+    }
   };
 
   // 로딩 중
@@ -170,78 +261,92 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       
-      {/* 상단 네비게이션 바 */}
-      <AppBar position="static">
-        <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            🚀 AI 금융 분석 플랫폼
-          </Typography>
-          <Typography variant="body2" sx={{ mr: 2 }}>
-            {user?.username}님 환영합니다
-          </Typography>
-          <Button color="inherit" onClick={handleLogout}>
-            로그아웃
-          </Button>
+      <AppBar position="sticky">
+        <Toolbar sx={{ height: '80px', py: 0 }}>
+          <Box onClick={handleGoHome} sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                        <img src={logo} alt="AI Financial Analysis Logo" style={{ height: '45px', width: '165px', marginRight: '20px' }} />
+          </Box>
+          
+          <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', px: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%', maxWidth: '700px' }}>
+              <Box sx={{ flex: 1 }}>
+                <StockSearch onStockSelect={handleStockSelect} />
+              </Box>
+              <Button 
+                variant="outlined" 
+                color="secondary" 
+                onClick={handleNewsButtonClick}
+                size="medium"
+              >
+                관심 뉴스
+              </Button>
+            </Box>
+          </Box>
+
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', minWidth: '200px', gap: 1 }}>
+            <Typography variant="body2" sx={{ mr: 1 }}>
+              {user?.username}님, 환영합니다!
+            </Typography>
+            <Button variant="outlined" color="secondary" onClick={handleLogout}>
+              로그아웃
+            </Button>
+          </Box>
         </Toolbar>
       </AppBar>
 
-      <Container maxWidth="xl" sx={{ py: 4 }}>
-        <StockSearch onStockSelect={handleStockSelect} />
-        
-        <Paper sx={{ mt: 3 }}>
-          <Tabs 
-            value={tabValue} 
-            onChange={handleTabChange} 
-            centered
-            sx={{ borderBottom: 1, borderColor: 'divider' }}
-          >
-            <Tab label="차트" />
-            <Tab label="AI 분석" />
-            <Tab label="뉴스" />
-            <Tab label="추천 뉴스" />
-          </Tabs>
+      <main>
+        {viewMode === 'landing' && (
+          <>
+            <LandingPage />
+            <Container maxWidth="lg" sx={{ py: 4 }} data-news-section>
+              <RecommendedNews />
+            </Container>
+          </>
+        )}
+        {viewMode === 'dashboard' && selectedStock && (
+          <Container maxWidth="lg" sx={{ py: 0 }}>
+            <Paper>
+              <Tabs 
+                value={tabValue} 
+                onChange={handleTabChange} 
+                centered
+                indicatorColor="secondary"
+                textColor="secondary"
+                sx={{ borderBottom: 1, borderColor: 'divider' }}
+              >
+                <Tab label="차트" />
+                <Tab label="AI 분석" />
+                <Tab label="뉴스" />
+              </Tabs>
 
-          <TabPanel value={tabValue} index={0}>
-            {selectedStock ? (
-              <StockChart 
-                symbol={selectedStock.symbol} 
-                market={selectedStock.market} 
-              />
-            ) : (
-              <Box textAlign="center" py={8}>
-                <div>주식을 선택하여 차트를 확인하세요</div>
-              </Box>
-            )}
-          </TabPanel>
+              <TabPanel value={tabValue} index={0}>
+                <StockChart 
+                  symbol={selectedStock.symbol} 
+                  market={selectedStock.market} 
+                />
+              </TabPanel>
 
-          <TabPanel value={tabValue} index={1}>
-            {selectedStock ? (
-              <StockAnalysis 
-                symbol={selectedStock.symbol}
-                market={selectedStock.market}
-                companyName={selectedStock.companyName || selectedStock.symbol}
-              />
-            ) : (
-              <Box textAlign="center" py={8}>
-                <div>주식을 선택하여 AI 분석을 받아보세요</div>
-              </Box>
-            )}
-          </TabPanel>
+              <TabPanel value={tabValue} index={1}>
+                <StockAnalysis 
+                  symbol={selectedStock.symbol}
+                  market={selectedStock.market}
+                  companyName={selectedStock.companyName || selectedStock.symbol}
+                />
+              </TabPanel>
 
-          <TabPanel value={tabValue} index={2}>
-            <NewsSection 
-              selectedSymbol={selectedStock?.symbol}
-              selectedMarket={selectedStock?.market}
-            />
-          </TabPanel>
-
-          <TabPanel value={tabValue} index={3}>
-            <RecommendedNews />
-          </TabPanel>
-        </Paper>
-      </Container>
+              <TabPanel value={tabValue} index={2}>
+                <NewsSection 
+                  selectedSymbol={selectedStock?.symbol}
+                  selectedMarket={selectedStock?.market}
+                />
+              </TabPanel>
+            </Paper>
+          </Container>
+        )}
+      </main>
+      
     </ThemeProvider>
   );
 }
 
-export default App;
+export default App;;;
