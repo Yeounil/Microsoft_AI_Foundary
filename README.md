@@ -1,264 +1,235 @@
-# 🚀 AI 금융 분석 프로그램
+# AI Finance News Recommendation System
 
-Microsoft Azure AI Foundary와 OpenAI를 활용한 AI 기반 금융 분석 웹 애플리케이션입니다.
+AI 기반 개인화 금융 뉴스 추천 및 분석 시스템
 
-## ✨ 주요 기능
+## 📋 프로젝트 개요
 
-### 📈 1. 주식 차트 시각화
-- **국내/해외 주식** 데이터 실시간 조회
-- **다양한 기간**: 1일, 5일, 1개월, 3개월, 6개월, 1년, 2년, 5년
-- **차트 타입**: 선형차트, 바차트 지원
-- **반응형 디자인**: 모바일/데스크톱 최적화
+**AI Finance News Recommendation System**은 사용자 관심사를 기반으로 Azure OpenAI와 Supabase Cloud를 활용하여 개인화된 금융 뉴스를 추천하고 AI 분석 요약을 제공하는 시스템입니다.
 
-### 🤖 2. AI 투자 분석
-- **OpenAI GPT-4** 기반 전문적인 주식 분석
-- **분석 항목**: 기술적 분석, 펀더멘털 분석, 시장 동향
-- **투자 의견**: 목표가 제시 및 리스크 분석
-- **실시간 생성**: 최신 주식 데이터 기반 분석
+### 🎯 핵심 기능
+- **개인화 뉴스 추천**: 사용자 관심 종목 기반 AI 추천
+- **종목별 뉴스 분석**: 특정 종목에 대한 전문적인 AI 분석
+- **다양성 알고리즘**: 소스/시간대/카테고리 균형잡힌 뉴스 제공  
+- **실시간 감정분석**: Azure OpenAI 기반 시장 감정 분석
+- **백그라운드 수집**: 인기 종목 뉴스 자동 수집 및 사전 분석
 
-### 📰 3. 뉴스 분석 및 요약
-- **금융 뉴스** 자동 수집
-- **AI 요약**: 핵심 내용 요약 및 시장 영향 분석
-- **주식별 뉴스**: 선택한 종목 관련 뉴스 필터링
-- **다국어 지원**: 한국어/영어 뉴스
+## 🏗️ 시스템 구조
 
-### 🔐 4. 사용자 인증
-- **보안 회원가입/로그인** (SHA-256 해싱)
-- **JWT 토큰** 기반 인증
-- **개인화 서비스** 지원
-
-## 🛠️ 기술 스택
-
-| 구분 | 기술 |
-|------|------|
-| **백엔드** | Python, FastAPI, SQLAlchemy, OpenAI API |
-| **프론트엔드** | React, TypeScript, Material-UI, Recharts |
-| **데이터** | yfinance (Yahoo Finance), News API |
-| **데이터베이스** | SQLite (개발용) |
-| **배포** | Uvicorn, Node.js |
-
-## 🚀 빠른 시작
-
-### 📋 필수 요구사항
-- Python 3.8+
-- Node.js 18+
-- OpenAI API 키
-
-### ⚡ 1분 실행 가이드
-
-1. **프로젝트 클론**
-```bash
-git clone https://github.com/Yeounil/Microsoft_AI_Foundary_temp.git
-cd Microsoft_AI_Foundary_temp
+```
+MS_AI_FOUNDRY/
+├── backend/                     # Python FastAPI 백엔드
+│   ├── .env                     # 환경 설정
+│   ├── requirements.txt         # Python 의존성
+│   ├── supabase_schema.sql     # 데이터베이스 스키마
+│   └── app/
+│       ├── main.py             # FastAPI 애플리케이션 진입점
+│       ├── api/                # REST API 엔드포인트
+│       │   ├── auth_supabase.py       # 인증 API (v2)
+│       │   ├── news_supabase.py       # 뉴스 API (v2)
+│       │   ├── recommendations_supabase.py  # AI 추천 API (v2)
+│       │   ├── analysis_supabase.py   # 분석 API (v2)
+│       │   └── stocks.py              # 주식 데이터 API (v1)
+│       ├── services/           # 비즈니스 로직
+│       │   ├── fast_recommendation_service.py     # 🔥 메인 AI 추천 엔진
+│       │   ├── azure_openai_service.py            # 🤖 Azure OpenAI 통합
+│       │   ├── background_news_collector.py       # 📰 백그라운드 뉴스 수집
+│       │   ├── news_service.py                    # 뉴스 크롤링
+│       │   └── supabase_*_service.py              # Supabase 연동 서비스들
+│       ├── core/               # 핵심 모듈
+│       ├── db/                 # 데이터베이스 연결
+│       └── models/             # 데이터 모델
+└── frontend/                   # React 프론트엔드
+    ├── src/
+    │   ├── components/         # React 컴포넌트
+    │   ├── services/          # API 서비스
+    │   └── types/             # TypeScript 타입
+    └── package.json
 ```
 
-2. **백엔드 설정 & 실행**
-```bash
-cd backend
-pip install fastapi uvicorn python-dotenv sqlalchemy openai yfinance
-python run.py
-```
+## 🚀 설치 및 실행
 
-3. **프론트엔드 설정 & 실행** (새 터미널)
-```bash
-cd frontend
-npm install
-npm start
-```
+### 📋 요구사항
 
-4. **접속**
-- 🌐 **웹 앱**: http://localhost:3000
-- 📚 **API 문서**: http://localhost:8000/docs
+**Backend:**
+- Python 3.9+
+- FastAPI
+- Supabase Cloud Account
+- Azure OpenAI Account
+- News API Key
 
-## 📝 상세 설치 가이드
+**Frontend:**
+- Node.js 16+
+- React 18+
+- TypeScript
 
-### 🔧 백엔드 설정
+### 🔧 Backend 설정
 
-1. **디렉토리 이동 및 패키지 설치**
+1. **환경 설정**
 ```bash
 cd backend
-pip install -r requirements.txt
+cp .env.example .env
 ```
 
-2. **환경 변수 설정** (`.env` 파일 생성)
+2. **필수 환경변수 설정** (`.env` 파일)
 ```env
-# OpenAI API 키 (필수)
-OPENAI_API_KEY=your_openai_api_key_here
+# Supabase Cloud 설정
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_KEY=your_supabase_anon_key
 
-# JWT 시크릿 키
+# Azure OpenAI 설정
+AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
+AZURE_OPENAI_API_KEY=your_azure_openai_key
+AZURE_OPENAI_API_VERSION=2024-02-01
+AZURE_OPENAI_DEPLOYMENT_NAME=your_deployment_name
+
+# 뉴스 API 설정
+NEWS_API_KEY=your_news_api_key
+
+# JWT 토큰 설정
 SECRET_KEY=your_super_secret_key_change_this_in_production
-
-# 뉴스 API 키 (선택사항)
-NEWS_API_KEY=your_news_api_key_here
+ACCESS_TOKEN_EXPIRE_MINUTES=1440
 ```
 
-3. **서버 실행**
+3. **의존성 설치 및 실행**
 ```bash
-python run.py
-# 또는
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+pip install -r requirements.txt
+python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### ⚛️ 프론트엔드 설정
+### 🌐 Frontend 설정
 
-1. **디렉토리 이동 및 패키지 설치**
 ```bash
 cd frontend
 npm install
-```
-
-2. **환경 변수 설정** (`.env` 파일 생성)
-```env
-REACT_APP_API_BASE_URL=http://localhost:8000
-```
-
-3. **개발 서버 실행**
-```bash
 npm start
 ```
 
-## 📖 사용 방법
+### 🗄️ 데이터베이스 설정
 
-### 1️⃣ 주식 검색 및 차트 보기
-1. 웹 브라우저에서 `http://localhost:3000` 접속
-2. 상단에서 **시장 선택** (🇺🇸 미국 / 🇰🇷 한국)
-3. **주식 검색** (예: Apple, AAPL, 삼성전자, 005930)
-4. **차트 탭**에서 기간 및 차트 타입 선택
+Supabase 대시보드에서 `supabase_schema.sql` 파일의 SQL을 실행하여 필요한 테이블들을 생성합니다:
 
-### 2️⃣ AI 분석 받기
-1. 주식 선택 후 **'AI 분석'** 탭 클릭
-2. **'AI 분석 시작'** 버튼 클릭
-3. 📊 **OpenAI 생성 분석 리포트** 확인
+- `users` - 사용자 정보
+- `user_interests` - 사용자 관심 종목
+- `news_articles` - 뉴스 기사 (AI 분석 점수 포함)
 
-### 3️⃣ 뉴스 확인 및 요약
-1. **'뉴스'** 탭에서 최신 금융 뉴스 확인
-2. **'AI 요약'** 버튼으로 뉴스 한줄 요약
-3. 주식 선택시 해당 종목 관련 뉴스 자동 표시
+## 🔗 API 엔드포인트
 
-## 🔑 API 키 발급 방법
-
-### OpenAI API 키 (필수)
-1. [OpenAI 플랫폼](https://platform.openai.com/) 방문
-2. 계정 생성 후 **API Keys** 메뉴
-3. **Create new secret key** 클릭
-4. `.env` 파일에 `OPENAI_API_KEY=sk-...` 추가
-
-### News API 키 (선택사항)
-1. [NewsAPI.org](https://newsapi.org/) 방문
-2. **Get API Key** 클릭하여 무료 계정 생성
-3. `.env` 파일에 `NEWS_API_KEY=...` 추가
-
-## 📁 프로젝트 구조
-
+### 🔐 인증 (v2)
 ```
-finance-ai-analyzer/
-├── 🔙 backend/                 # Python FastAPI 백엔드
-│   ├── app/
-│   │   ├── api/                # API 엔드포인트
-│   │   │   ├── auth.py         # 사용자 인증
-│   │   │   ├── stocks.py       # 주식 데이터
-│   │   │   ├── news.py         # 뉴스 데이터
-│   │   │   └── analysis.py     # AI 분석
-│   │   ├── core/               # 코어 설정
-│   │   ├── models/             # 데이터 모델
-│   │   └── services/           # 비즈니스 로직
-│   ├── requirements.txt        # Python 의존성
-│   └── run.py                  # 서버 실행 스크립트
-├── 🎨 frontend/                # React 프론트엔드
-│   ├── src/
-│   │   ├── components/         # React 컴포넌트
-│   │   │   ├── StockChart.tsx  # 주식 차트
-│   │   │   ├── StockSearch.tsx # 주식 검색
-│   │   │   ├── StockAnalysis.tsx # AI 분석
-│   │   │   └── NewsSection.tsx # 뉴스 섹션
-│   │   ├── services/           # API 호출 로직
-│   │   └── types/              # TypeScript 타입
-│   └── package.json
-└── 📖 README.md               # 이 문서
+POST /api/v2/auth/register      # 회원가입
+POST /api/v2/auth/login         # 로그인
+GET  /api/v2/auth/me            # 사용자 정보 조회
+GET  /api/v2/auth/verify        # 토큰 검증
 ```
 
-## 🌐 주요 URL
-
-| 서비스 | URL | 설명 |
-|--------|-----|------|
-| 🎯 **메인 앱** | http://localhost:3000 | React 웹 애플리케이션 |
-| 📚 **API 문서** | http://localhost:8000/docs | Swagger UI 문서 |
-| 🔍 **API 테스트** | http://localhost:8000/redoc | ReDoc 문서 |
-| 📊 **주식 API** | http://localhost:8000/api/v1/stocks/AAPL | Apple 주식 데이터 예시 |
-
-## 🛠️ 개발자 명령어
-
-### 🔍 디버깅
-```bash
-# 백엔드 로그 확인
-cd backend && python run.py
-
-# 프론트엔드 개발 모드
-cd frontend && npm start
-
-# API 테스트
-curl http://localhost:8000/api/v1/stocks/AAPL
+### 🤖 AI 뉴스 추천 (v2)
+```
+GET  /api/v2/recommendations/interests                      # 관심사 관리
+GET  /api/v2/recommendations/news/recommended?limit=10      # 🔥 AI 개인화 추천
+GET  /api/v2/news/stock/{symbol}?ai_mode=true              # 🔥 종목별 AI 뉴스
+GET  /api/v2/recommendations/news/trending                  # 트렌딩 뉴스
 ```
 
-### 🧹 코드 정리
-```bash
-# Python 코드 포맷팅
-cd backend && black . && isort .
-
-# React 빌드
-cd frontend && npm run build
+### 📈 주식 데이터 (v1)
+```
+GET  /api/v1/stocks/search?q={query}           # 종목 검색
+GET  /api/v1/stocks/{symbol}                   # 종목 차트 데이터
 ```
 
-## 📊 지원하는 주식
+## 💡 사용법
 
-### 🇺🇸 미국 주식 (예시)
-- **Apple (AAPL)**, Google (GOOGL), Microsoft (MSFT)
-- **Tesla (TSLA)**, Amazon (AMZN), NVIDIA (NVDA)
+### 1. 사용자 등록 및 로그인
+```javascript
+// 회원가입
+const response = await fetch('/api/v2/auth/register', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    username: 'user',
+    email: 'user@example.com',
+    password: 'password123'
+  })
+});
 
-### 🇰🇷 한국 주식 (예시)
-- **삼성전자 (005930.KS)**, SK하이닉스 (000660.KS)
-- **NAVER (035420.KS)**, 카카오 (035720.KS)
+// 로그인
+const loginResponse = await fetch('/api/v2/auth/login', {
+  method: 'POST', 
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    username: 'user',
+    password: 'password123'
+  })
+});
+const { access_token } = await loginResponse.json();
+```
 
-## ⚠️ 주의사항
+### 2. AI 뉴스 추천 받기
+```javascript
+// 개인화 뉴스 추천
+const recommendations = await fetch('/api/v2/recommendations/news/recommended?limit=10', {
+  headers: { 'Authorization': `Bearer ${access_token}` }
+});
+
+// 종목별 AI 뉴스 (AAPL 예시)
+const stockNews = await fetch('/api/v2/news/stock/AAPL?ai_mode=true&limit=5', {
+  headers: { 'Authorization': `Bearer ${access_token}` }
+});
+```
+
+### 3. 관심사 관리
+```javascript
+// 관심사 추가
+await fetch('/api/v2/recommendations/interests', {
+  method: 'POST',
+  headers: { 
+    'Authorization': `Bearer ${access_token}`,
+    'Content-Type': 'application/json' 
+  },
+  body: JSON.stringify({ interest: 'NVDA' })
+});
+```
+
+## ⚙️ 시스템 특징
+
+### 🎯 AI 추천 엔진
+- **개인화 점수**: 기본 적합성(40%) + 종목 특화(30%) + 사용자 관심도(20%) + 신선도(10%)
+- **다양성 알고리즘**: 소스/시간대/카테고리/언어 다양성 보장
+- **실시간 분석**: Azure OpenAI 기반 뉴스 감정분석 및 요약
+
+### 🚀 성능 최적화
+- **백그라운드 처리**: 뉴스 수집과 AI 분석을 미리 완료
+- **빠른 응답**: 사전 분석된 데이터로 4-5초 응답
+- **확장성**: Supabase Cloud 기반 무제한 확장
 
 ### 🔒 보안
-- `.env` 파일은 **절대 GitHub에 업로드하지 마세요**
-- API 키는 **안전하게 보관**하세요
+- **JWT 인증**: 안전한 토큰 기반 인증
+- **HTTPS**: 프로덕션 환경 SSL 적용
+- **API Rate Limiting**: 남용 방지
 
-### 💡 투자 면책사항
-- 본 프로그램의 AI 분석은 **참고용**입니다
-- **실제 투자 결정**에 대한 책임을 지지 않습니다
-- 투자는 **신중히** 결정하시기 바랍니다
+## 🛠️ 개발 환경
 
-### 📈 데이터 특성
-- **yfinance**: 15-20분 지연된 데이터 (무료)
-- **실시간 데이터** 필요시 유료 API 사용 권장
+**개발 서버 실행:**
+```bash
+# Backend
+cd backend && python -m uvicorn app.main:app --reload
 
-## 🤝 기여하기
+# Frontend  
+cd frontend && npm start
+```
 
-1. Fork 프로젝트
-2. 기능 브랜치 생성 (`git checkout -b feature/AmazingFeature`)
-3. 변경사항 커밋 (`git commit -m 'Add some AmazingFeature'`)
-4. 브랜치 푸시 (`git push origin feature/AmazingFeature`)
-5. Pull Request 생성
+**프로덕션 배포:**
+- Backend: Docker + Gunicorn 권장
+- Frontend: Vercel, Netlify 등
+- Database: Supabase Cloud (관리형)
 
-## 📄 라이선스
+## 📚 추가 문서
 
-MIT License
+- [뉴스 추천 알고리즘 상세 설명](./NEWS_RECOMMENDATION_ALGORITHM.md)
+
+## 📞 지원
+
+문제가 있거나 기능 요청이 있으시면 이슈를 등록해 주세요.
 
 ---
 
-## 🚀 지금 바로 시작하세요!
-
-```bash
-# 1. 백엔드 실행
-cd backend && python run.py
-
-# 2. 프론트엔드 실행 (새 터미널)
-cd frontend && npm start
-
-# 3. 웹 브라우저에서 접속
-open http://localhost:3000
-```
-
-**🎉 Happy Coding!**
+🤖 **AI-Powered Finance News Recommendation System** v2.0.0

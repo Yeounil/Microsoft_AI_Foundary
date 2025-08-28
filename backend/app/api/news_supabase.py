@@ -49,34 +49,72 @@ async def get_financial_news(
 @router.get("/stock/{symbol}")
 async def get_stock_news(
     symbol: str,
-    limit: int = Query(5, description="가져올 뉴스 개수"),
+    limit: int = Query(10, description="가져올 뉴스 개수"),
+    ai_mode: bool = Query(True, description="AI 추천 모드 사용 여부"),
     current_user: Dict[str, Any] = Depends(get_current_active_user)
 ):
-    """특정 주식 관련 뉴스"""
+    """특정 주식 관련 뉴스 (AI 추천 시스템 연동)"""
     try:
-        # 동기 함수 호출 (await 제거)
-        news = NewsService.get_stock_related_news(symbol, limit)
-        
-        # 활동 로그
-        data_service = SupabaseDataService()
-        try:
-            await data_service.log_user_activity(
-                user_id=current_user['id'],
-                activity_type="stock_news_fetch",
-                details={
-                    "symbol": symbol,
-                    "articles_count": len(news)
-                }
+        if ai_mode:
+            # AI 추천 시스템 사용 (개선된 방식)
+            from app.services.fast_recommendation_service import FastRecommendationService
+            
+            fast_service = FastRecommendationService()
+            result = await fast_service.get_stock_specific_recommendations(
+                current_user['id'], symbol, limit
             )
-        except Exception as log_error:
-            print(f"활동 로그 실패: {log_error}")
-        
-        return {
-            "query": symbol,
-            "language": "en",
-            "total_count": len(news),
-            "articles": news
-        }
+            
+            # 활동 로그
+            data_service = SupabaseDataService()
+            try:
+                await data_service.log_user_activity(
+                    user_id=current_user['id'],
+                    activity_type="stock_news_ai_fetch",
+                    details={
+                        "symbol": symbol,
+                        "articles_count": result.get('total_recommendations', 0),
+                        "ai_mode": True
+                    }
+                )
+            except Exception as log_error:
+                print(f"활동 로그 실패: {log_error}")
+            
+            return {
+                "symbol": symbol,
+                "ai_mode": ai_mode,
+                "total_count": result.get('total_recommendations', 0),
+                "articles": result.get('recommendations', []),
+                "ai_summary": result.get('ai_summary'),
+                "user_interests": result.get('user_interests', []),
+                "recommendation_type": "stock_specific_ai",
+                "generated_at": result.get('generated_at')
+            }
+        else:
+            # 기존 방식 (레거시 지원)
+            news = NewsService.get_stock_related_news(symbol, limit)
+            
+            # 활동 로그
+            data_service = SupabaseDataService()
+            try:
+                await data_service.log_user_activity(
+                    user_id=current_user['id'],
+                    activity_type="stock_news_fetch",
+                    details={
+                        "symbol": symbol,
+                        "articles_count": len(news),
+                        "ai_mode": False
+                    }
+                )
+            except Exception as log_error:
+                print(f"활동 로그 실패: {log_error}")
+            
+            return {
+                "symbol": symbol,
+                "ai_mode": ai_mode,
+                "total_count": len(news),
+                "articles": news,
+                "recommendation_type": "legacy"
+            }
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
