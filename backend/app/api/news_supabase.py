@@ -8,6 +8,87 @@ from datetime import datetime
 
 router = APIRouter()
 
+@router.get("/test")
+async def test_news():
+    """테스트용 뉴스 엔드포인트 (인증 없음)"""
+    try:
+        news = NewsService.get_financial_news("finance", 5)
+        return {
+            "status": "success",
+            "total_count": len(news),
+            "articles": news
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/test-ai")
+async def test_ai_analysis():
+    """테스트용 AI 분석 엔드포인트 (인증 없음)"""
+    try:
+        from app.core.config import settings
+        
+        # 모든 AI 관련 설정 확인
+        config_status = {
+            "openai_api_key": bool(settings.openai_api_key and settings.openai_api_key.strip()),
+            "azure_openai_endpoint": bool(settings.azure_openai_endpoint),
+            "azure_openai_key": bool(settings.azure_openai_key),
+            "azure_openai_deployment": bool(settings.azure_openai_deployment)
+        }
+        
+        # Azure OpenAI 또는 일반 OpenAI가 설정되어 있는지 확인
+        has_openai = config_status["openai_api_key"]
+        has_azure = config_status["azure_openai_endpoint"] and config_status["azure_openai_key"]
+        
+        if not has_openai and not has_azure:
+            return {
+                "status": "error",
+                "message": "Neither OpenAI nor Azure OpenAI is configured",
+                "config_status": config_status
+            }
+        
+        # 뉴스 가져오기
+        news = NewsService.get_financial_news("finance", 3)
+        
+        # AI 분석 시도
+        openai_service = OpenAIService()
+        summary = await openai_service.summarize_news(news)
+        
+        return {
+            "status": "success",
+            "config_status": config_status,
+            "ai_provider": "azure" if has_azure else "openai",
+            "news_count": len(news),
+            "ai_summary": summary[:200] + "..." if len(summary) > 200 else summary
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e),
+            "config_status": config_status if 'config_status' in locals() else {}
+        }
+
+@router.get("/test-supabase")
+async def test_supabase_connection():
+    """테스트용 Supabase 연결 엔드포인트 (인증 없음)"""
+    try:
+        from app.db.supabase_client import get_supabase
+        
+        supabase = get_supabase()
+        
+        # 간단한 테이블 조회로 연결 테스트
+        response = supabase.table("auth_users").select("count", count="exact").limit(1).execute()
+        
+        return {
+            "status": "success",
+            "message": "Supabase connection successful",
+            "user_count": response.count if response.count is not None else "unknown"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Supabase connection failed: {str(e)}"
+        }
+
 @router.get("/financial")
 async def get_financial_news(
     query: str = Query("finance", description="검색 키워드"),
