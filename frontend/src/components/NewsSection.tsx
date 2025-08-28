@@ -100,6 +100,7 @@ const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarke
 
   const handleSummarizeNews = async () => {
     setSummaryLoading(true);
+    setAiAnalysis(''); // 분석 내용 초기화
     setError('');
     
     try {
@@ -124,6 +125,7 @@ const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarke
     if (!selectedSymbol) return;
     
     setAnalysisLoading(true);
+    setAiSummary(''); // 요약 내용 초기화
     setError('');
     
     try {

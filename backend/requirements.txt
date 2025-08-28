@@ -1,5 +1,5 @@
 # FastAPI and web server
-<<<<<<< HEAD
+
 fastapi
 uvicorn[standard]
 python-multipart
@@ -73,41 +73,39 @@ numpy
 # Utilities
 pytz
 python-dateutil
-=======
-fastapi>=0.104.0
-uvicorn[standard]>=0.24.0
-python-multipart>=0.0.6
+fastapi
+uvicorn[standard]
+python-multipart
 
 # Authentication and security
-python-jose[cryptography]>=3.3.0
-passlib[bcrypt]>=1.7.4
-pydantic>=2.11.0,<3.0.0
-pydantic-settings>=2.1.0
+python-jose[cryptography]
+passlib[bcrypt]
+pydantic
+pydantic-settings
 
 # Database
-sqlalchemy>=2.0.0
-alembic>=1.12.0
-psycopg2-binary>=2.9.0
-supabase>=2.18.0
+sqlalchemy
+alembic
+psycopg2-binary
+supabase
 
 # Configuration and environment
-python-dotenv>=1.0.0
+python-dotenv
 
 # HTTP requests and web scraping
-requests>=2.31.0
-httpx>=0.26,<0.29
-beautifulsoup4>=4.12.0
-lxml>=4.9.0
+requests
+httpx
+beautifulsoup4
+lxml
 
 # AI/ML and analysis
-openai>=1.3.0
+openai
 
 # Financial data
-yfinance>=0.2.28
-pandas>=2.1.0
-numpy>=1.25.0
+yfinance
+pandas
+numpy
 
 # Utilities
-pytz>=2023.3
-python-dateutil>=2.8.0
->>>>>>> a2dde6fa8a73c67a1a7703322ee03f66e9f9c6e1
+pytz
+python-dateutil
