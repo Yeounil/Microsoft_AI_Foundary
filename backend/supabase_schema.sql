@@ -71,6 +71,10 @@ CREATE TABLE news_articles (
     language VARCHAR DEFAULT 'en', -- 'en', 'ko'
     category VARCHAR DEFAULT 'finance', -- 'finance', 'stock', 'market' 등
     api_source VARCHAR, -- 'newsapi', 'naver', 'manual' 등 출처 구분
+    relevance_score FLOAT DEFAULT 0.5, -- AI 기반 적합성 점수 (0.0 ~ 1.0)
+    base_score FLOAT DEFAULT 0.5, -- 기본 적합성 점수 (0.0 ~ 1.0)
+    ai_score FLOAT DEFAULT 0.5, -- AI 분석 점수 (0.0 ~ 1.0)
+    analyzed_at TIMESTAMP WITH TIME ZONE, -- AI 분석 시각
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -132,3 +136,19 @@ CREATE POLICY "Users can view own data" ON user_profiles FOR ALL USING (auth.uid
 CREATE POLICY "Users can view own data" ON ai_analysis_history FOR ALL USING (auth.uid()::text = user_id);
 
 CREATE POLICY "Users can view own data" ON user_favorites FOR ALL USING (auth.uid()::text = user_id);
+
+-- 9. news_crawl_history 테이블 (뉴스 크롤링 이력 추적)
+CREATE TABLE news_crawl_history (
+    id SERIAL PRIMARY KEY,
+    symbol VARCHAR NOT NULL, -- 크롤링한 종목
+    crawl_type VARCHAR DEFAULT 'scheduled', -- 'scheduled', 'manual', 'recovery'
+    articles_collected INTEGER DEFAULT 0, -- 수집된 뉴스 개수
+    crawl_started_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    crawl_completed_at TIMESTAMP WITH TIME ZONE,
+    status VARCHAR DEFAULT 'in_progress', -- 'in_progress', 'completed', 'failed'
+    error_message TEXT
+);
+
+CREATE INDEX idx_news_crawl_history_symbol ON news_crawl_history (symbol);
+CREATE INDEX idx_news_crawl_history_completed_at ON news_crawl_history (crawl_completed_at DESC);
+CREATE INDEX idx_news_crawl_history_status ON news_crawl_history (status);

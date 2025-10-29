@@ -57,9 +57,13 @@ async def get_current_active_user(current_user: Dict[str, Any] = Depends(get_cur
 @router.post("/register", response_model=Dict[str, Any])
 async def register(user: UserCreate):
     """새 사용자 등록"""
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"회원가입 요청: username={user.username}, email={user.email}")
+
     direct_service = DirectDBService()
     data_service = SupabaseDataService()
-    
+
     try:
         # 중복 사용자 확인
         username_exists = await direct_service.check_user_exists(username=user.username)
@@ -119,9 +123,17 @@ async def login(user_credentials: UserLogin):
     user_service = SupabaseUserService()
     data_service = SupabaseDataService()
     
+    # username 또는 email 중 하나가 제공되어야 함
+    username_or_email = user_credentials.username or user_credentials.email
+    if not username_or_email:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Username or email is required"
+        )
+    
     # 사용자 인증
     user = await user_service.authenticate_user(
-        user_credentials.username, 
+        username_or_email, 
         user_credentials.password
     )
     

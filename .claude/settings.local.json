@@ -17,7 +17,13 @@
       "Bash(SUPABASE_URL=\"https://nrsftmbbcktetgbhtydb.supabase.co\" SUPABASE_KEY=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5yc2Z0bWJiY2t0ZXRnYmh0eWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyMDMwNTAsImV4cCI6MjA3MTc3OTA1MH0.HPF5-Tno6Y353RMH_KjtbOlA3Owsw9QrcgRlOQoc2f4\" python migrate_user_interests.py)",
       "Bash(SUPABASE_URL=\"https://nrsftmbbcktetgbhtydb.supabase.co\" SUPABASE_KEY=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5yc2Z0bWJiY2t0ZXRnYmh0eWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyMDMwNTAsImV4cCI6MjA3MVc3OTA1MH0.HPF5-Tno6Y353RMH_KjtbOlA3Owsw9QrcgRlOQoc2f4\" python migrate_temp_user.py)",
       "Bash(SUPABASE_URL=\"https://nrsftmbbcktetgbhtydb.supabase.co\" SUPABASE_KEY=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5yc2Z0bWJiY2t0ZXRnYmh0eWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyMDMwNTAsImV4cCI6MjA3MTc3OTA1MH0.HPF5-Tno6Y353RMH_KjtbOlA3Owsw9QrcgRlOQoc2f4\" python migrate_temp_user.py)",
-      "Bash(SUPABASE_URL=\"https://nrsftmbbcktetgbhtydb.supabase.co\" SUPABASE_KEY=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5yc2Z0bWJiY2t0ZXRnYmh0eWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyMDMwNTAsImV4cCI6MjA3MTc3OTA1MH0.HPF5-Tno6Y353RMH_KjtbOlA3Owsw9QrcgRlOQoc2f4\" python ../migrate_user_interests.py)"
+      "Bash(SUPABASE_URL=\"https://nrsftmbbcktetgbhtydb.supabase.co\" SUPABASE_KEY=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5yc2Z0bWJiY2t0ZXRnYmh0eWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyMDMwNTAsImV4cCI6MjA3MTc3OTA1MH0.HPF5-Tno6Y353RMH_KjtbOlA3Owsw9QrcgRlOQoc2f4\" python ../migrate_user_interests.py)",
+      "Bash(gcloud builds submit:*)",
+      "Bash(gcloud run deploy:*)",
+      "Bash(gcloud logging read:*)",
+      "Bash(gcloud run services update:*)",
+      "Bash(npm install:*)",
+      "Bash(cp:*)"
     ],
     "deny": [],
     "ask": []

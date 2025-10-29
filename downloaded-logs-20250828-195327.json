@@ -1,0 +1,3577 @@
+[
+  {
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "status": {
+        "code": 3,
+        "message": "Exception calling IAM: Service account 281484912307251 does not exist."
+      },
+      "authenticationInfo": {
+        "principalEmail": "service-agent-manager@system.gserviceaccount.com"
+      },
+      "requestMetadata": {
+        "callerIp": "private",
+        "requestAttributes": {},
+        "destinationAttributes": {}
+      },
+      "serviceName": "cloudresourcemanager.googleapis.com",
+      "methodName": "SetIamPolicy",
+      "authorizationInfo": [
+        {
+          "resource": "projects/black-moon-469217-u2",
+          "permission": "resourcemanager.projects.setIamPolicy",
+          "granted": true,
+          "resourceAttributes": {
+            "service": "cloudresourcemanager.googleapis.com",
+            "name": "projects/black-moon-469217-u2",
+            "type": "cloudresourcemanager.googleapis.com/Project"
+          },
+          "permissionType": "ADMIN_WRITE"
+        }
+      ],
+      "resourceName": "projects/black-moon-469217-u2",
+      "request": {
+        "resource": "387636570370",
+        "@type": "type.googleapis.com/google.iam.v1.SetIamPolicyRequest",
+        "policy": {
+          "bindings": [
+            {
+              "members": [
+                "serviceAccount:service-387636570370@compute-system.iam.gserviceaccount.com"
+              ],
+              "role": "roles/compute.serviceAgent"
+            },
+            {
+              "members": [
+                "serviceAccount:387636570370-compute@developer.gserviceaccount.com",
+                "serviceAccount:387636570370@cloudservices.gserviceaccount.com"
+              ],
+              "role": "roles/editor"
+            },
+            {
+              "members": [
+                "user:seth000123@gmail.com"
+              ],
+              "role": "roles/owner"
+            },
+            {
+              "members": [
+                "serviceAccountId:104719834454426876013"
+              ],
+              "role": "roles/containerregistry.ServiceAgent"
+            }
+          ],
+          "etag": "BwY8fwr5/JY="
+        }
+      }
+    },
+    "insertId": "of5ht5e160ki",
+    "resource": {
+      "type": "project",
+      "labels": {
+        "project_id": "black-moon-469217-u2"
+      }
+    },
+    "timestamp": "2025-08-28T08:17:46.436272Z",
+    "severity": "ERROR",
+    "logName": "projects/black-moon-469217-u2/logs/cloudaudit.googleapis.com%2Factivity",
+    "receiveTimestamp": "2025-08-28T08:17:47.564950735Z"
+  },
+  {
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "status": {
+        "code": 3,
+        "message": "Exception calling IAM: Service account 281475443527653 does not exist."
+      },
+      "authenticationInfo": {
+        "principalEmail": "service-agent-manager@system.gserviceaccount.com"
+      },
+      "requestMetadata": {
+        "callerIp": "private",
+        "requestAttributes": {},
+        "destinationAttributes": {}
+      },
+      "serviceName": "cloudresourcemanager.googleapis.com",
+      "methodName": "SetIamPolicy",
+      "authorizationInfo": [
+        {
+          "resource": "projects/black-moon-469217-u2",
+          "permission": "resourcemanager.projects.setIamPolicy",
+          "granted": true,
+          "resourceAttributes": {
+            "service": "cloudresourcemanager.googleapis.com",
+            "name": "projects/black-moon-469217-u2",
+            "type": "cloudresourcemanager.googleapis.com/Project"
+          },
+          "permissionType": "ADMIN_WRITE"
+        }
+      ],
+      "resourceName": "projects/black-moon-469217-u2",
+      "request": {
+        "@type": "type.googleapis.com/google.iam.v1.SetIamPolicyRequest",
+        "resource": "387636570370",
+        "policy": {
+          "bindings": [
+            {
+              "members": [
+                "serviceAccount:service-387636570370@compute-system.iam.gserviceaccount.com"
+              ],
+              "role": "roles/compute.serviceAgent"
+            },
+            {
+              "members": [
+                "serviceAccount:387636570370-compute@developer.gserviceaccount.com",
+                "serviceAccount:387636570370@cloudservices.gserviceaccount.com"
+              ],
+              "role": "roles/editor"
+            },
+            {
+              "members": [
+                "user:seth000123@gmail.com"
+              ],
+              "role": "roles/owner"
+            },
+            {
+              "members": [
+                "serviceAccountId:107567508531520291521"
+              ],
+              "role": "roles/pubsub.serviceAgent"
+            }
+          ],
+          "etag": "BwY8fwr5/JY="
+        }
+      }
+    },
+    "insertId": "-4ozffmd80vc",
+    "resource": {
+      "type": "project",
+      "labels": {
+        "project_id": "black-moon-469217-u2"
+      }
+    },
+    "timestamp": "2025-08-28T08:17:46.436805Z",
+    "severity": "ERROR",
+    "logName": "projects/black-moon-469217-u2/logs/cloudaudit.googleapis.com%2Factivity",
+    "receiveTimestamp": "2025-08-28T08:17:46.909632615Z"
+  },
+  {
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "status": {
+        "code": 3,
+        "message": "Exception calling IAM: Service account 281484912307251 does not exist."
+      },
+      "authenticationInfo": {
+        "principalEmail": "service-agent-manager@system.gserviceaccount.com"
+      },
+      "requestMetadata": {
+        "callerIp": "private",
+        "requestAttributes": {},
+        "destinationAttributes": {}
+      },
+      "serviceName": "cloudresourcemanager.googleapis.com",
+      "methodName": "SetIamPolicy",
+      "authorizationInfo": [
+        {
+          "resource": "projects/black-moon-469217-u2",
+          "permission": "resourcemanager.projects.setIamPolicy",
+          "granted": true,
+          "resourceAttributes": {
+            "service": "cloudresourcemanager.googleapis.com",
+            "name": "projects/black-moon-469217-u2",
+            "type": "cloudresourcemanager.googleapis.com/Project"
+          },
+          "permissionType": "ADMIN_WRITE"
+        }
+      ],
+      "resourceName": "projects/black-moon-469217-u2",
+      "request": {
+        "resource": "387636570370",
+        "@type": "type.googleapis.com/google.iam.v1.SetIamPolicyRequest",
+        "policy": {
+          "bindings": [
+            {
+              "role": "roles/compute.serviceAgent",
+              "members": [
+                "serviceAccount:service-387636570370@compute-system.iam.gserviceaccount.com"
+              ]
+            },
+            {
+              "members": [
+                "serviceAccount:387636570370-compute@developer.gserviceaccount.com",
+                "serviceAccount:387636570370@cloudservices.gserviceaccount.com"
+              ],
+              "role": "roles/editor"
+            },
+            {
+              "role": "roles/owner",
+              "members": [
+                "user:seth000123@gmail.com"
+              ]
+            },
+            {
+              "members": [
+                "serviceAccount:service-387636570370@serverless-robot-prod.iam.gserviceaccount.com"
+              ],
+              "role": "roles/run.serviceAgent"
+            },
+            {
+              "members": [
+                "serviceAccountId:104719834454426876013"
+              ],
+              "role": "roles/containerregistry.ServiceAgent"
+            }
+          ],
+          "etag": "BwY9aIpSf5A="
+        }
+      }
+    },
+    "insertId": "3bz416d585k",
+    "resource": {
+      "type": "project",
+      "labels": {
+        "project_id": "black-moon-469217-u2"
+      }
+    },
+    "timestamp": "2025-08-28T08:17:47.543177Z",
+    "severity": "ERROR",
+    "logName": "projects/black-moon-469217-u2/logs/cloudaudit.googleapis.com%2Factivity",
+    "receiveTimestamp": "2025-08-28T08:17:48.909139074Z"
+  },
+  {
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "status": {
+        "code": 3,
+        "message": "Exception calling IAM: Service account 281475443527653 does not exist."
+      },
+      "authenticationInfo": {
+        "principalEmail": "service-agent-manager@system.gserviceaccount.com"
+      },
+      "requestMetadata": {
+        "callerIp": "private",
+        "requestAttributes": {},
+        "destinationAttributes": {}
+      },
+      "serviceName": "cloudresourcemanager.googleapis.com",
+      "methodName": "SetIamPolicy",
+      "authorizationInfo": [
+        {
+          "resource": "projects/black-moon-469217-u2",
+          "permission": "resourcemanager.projects.setIamPolicy",
+          "granted": true,
+          "resourceAttributes": {
+            "service": "cloudresourcemanager.googleapis.com",
+            "name": "projects/black-moon-469217-u2",
+            "type": "cloudresourcemanager.googleapis.com/Project"
+          },
+          "permissionType": "ADMIN_WRITE"
+        }
+      ],
+      "resourceName": "projects/black-moon-469217-u2",
+      "request": {
+        "policy": {
+          "bindings": [
+            {
+              "members": [
+                "serviceAccount:service-387636570370@compute-system.iam.gserviceaccount.com"
+              ],
+              "role": "roles/compute.serviceAgent"
+            },
+            {
+              "members": [
+                "serviceAccount:387636570370-compute@developer.gserviceaccount.com",
+                "serviceAccount:387636570370@cloudservices.gserviceaccount.com"
+              ],
+              "role": "roles/editor"
+            },
+            {
+              "members": [
+                "user:seth000123@gmail.com"
+              ],
+              "role": "roles/owner"
+            },
+            {
+              "members": [
+                "serviceAccount:service-387636570370@serverless-robot-prod.iam.gserviceaccount.com"
+              ],
+              "role": "roles/run.serviceAgent"
+            },
+            {
+              "members": [
+                "serviceAccountId:107567508531520291521"
+              ],
+              "role": "roles/pubsub.serviceAgent"
+            }
+          ],
+          "etag": "BwY9aIpSf5A="
+        },
+        "@type": "type.googleapis.com/google.iam.v1.SetIamPolicyRequest",
+        "resource": "387636570370"
+      }
+    },
+    "insertId": "59t138e540de",
+    "resource": {
+      "type": "project",
+      "labels": {
+        "project_id": "black-moon-469217-u2"
+      }
+    },
+    "timestamp": "2025-08-28T08:17:48.134384Z",
+    "severity": "ERROR",
+    "logName": "projects/black-moon-469217-u2/logs/cloudaudit.googleapis.com%2Factivity",
+    "receiveTimestamp": "2025-08-28T08:17:49.155737489Z"
+  },
+  {
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "status": {
+        "code": 3,
+        "message": "Exception calling IAM: Service account 281484912307251 does not exist."
+      },
+      "authenticationInfo": {
+        "principalEmail": "service-agent-manager@system.gserviceaccount.com"
+      },
+      "requestMetadata": {
+        "callerIp": "private",
+        "requestAttributes": {},
+        "destinationAttributes": {}
+      },
+      "serviceName": "cloudresourcemanager.googleapis.com",
+      "methodName": "SetIamPolicy",
+      "authorizationInfo": [
+        {
+          "resource": "projects/black-moon-469217-u2",
+          "permission": "resourcemanager.projects.setIamPolicy",
+          "granted": true,
+          "resourceAttributes": {
+            "service": "cloudresourcemanager.googleapis.com",
+            "name": "projects/black-moon-469217-u2",
+            "type": "cloudresourcemanager.googleapis.com/Project"
+          },
+          "permissionType": "ADMIN_WRITE"
+        }
+      ],
+      "resourceName": "projects/black-moon-469217-u2",
+      "request": {
+        "policy": {
+          "etag": "BwY9aIpSf5A=",
+          "bindings": [
+            {
+              "members": [
+                "serviceAccount:service-387636570370@compute-system.iam.gserviceaccount.com"
+              ],
+              "role": "roles/compute.serviceAgent"
+            },
+            {
+              "members": [
+                "serviceAccount:387636570370-compute@developer.gserviceaccount.com",
+                "serviceAccount:387636570370@cloudservices.gserviceaccount.com"
+              ],
+              "role": "roles/editor"
+            },
+            {
+              "members": [
+                "user:seth000123@gmail.com"
+              ],
+              "role": "roles/owner"
+            },
+            {
+              "members": [
+                "serviceAccount:service-387636570370@serverless-robot-prod.iam.gserviceaccount.com"
+              ],
+              "role": "roles/run.serviceAgent"
+            },
+            {
+              "members": [
+                "serviceAccountId:104719834454426876013"
+              ],
+              "role": "roles/containerregistry.ServiceAgent"
+            }
+          ]
+        },
+        "@type": "type.googleapis.com/google.iam.v1.SetIamPolicyRequest",
+        "resource": "387636570370"
+      }
+    },
+    "insertId": "t6mwe3eajznw",
+    "resource": {
+      "type": "project",
+      "labels": {
+        "project_id": "black-moon-469217-u2"
+      }
+    },
+    "timestamp": "2025-08-28T08:17:48.937821Z",
+    "severity": "ERROR",
+    "logName": "projects/black-moon-469217-u2/logs/cloudaudit.googleapis.com%2Factivity",
+    "receiveTimestamp": "2025-08-28T08:17:49.943350637Z"
+  },
+  {
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "status": {
+        "code": 10,
+        "message": "Exception calling IAM: There were concurrent policy changes. Please retry the whole read-modify-write with exponential backoff."
+      },
+      "authenticationInfo": {
+        "principalEmail": "service-agent-manager@system.gserviceaccount.com"
+      },
+      "requestMetadata": {
+        "callerIp": "private",
+        "requestAttributes": {},
+        "destinationAttributes": {}
+      },
+      "serviceName": "cloudresourcemanager.googleapis.com",
+      "methodName": "SetIamPolicy",
+      "authorizationInfo": [
+        {
+          "resource": "projects/black-moon-469217-u2",
+          "permission": "resourcemanager.projects.setIamPolicy",
+          "granted": true,
+          "resourceAttributes": {
+            "service": "cloudresourcemanager.googleapis.com",
+            "name": "projects/black-moon-469217-u2",
+            "type": "cloudresourcemanager.googleapis.com/Project"
+          },
+          "permissionType": "ADMIN_WRITE"
+        }
+      ],
+      "resourceName": "projects/black-moon-469217-u2",
+      "request": {
+        "policy": {
+          "bindings": [
+            {
+              "members": [
+                "serviceAccount:service-387636570370@compute-system.iam.gserviceaccount.com"
+              ],
+              "role": "roles/compute.serviceAgent"
+            },
+            {
+              "members": [
+                "serviceAccount:387636570370-compute@developer.gserviceaccount.com",
+                "serviceAccount:387636570370@cloudservices.gserviceaccount.com"
+              ],
+              "role": "roles/editor"
+            },
+            {
+              "members": [
+                "user:seth000123@gmail.com"
+              ],
+              "role": "roles/owner"
+            },
+            {
+              "role": "roles/run.serviceAgent",
+              "members": [
+                "serviceAccount:service-387636570370@serverless-robot-prod.iam.gserviceaccount.com"
+              ]
+            },
+            {
+              "members": [
+                "serviceAccountId:104719834454426876013"
+              ],
+              "role": "roles/containerregistry.ServiceAgent"
+            }
+          ],
+          "etag": "BwY9aIpSf5A="
+        },
+        "@type": "type.googleapis.com/google.iam.v1.SetIamPolicyRequest",
+        "resource": "387636570370"
+      }
+    },
+    "insertId": "-gcwtuccg76",
+    "resource": {
+      "type": "project",
+      "labels": {
+        "project_id": "black-moon-469217-u2"
+      }
+    },
+    "timestamp": "2025-08-28T08:17:49.928884Z",
+    "severity": "ERROR",
+    "logName": "projects/black-moon-469217-u2/logs/cloudaudit.googleapis.com%2Factivity",
+    "receiveTimestamp": "2025-08-28T08:17:50.407791085Z"
+  },
+  {
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "status": {
+        "code": 3,
+        "message": "Exception calling IAM: Service account 281492615617563 does not exist."
+      },
+      "authenticationInfo": {
+        "principalEmail": "service-agent-manager@system.gserviceaccount.com"
+      },
+      "requestMetadata": {
+        "callerIp": "private",
+        "requestAttributes": {},
+        "destinationAttributes": {}
+      },
+      "serviceName": "cloudresourcemanager.googleapis.com",
+      "methodName": "SetIamPolicy",
+      "authorizationInfo": [
+        {
+          "resource": "projects/black-moon-469217-u2",
+          "permission": "resourcemanager.projects.setIamPolicy",
+          "granted": true,
+          "resourceAttributes": {
+            "service": "cloudresourcemanager.googleapis.com",
+            "name": "projects/black-moon-469217-u2",
+            "type": "cloudresourcemanager.googleapis.com/Project"
+          },
+          "permissionType": "ADMIN_WRITE"
+        }
+      ],
+      "resourceName": "projects/black-moon-469217-u2",
+      "request": {
+        "resource": "387636570370",
+        "@type": "type.googleapis.com/google.iam.v1.SetIamPolicyRequest",
+        "policy": {
+          "etag": "BwY9aIqX+4M=",
+          "bindings": [
+            {
+              "members": [
+                "serviceAccount:service-387636570370@compute-system.iam.gserviceaccount.com"
+              ],
+              "role": "roles/compute.serviceAgent"
+            },
+            {
+              "members": [
+                "serviceAccount:service-387636570370@containerregistry.iam.gserviceaccount.com"
+              ],
+              "role": "roles/containerregistry.ServiceAgent"
+            },
+            {
+              "members": [
+                "serviceAccount:387636570370-compute@developer.gserviceaccount.com",
+                "serviceAccount:387636570370@cloudservices.gserviceaccount.com"
+              ],
+              "role": "roles/editor"
+            },
+            {
+              "members": [
+                "user:seth000123@gmail.com"
+              ],
+              "role": "roles/owner"
+            },
+            {
+              "role": "roles/pubsub.serviceAgent",
+              "members": [
+                "serviceAccount:service-387636570370@gcp-sa-pubsub.iam.gserviceaccount.com"
+              ]
+            },
+            {
+              "role": "roles/run.serviceAgent",
+              "members": [
+                "serviceAccount:service-387636570370@serverless-robot-prod.iam.gserviceaccount.com"
+              ]
+            },
+            {
+              "role": "roles/cloudbuild.serviceAgent",
+              "members": [
+                "serviceAccountId:115187804159457814688"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "insertId": "-2zh74vdkg3y",
+    "resource": {
+      "type": "project",
+      "labels": {
+        "project_id": "black-moon-469217-u2"
+      }
+    },
+    "timestamp": "2025-08-28T08:41:57.937818Z",
+    "severity": "ERROR",
+    "logName": "projects/black-moon-469217-u2/logs/cloudaudit.googleapis.com%2Factivity",
+    "receiveTimestamp": "2025-08-28T08:41:58.768812966Z"
+  },
+  {
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "status": {
+        "code": 3,
+        "message": "Exception calling IAM: Service account 281493163931662 does not exist."
+      },
+      "authenticationInfo": {
+        "principalEmail": "service-agent-manager@system.gserviceaccount.com"
+      },
+      "requestMetadata": {
+        "callerIp": "private",
+        "requestAttributes": {},
+        "destinationAttributes": {}
+      },
+      "serviceName": "cloudresourcemanager.googleapis.com",
+      "methodName": "SetIamPolicy",
+      "authorizationInfo": [
+        {
+          "resource": "projects/black-moon-469217-u2",
+          "permission": "resourcemanager.projects.setIamPolicy",
+          "granted": true,
+          "resourceAttributes": {
+            "service": "cloudresourcemanager.googleapis.com",
+            "name": "projects/black-moon-469217-u2",
+            "type": "cloudresourcemanager.googleapis.com/Project"
+          },
+          "permissionType": "ADMIN_WRITE"
+        }
+      ],
+      "resourceName": "projects/black-moon-469217-u2",
+      "request": {
+        "@type": "type.googleapis.com/google.iam.v1.SetIamPolicyRequest",
+        "resource": "387636570370",
+        "policy": {
+          "etag": "BwY9aIqX+4M=",
+          "bindings": [
+            {
+              "members": [
+                "serviceAccount:service-387636570370@compute-system.iam.gserviceaccount.com"
+              ],
+              "role": "roles/compute.serviceAgent"
+            },
+            {
+              "members": [
+                "serviceAccount:service-387636570370@containerregistry.iam.gserviceaccount.com"
+              ],
+              "role": "roles/containerregistry.ServiceAgent"
+            },
+            {
+              "role": "roles/editor",
+              "members": [
+                "serviceAccount:387636570370-compute@developer.gserviceaccount.com",
+                "serviceAccount:387636570370@cloudservices.gserviceaccount.com"
+              ]
+            },
+            {
+              "members": [
+                "user:seth000123@gmail.com"
+              ],
+              "role": "roles/owner"
+            },
+            {
+              "members": [
+                "serviceAccount:service-387636570370@gcp-sa-pubsub.iam.gserviceaccount.com"
+              ],
+              "role": "roles/pubsub.serviceAgent"
+            },
+            {
+              "members": [
+                "serviceAccount:service-387636570370@serverless-robot-prod.iam.gserviceaccount.com"
+              ],
+              "role": "roles/run.serviceAgent"
+            },
+            {
+              "members": [
+                "serviceAccountId:101119034766554107602"
+              ],
+              "role": "roles/cloudbuild.builds.builder"
+            }
+          ]
+        }
+      }
+    },
+    "insertId": "-39x5j2ekxtie",
+    "resource": {
+      "type": "project",
+      "labels": {
+        "project_id": "black-moon-469217-u2"
+      }
+    },
+    "timestamp": "2025-08-28T08:41:57.948083Z",
+    "severity": "ERROR",
+    "logName": "projects/black-moon-469217-u2/logs/cloudaudit.googleapis.com%2Factivity",
+    "receiveTimestamp": "2025-08-28T08:41:58.470261304Z"
+  },
+  {
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "status": {
+        "code": 3,
+        "message": "Exception calling IAM: Service account 281493163931662 does not exist."
+      },
+      "authenticationInfo": {
+        "principalEmail": "service-agent-manager@system.gserviceaccount.com"
+      },
+      "requestMetadata": {
+        "callerIp": "private",
+        "requestAttributes": {},
+        "destinationAttributes": {}
+      },
+      "serviceName": "cloudresourcemanager.googleapis.com",
+      "methodName": "SetIamPolicy",
+      "authorizationInfo": [
+        {
+          "resource": "projects/black-moon-469217-u2",
+          "permission": "resourcemanager.projects.setIamPolicy",
+          "granted": true,
+          "resourceAttributes": {
+            "service": "cloudresourcemanager.googleapis.com",
+            "name": "projects/black-moon-469217-u2",
+            "type": "cloudresourcemanager.googleapis.com/Project"
+          },
+          "permissionType": "ADMIN_WRITE"
+        }
+      ],
+      "resourceName": "projects/black-moon-469217-u2",
+      "request": {
+        "resource": "387636570370",
+        "policy": {
+          "etag": "BwY9aIqX+4M=",
+          "bindings": [
+            {
+              "members": [
+                "serviceAccount:service-387636570370@compute-system.iam.gserviceaccount.com"
+              ],
+              "role": "roles/compute.serviceAgent"
+            },
+            {
+              "members": [
+                "serviceAccount:service-387636570370@containerregistry.iam.gserviceaccount.com"
+              ],
+              "role": "roles/containerregistry.ServiceAgent"
+            },
+            {
+              "members": [
+                "serviceAccount:387636570370-compute@developer.gserviceaccount.com",
+                "serviceAccount:387636570370@cloudservices.gserviceaccount.com"
+              ],
+              "role": "roles/editor"
+            },
+            {
+              "members": [
+                "user:seth000123@gmail.com"
+              ],
+              "role": "roles/owner"
+            },
+            {
+              "members": [
+                "serviceAccount:service-387636570370@gcp-sa-pubsub.iam.gserviceaccount.com"
+              ],
+              "role": "roles/pubsub.serviceAgent"
+            },
+            {
+              "members": [
+                "serviceAccount:service-387636570370@serverless-robot-prod.iam.gserviceaccount.com"
+              ],
+              "role": "roles/run.serviceAgent"
+            },
+            {
+              "members": [
+                "serviceAccountId:101119034766554107602"
+              ],
+              "role": "roles/cloudbuild.builds.builder"
+            }
+          ]
+        },
+        "@type": "type.googleapis.com/google.iam.v1.SetIamPolicyRequest"
+      }
+    },
+    "insertId": "-rpofq1f10xqa0",
+    "resource": {
+      "type": "project",
+      "labels": {
+        "project_id": "black-moon-469217-u2"
+      }
+    },
+    "timestamp": "2025-08-28T08:41:59.235541Z",
+    "severity": "ERROR",
+    "logName": "projects/black-moon-469217-u2/logs/cloudaudit.googleapis.com%2Factivity",
+    "receiveTimestamp": "2025-08-28T08:41:59.585382802Z"
+  },
+  {
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "status": {
+        "code": 3,
+        "message": "Exception calling IAM: Service account 281493163931662 does not exist."
+      },
+      "authenticationInfo": {
+        "principalEmail": "service-agent-manager@system.gserviceaccount.com"
+      },
+      "requestMetadata": {
+        "callerIp": "private",
+        "requestAttributes": {},
+        "destinationAttributes": {}
+      },
+      "serviceName": "cloudresourcemanager.googleapis.com",
+      "methodName": "SetIamPolicy",
+      "authorizationInfo": [
+        {
+          "resource": "projects/black-moon-469217-u2",
+          "permission": "resourcemanager.projects.setIamPolicy",
+          "granted": true,
+          "resourceAttributes": {
+            "service": "cloudresourcemanager.googleapis.com",
+            "name": "projects/black-moon-469217-u2",
+            "type": "cloudresourcemanager.googleapis.com/Project"
+          },
+          "permissionType": "ADMIN_WRITE"
+        }
+      ],
+      "resourceName": "projects/black-moon-469217-u2",
+      "request": {
+        "@type": "type.googleapis.com/google.iam.v1.SetIamPolicyRequest",
+        "resource": "387636570370",
+        "policy": {
+          "etag": "BwY9aODwgGw=",
+          "bindings": [
+            {
+              "members": [
+                "serviceAccount:service-387636570370@gcp-sa-cloudbuild.iam.gserviceaccount.com"
+              ],
+              "role": "roles/cloudbuild.serviceAgent"
+            },
+            {
+              "members": [
+                "serviceAccount:service-387636570370@compute-system.iam.gserviceaccount.com"
+              ],
+              "role": "roles/compute.serviceAgent"
+            },
+            {
+              "members": [
+                "serviceAccount:service-387636570370@containerregistry.iam.gserviceaccount.com"
+              ],
+              "role": "roles/containerregistry.ServiceAgent"
+            },
+            {
+              "members": [
+                "serviceAccount:387636570370-compute@developer.gserviceaccount.com",
+                "serviceAccount:387636570370@cloudservices.gserviceaccount.com"
+              ],
+              "role": "roles/editor"
+            },
+            {
+              "members": [
+                "user:seth000123@gmail.com"
+              ],
+              "role": "roles/owner"
+            },
+            {
+              "members": [
+                "serviceAccount:service-387636570370@gcp-sa-pubsub.iam.gserviceaccount.com"
+              ],
+              "role": "roles/pubsub.serviceAgent"
+            },
+            {
+              "members": [
+                "serviceAccount:service-387636570370@serverless-robot-prod.iam.gserviceaccount.com"
+              ],
+              "role": "roles/run.serviceAgent"
+            },
+            {
+              "members": [
+                "serviceAccountId:101119034766554107602"
+              ],
+              "role": "roles/cloudbuild.builds.builder"
+            }
+          ]
+        }
+      }
+    },
+    "insertId": "-7px94ue1dx4s",
+    "resource": {
+      "type": "project",
+      "labels": {
+        "project_id": "black-moon-469217-u2"
+      }
+    },
+    "timestamp": "2025-08-28T08:42:01.026029Z",
+    "severity": "ERROR",
+    "logName": "projects/black-moon-469217-u2/logs/cloudaudit.googleapis.com%2Factivity",
+    "receiveTimestamp": "2025-08-28T08:42:01.751744060Z"
+  },
+  {
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "status": {
+        "code": 9
+      },
+      "authenticationInfo": {
+        "principalEmail": "seth000123@gmail.com",
+        "principalSubject": "user:seth000123@gmail.com"
+      },
+      "requestMetadata": {
+        "requestAttributes": {},
+        "destinationAttributes": {}
+      },
+      "serviceName": "cloudbuild.googleapis.com",
+      "methodName": "google.devtools.cloudbuild.v1.CloudBuild.CreateBuild",
+      "authorizationInfo": [
+        {
+          "resource": "projects/black-moon-469217-u2",
+          "permission": "cloudbuild.builds.create",
+          "granted": true,
+          "resourceAttributes": {
+            "service": "cloudbuild.googleapis.com",
+            "name": "projects//locations/global/builds",
+            "type": "cloudbuild.googleapis.com/Build"
+          },
+          "permissionType": "ADMIN_WRITE"
+        }
+      ],
+      "resourceName": "projects/black-moon-469217-u2/builds",
+      "resourceLocation": {
+        "currentLocations": [
+          "global"
+        ]
+      }
+    },
+    "insertId": "c8ux2sdnb18",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "project_id": "black-moon-469217-u2",
+        "build_trigger_id": "",
+        "build_id": "93c28084-215c-45bc-8e96-8f0f727e6267"
+      }
+    },
+    "timestamp": "2025-08-28T08:48:21.390773Z",
+    "severity": "ERROR",
+    "logName": "projects/black-moon-469217-u2/logs/cloudaudit.googleapis.com%2Factivity",
+    "operation": {
+      "id": "operations/build/black-moon-469217-u2/OTNjMjgwODQtMjE1Yy00NWJjLThlOTYtOGYwZjcyN2U2MjY3",
+      "producer": "cloudbuild.googleapis.com",
+      "last": true
+    },
+    "receiveTimestamp": "2025-08-28T08:48:21.671289427Z"
+  },
+  {
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "status": {
+        "code": 9
+      },
+      "authenticationInfo": {
+        "principalEmail": "seth000123@gmail.com",
+        "principalSubject": "user:seth000123@gmail.com"
+      },
+      "requestMetadata": {
+        "requestAttributes": {},
+        "destinationAttributes": {}
+      },
+      "serviceName": "cloudbuild.googleapis.com",
+      "methodName": "google.devtools.cloudbuild.v1.CloudBuild.CreateBuild",
+      "authorizationInfo": [
+        {
+          "resource": "projects/black-moon-469217-u2",
+          "permission": "cloudbuild.builds.create",
+          "granted": true,
+          "resourceAttributes": {
+            "service": "cloudbuild.googleapis.com",
+            "name": "projects//locations/global/builds",
+            "type": "cloudbuild.googleapis.com/Build"
+          },
+          "permissionType": "ADMIN_WRITE"
+        }
+      ],
+      "resourceName": "projects/black-moon-469217-u2/builds",
+      "resourceLocation": {
+        "currentLocations": [
+          "global"
+        ]
+      }
+    },
+    "insertId": "-1n3bcndlgfc",
+    "resource": {
+      "type": "build",
+      "labels": {
+        "build_trigger_id": "",
+        "build_id": "ba64fe1b-6850-4c61-b303-6d58c0b233c2",
+        "project_id": "black-moon-469217-u2"
+      }
+    },
+    "timestamp": "2025-08-28T08:50:17.974215Z",
+    "severity": "ERROR",
+    "logName": "projects/black-moon-469217-u2/logs/cloudaudit.googleapis.com%2Factivity",
+    "operation": {
+      "id": "operations/build/black-moon-469217-u2/YmE2NGZlMWItNjg1MC00YzYxLWIzMDMtNmQ1OGMwYjIzM2My",
+      "producer": "cloudbuild.googleapis.com",
+      "last": true
+    },
+    "receiveTimestamp": "2025-08-28T08:50:18.860017419Z"
+  },
+  {
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "status": {
+        "code": 3,
+        "message": "Exception calling IAM: Service account 281484932773548 does not exist."
+      },
+      "authenticationInfo": {
+        "principalEmail": "service-agent-manager@system.gserviceaccount.com"
+      },
+      "requestMetadata": {
+        "callerIp": "private",
+        "requestAttributes": {},
+        "destinationAttributes": {}
+      },
+      "serviceName": "cloudresourcemanager.googleapis.com",
+      "methodName": "SetIamPolicy",
+      "authorizationInfo": [
+        {
+          "resource": "projects/black-moon-469217-u2",
+          "permission": "resourcemanager.projects.setIamPolicy",
+          "granted": true,
+          "resourceAttributes": {
+            "service": "cloudresourcemanager.googleapis.com",
+            "name": "projects/black-moon-469217-u2",
+            "type": "cloudresourcemanager.googleapis.com/Project"
+          },
+          "permissionType": "ADMIN_WRITE"
+        }
+      ],
+      "resourceName": "projects/black-moon-469217-u2",
+      "request": {
+        "policy": {
+          "bindings": [
+            {
+              "role": "roles/cloudbuild.builds.builder",
+              "members": [
+                "serviceAccount:387636570370@cloudbuild.gserviceaccount.com"
+              ]
+            },
+            {
+              "members": [
+                "user:seth000123@gmail.com"
+              ],
+              "role": "roles/cloudbuild.builds.editor"
+            },
+            {
+              "members": [
+                "serviceAccount:service-387636570370@gcp-sa-cloudbuild.iam.gserviceaccount.com"
+              ],
+              "role": "roles/cloudbuild.serviceAgent"
+            },
+            {
+              "role": "roles/compute.serviceAgent",
+              "members": [
+                "serviceAccount:service-387636570370@compute-system.iam.gserviceaccount.com"
+              ]
+            },
+            {
+              "members": [
+                "serviceAccount:service-387636570370@containerregistry.iam.gserviceaccount.com"
+              ],
+              "role": "roles/containerregistry.ServiceAgent"
+            },
+            {
+              "members": [
+                "serviceAccount:387636570370-compute@developer.gserviceaccount.com",
+                "serviceAccount:387636570370@cloudservices.gserviceaccount.com"
+              ],
+              "role": "roles/editor"
+            },
+            {
+              "members": [
+                "user:seth000123@gmail.com"
+              ],
+              "role": "roles/owner"
+            },
+            {
+              "members": [
+                "serviceAccount:service-387636570370@gcp-sa-pubsub.iam.gserviceaccount.com"
+              ],
+              "role": "roles/pubsub.serviceAgent"
+            },
+            {
+              "role": "roles/run.serviceAgent",
+              "members": [
+                "serviceAccount:service-387636570370@serverless-robot-prod.iam.gserviceaccount.com"
+              ]
+            },
+            {
+              "members": [
+                "serviceAccountId:104362415779097351235"
+              ],
+              "role": "roles/artifactregistry.serviceAgent"
+            }
+          ],
+          "etag": "BwY9aO4koGg="
+        },
+        "resource": "387636570370",
+        "@type": "type.googleapis.com/google.iam.v1.SetIamPolicyRequest"
+      }
+    },
+    "insertId": "-phwydzd8j1c",
+    "resource": {
+      "type": "project",
+      "labels": {
+        "project_id": "black-moon-469217-u2"
+      }
+    },
+    "timestamp": "2025-08-28T08:52:19.072404Z",
+    "severity": "ERROR",
+    "logName": "projects/black-moon-469217-u2/logs/cloudaudit.googleapis.com%2Factivity",
+    "receiveTimestamp": "2025-08-28T08:52:20.305303245Z"
+  },
+  {
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "status": {
+        "code": 3,
+        "message": "Exception calling IAM: Service account 281484932773548 does not exist."
+      },
+      "authenticationInfo": {
+        "principalEmail": "service-agent-manager@system.gserviceaccount.com"
+      },
+      "requestMetadata": {
+        "callerIp": "private",
+        "requestAttributes": {},
+        "destinationAttributes": {}
+      },
+      "serviceName": "cloudresourcemanager.googleapis.com",
+      "methodName": "SetIamPolicy",
+      "authorizationInfo": [
+        {
+          "resource": "projects/black-moon-469217-u2",
+          "permission": "resourcemanager.projects.setIamPolicy",
+          "granted": true,
+          "resourceAttributes": {
+            "service": "cloudresourcemanager.googleapis.com",
+            "name": "projects/black-moon-469217-u2",
+            "type": "cloudresourcemanager.googleapis.com/Project"
+          },
+          "permissionType": "ADMIN_WRITE"
+        }
+      ],
+      "resourceName": "projects/black-moon-469217-u2",
+      "request": {
+        "policy": {
+          "bindings": [
+            {
+              "members": [
+                "serviceAccount:387636570370@cloudbuild.gserviceaccount.com"
+              ],
+              "role": "roles/cloudbuild.builds.builder"
+            },
+            {
+              "members": [
+                "user:seth000123@gmail.com"
+              ],
+              "role": "roles/cloudbuild.builds.editor"
+            },
+            {
+              "members": [
+                "serviceAccount:service-387636570370@gcp-sa-cloudbuild.iam.gserviceaccount.com"
+              ],
+              "role": "roles/cloudbuild.serviceAgent"
+            },
+            {
+              "members": [
+                "serviceAccount:service-387636570370@compute-system.iam.gserviceaccount.com"
+              ],
+              "role": "roles/compute.serviceAgent"
+            },
+            {
+              "role": "roles/containerregistry.ServiceAgent",
+              "members": [
+                "serviceAccount:service-387636570370@containerregistry.iam.gserviceaccount.com"
+              ]
+            },
+            {
+              "members": [
+                "serviceAccount:387636570370-compute@developer.gserviceaccount.com",
+                "serviceAccount:387636570370@cloudservices.gserviceaccount.com"
+              ],
+              "role": "roles/editor"
+            },
+            {
+              "members": [
+                "user:seth000123@gmail.com"
+              ],
+              "role": "roles/owner"
+            },
+            {
+              "members": [
+                "serviceAccount:service-387636570370@gcp-sa-pubsub.iam.gserviceaccount.com"
+              ],
+              "role": "roles/pubsub.serviceAgent"
+            },
+            {
+              "role": "roles/run.serviceAgent",
+              "members": [
+                "serviceAccount:service-387636570370@serverless-robot-prod.iam.gserviceaccount.com"
+              ]
+            },
+            {
+              "members": [
+                "serviceAccountId:104362415779097351235"
+              ],
+              "role": "roles/artifactregistry.serviceAgent"
+            }
+          ],
+          "etag": "BwY9aO4koGg="
+        },
+        "resource": "387636570370",
+        "@type": "type.googleapis.com/google.iam.v1.SetIamPolicyRequest"
+      }
+    },
+    "insertId": "swsqpkf167q4q",
+    "resource": {
+      "type": "project",
+      "labels": {
+        "project_id": "black-moon-469217-u2"
+      }
+    },
+    "timestamp": "2025-08-28T08:52:20.571933Z",
+    "severity": "ERROR",
+    "logName": "projects/black-moon-469217-u2/logs/cloudaudit.googleapis.com%2Factivity",
+    "receiveTimestamp": "2025-08-28T08:52:21.617499164Z"
+  },
+  {
+    "textPayload": "Traceback (most recent call last):\n  File \"/usr/local/bin/uvicorn\", line 8, in <module>\n    sys.exit(main())",
+    "insertId": "68b022c2000420633bf8cc03",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "revision_name": "ms-ai-foundry-backend-00001-5xn",
+        "project_id": "black-moon-469217-u2",
+        "configuration_name": "ms-ai-foundry-backend",
+        "service_name": "ms-ai-foundry-backend",
+        "location": "asia-northeast3"
+      }
+    },
+    "timestamp": "2025-08-28T09:34:58.270435Z",
+    "severity": "ERROR",
+    "labels": {
+      "instanceId": "0069c7a988b4e65e92b4201921bca24e208d31e1828d50b4de61e065b11a2142f84fd7e3fd93c401a2e132f6b109f189c9377b01de2730a3892ba37b33916b520a472dbeed9af05feb32e6def956098c9ca4"
+    },
+    "logName": "projects/black-moon-469217-u2/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2025-08-28T09:34:58.272278978Z",
+    "errorGroups": [
+      {
+        "id": "COv40r3t68fvkQE"
+      }
+    ]
+  },
+  {
+    "textPayload": "Default STARTUP TCP probe failed 1 time consecutively for container \"ms-ai-foundry-backend-1\" on port 8080. The instance was not started.\nConnection failed with status CANCELLED.",
+    "insertId": "68b022c3000491f1c415b1c7",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "revision_name": "ms-ai-foundry-backend-00001-5xn",
+        "service_name": "ms-ai-foundry-backend",
+        "configuration_name": "ms-ai-foundry-backend",
+        "location": "asia-northeast3",
+        "project_id": "black-moon-469217-u2"
+      }
+    },
+    "timestamp": "2025-08-28T09:34:59.299505Z",
+    "severity": "ERROR",
+    "labels": {
+      "instanceId": "0069c7a988b4e65e92b4201921bca24e208d31e1828d50b4de61e065b11a2142f84fd7e3fd93c401a2e132f6b109f189c9377b01de2730a3892ba37b33916b520a472dbeed9af05feb32e6def956098c9ca4"
+    },
+    "logName": "projects/black-moon-469217-u2/logs/run.googleapis.com%2Fvarlog%2Fsystem",
+    "receiveTimestamp": "2025-08-28T09:34:59.397167738Z"
+  },
+  {
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "status": {
+        "code": 9,
+        "message": "Ready condition status changed to False for Revision ms-ai-foundry-backend-00001-5xn with message: The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00001-5xn&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00001-5xn%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start"
+      },
+      "serviceName": "run.googleapis.com",
+      "methodName": "/Services.CreateService",
+      "resourceName": "namespaces/black-moon-469217-u2/revisions/ms-ai-foundry-backend-00001-5xn",
+      "response": {
+        "metadata": {
+          "name": "ms-ai-foundry-backend-00001-5xn",
+          "namespace": "387636570370",
+          "selfLink": "/apis/serving.knative.dev/v1/namespaces/387636570370/revisions/ms-ai-foundry-backend-00001-5xn",
+          "uid": "a9b5d6b9-b5de-4e37-8d77-cd71038e174a",
+          "resourceVersion": "AAY9aZ5wi8Y",
+          "generation": 1,
+          "creationTimestamp": "2025-08-28T09:33:24.038621Z",
+          "labels": {
+            "serving.knative.dev/configuration": "ms-ai-foundry-backend",
+            "serving.knative.dev/configurationGeneration": "1",
+            "serving.knative.dev/service": "ms-ai-foundry-backend",
+            "serving.knative.dev/serviceUid": "09f447ae-2d4e-4173-8f42-23311811557c",
+            "serving.knative.dev/route": "ms-ai-foundry-backend",
+            "run.googleapis.com/satisfiesPzs": "true",
+            "cloud.googleapis.com/location": "asia-northeast3",
+            "run.googleapis.com/startupProbeType": "Default"
+          },
+          "annotations": {
+            "run.googleapis.com/client-name": "cloud-console",
+            "autoscaling.knative.dev/maxScale": "20",
+            "serving.knative.dev/creator": "seth000123@gmail.com",
+            "run.googleapis.com/operation-id": "75a6a06e-f479-46b5-8a57-8da600885945",
+            "run.googleapis.com/startup-cpu-boost": "true"
+          },
+          "ownerReferences": [
+            {
+              "kind": "Configuration",
+              "name": "ms-ai-foundry-backend",
+              "uid": "7350fcc0-9b83-4b41-b27c-fc2a139fc86c",
+              "apiVersion": "serving.knative.dev/v1",
+              "controller": true,
+              "blockOwnerDeletion": true
+            }
+          ]
+        },
+        "apiVersion": "serving.knative.dev/v1",
+        "kind": "Revision",
+        "spec": {
+          "containerConcurrency": 80,
+          "timeoutSeconds": 300,
+          "serviceAccountName": "387636570370-compute@developer.gserviceaccount.com",
+          "containers": [
+            {
+              "name": "ms-ai-foundry-backend-1",
+              "image": "gcr.io/black-moon-469217-u2/ms-ai-foundry-backend@sha256:12619adc982ab7d4f17e5d482cb7ebae4e648adfd1ce6a26a742bf683e653a8d",
+              "ports": [
+                {
+                  "name": "http1",
+                  "containerPort": 8080
+                }
+              ],
+              "resources": {
+                "limits": {
+                  "cpu": "1000m",
+                  "memory": "512Mi"
+                }
+              },
+              "startupProbe": {
+                "timeoutSeconds": 240,
+                "periodSeconds": 240,
+                "failureThreshold": 1,
+                "tcpSocket": {
+                  "port": 8080
+                }
+              }
+            }
+          ]
+        },
+        "status": {
+          "observedGeneration": 1,
+          "conditions": [
+            {
+              "type": "Ready",
+              "status": "False",
+              "reason": "HealthCheckContainerError",
+              "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00001-5xn&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00001-5xn%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+              "lastTransitionTime": "2025-08-28T09:34:59.300294Z"
+            },
+            {
+              "type": "ContainerHealthy",
+              "status": "False",
+              "reason": "HealthCheckContainerError",
+              "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00001-5xn&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00001-5xn%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+              "lastTransitionTime": "2025-08-28T09:34:59.300294Z"
+            },
+            {
+              "type": "ContainerReady",
+              "status": "True",
+              "message": "Container image import completed in 8.07s.",
+              "lastTransitionTime": "2025-08-28T09:33:34.083332Z"
+            },
+            {
+              "type": "ResourcesAvailable",
+              "status": "True",
+              "message": "Provisioning imported containers completed in 1m18.85s. Checking container health. This will wait for up to 4m for the configured startup probe, including an initial delay of 0s.",
+              "lastTransitionTime": "2025-08-28T09:34:52.934350Z"
+            },
+            {
+              "type": "Retry",
+              "status": "True",
+              "reason": "ImmediateRetry",
+              "message": "System will retry after 0:00:00 from lastTransitionTime for attempt 0.",
+              "lastTransitionTime": "2025-08-28T09:34:52.934350Z",
+              "severity": "Info"
+            }
+          ],
+          "logUrl": "https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00001-5xn&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00001-5xn%22",
+          "imageDigest": "gcr.io/black-moon-469217-u2/ms-ai-foundry-backend@sha256:12619adc982ab7d4f17e5d482cb7ebae4e648adfd1ce6a26a742bf683e653a8d",
+          "containerStatuses": [
+            {
+              "name": "ms-ai-foundry-backend-1",
+              "imageDigest": "gcr.io/black-moon-469217-u2/ms-ai-foundry-backend@sha256:12619adc982ab7d4f17e5d482cb7ebae4e648adfd1ce6a26a742bf683e653a8d"
+            }
+          ]
+        },
+        "@type": "type.googleapis.com/google.cloud.run.v1.Revision"
+      }
+    },
+    "insertId": "-4yhtxxd4bji",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "configuration_name": "ms-ai-foundry-backend",
+        "location": "asia-northeast3",
+        "revision_name": "ms-ai-foundry-backend-00001-5xn",
+        "project_id": "black-moon-469217-u2",
+        "service_name": "ms-ai-foundry-backend"
+      }
+    },
+    "timestamp": "2025-08-28T09:34:59.308056Z",
+    "severity": "ERROR",
+    "logName": "projects/black-moon-469217-u2/logs/cloudaudit.googleapis.com%2Fsystem_event",
+    "receiveTimestamp": "2025-08-28T09:34:59.457835540Z"
+  },
+  {
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "status": {
+        "code": 9,
+        "message": "Ready condition status changed to False for Service ms-ai-foundry-backend with message: Revision 'ms-ai-foundry-backend-00001-5xn' is not ready and cannot serve traffic. The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00001-5xn&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00001-5xn%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start"
+      },
+      "serviceName": "run.googleapis.com",
+      "methodName": "/Services.CreateService",
+      "resourceName": "namespaces/black-moon-469217-u2/services/ms-ai-foundry-backend",
+      "response": {
+        "metadata": {
+          "name": "ms-ai-foundry-backend",
+          "namespace": "387636570370",
+          "selfLink": "/apis/serving.knative.dev/v1/namespaces/387636570370/services/ms-ai-foundry-backend",
+          "uid": "09f447ae-2d4e-4173-8f42-23311811557c",
+          "resourceVersion": "AAY9aZ5xxzY",
+          "generation": 1,
+          "creationTimestamp": "2025-08-28T09:33:23.798096Z",
+          "labels": {
+            "run.googleapis.com/satisfiesPzs": "true",
+            "cloud.googleapis.com/location": "asia-northeast3"
+          },
+          "annotations": {
+            "run.googleapis.com/client-name": "cloud-console",
+            "serving.knative.dev/creator": "seth000123@gmail.com",
+            "serving.knative.dev/lastModifier": "seth000123@gmail.com",
+            "run.googleapis.com/operation-id": "75a6a06e-f479-46b5-8a57-8da600885945",
+            "run.googleapis.com/ingress": "all",
+            "run.googleapis.com/ingress-status": "all",
+            "run.googleapis.com/invoker-iam-disabled": "true",
+            "run.googleapis.com/maxScale": "3",
+            "run.googleapis.com/urls": "[\"https://ms-ai-foundry-backend-387636570370.asia-northeast3.run.app\"]"
+          }
+        },
+        "apiVersion": "serving.knative.dev/v1",
+        "kind": "Service",
+        "spec": {
+          "template": {
+            "metadata": {
+              "labels": {
+                "run.googleapis.com/startupProbeType": "Default"
+              },
+              "annotations": {
+                "run.googleapis.com/client-name": "cloud-console",
+                "autoscaling.knative.dev/maxScale": "20",
+                "run.googleapis.com/startup-cpu-boost": "true"
+              }
+            },
+            "spec": {
+              "containerConcurrency": 80,
+              "timeoutSeconds": 300,
+              "serviceAccountName": "387636570370-compute@developer.gserviceaccount.com",
+              "containers": [
+                {
+                  "name": "ms-ai-foundry-backend-1",
+                  "image": "gcr.io/black-moon-469217-u2/ms-ai-foundry-backend:latest",
+                  "ports": [
+                    {
+                      "name": "http1",
+                      "containerPort": 8080
+                    }
+                  ],
+                  "resources": {
+                    "limits": {
+                      "cpu": "1000m",
+                      "memory": "512Mi"
+                    }
+                  },
+                  "startupProbe": {
+                    "timeoutSeconds": 240,
+                    "periodSeconds": 240,
+                    "failureThreshold": 1,
+                    "tcpSocket": {
+                      "port": 8080
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "traffic": [
+            {
+              "percent": 100,
+              "latestRevision": true
+            }
+          ]
+        },
+        "status": {
+          "observedGeneration": 1,
+          "conditions": [
+            {
+              "type": "Ready",
+              "status": "False",
+              "reason": "HealthCheckContainerError",
+              "message": "Revision 'ms-ai-foundry-backend-00001-5xn' is not ready and cannot serve traffic. The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00001-5xn&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00001-5xn%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+              "lastTransitionTime": "2025-08-28T09:34:59.334491Z"
+            },
+            {
+              "type": "ConfigurationsReady",
+              "status": "True",
+              "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00001-5xn&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00001-5xn%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+              "lastTransitionTime": "2025-08-28T09:34:59.326268Z"
+            },
+            {
+              "type": "RoutesReady",
+              "status": "False",
+              "reason": "HealthCheckContainerError",
+              "message": "Revision 'ms-ai-foundry-backend-00001-5xn' is not ready and cannot serve traffic. The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00001-5xn&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00001-5xn%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+              "lastTransitionTime": "2025-08-28T09:34:59.334491Z"
+            }
+          ],
+          "latestCreatedRevisionName": "ms-ai-foundry-backend-00001-5xn"
+        },
+        "@type": "type.googleapis.com/google.cloud.run.v1.Service"
+      }
+    },
+    "insertId": "-4yhtxxd4bjk",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "project_id": "black-moon-469217-u2",
+        "service_name": "ms-ai-foundry-backend",
+        "revision_name": "",
+        "location": "asia-northeast3",
+        "configuration_name": ""
+      }
+    },
+    "timestamp": "2025-08-28T09:34:59.388985Z",
+    "severity": "ERROR",
+    "logName": "projects/black-moon-469217-u2/logs/cloudaudit.googleapis.com%2Fsystem_event",
+    "receiveTimestamp": "2025-08-28T09:34:59.457835540Z"
+  },
+  {
+    "textPayload": "Traceback (most recent call last):\n  File \"/usr/local/bin/uvicorn\", line 8, in <module>\n    sys.exit(main())",
+    "insertId": "68b02544000f38ad80b759dd",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "project_id": "black-moon-469217-u2",
+        "service_name": "ms-ai-foundry-backend",
+        "revision_name": "ms-ai-foundry-backend-00002-zwv",
+        "configuration_name": "ms-ai-foundry-backend",
+        "location": "asia-northeast3"
+      }
+    },
+    "timestamp": "2025-08-28T09:45:40.997549Z",
+    "severity": "ERROR",
+    "labels": {
+      "instanceId": "0069c7a988d51320b7f09925815abb0ba8b949a4b0b823b295f3de60ddd848bac599de171666caf7e0ffec55b42d0ee79bad1da7d0ae7601573d46e1097c0f9eacc95aec04a810cf6fc51cc49f6dfba2631b"
+    },
+    "logName": "projects/black-moon-469217-u2/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2025-08-28T09:45:40.999648399Z",
+    "errorGroups": [
+      {
+        "id": "COv40r3t68fvkQE"
+      }
+    ]
+  },
+  {
+    "textPayload": "Default STARTUP TCP probe failed 1 time consecutively for container \"ms-ai-foundry-backend-1\" on port 8080. The instance was not started.\nConnection failed with status CANCELLED.",
+    "insertId": "68b02545000923ba9411cb31",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "project_id": "black-moon-469217-u2",
+        "revision_name": "ms-ai-foundry-backend-00002-zwv",
+        "configuration_name": "ms-ai-foundry-backend",
+        "service_name": "ms-ai-foundry-backend",
+        "location": "asia-northeast3"
+      }
+    },
+    "timestamp": "2025-08-28T09:45:41.598970Z",
+    "severity": "ERROR",
+    "labels": {
+      "instanceId": "0069c7a988d51320b7f09925815abb0ba8b949a4b0b823b295f3de60ddd848bac599de171666caf7e0ffec55b42d0ee79bad1da7d0ae7601573d46e1097c0f9eacc95aec04a810cf6fc51cc49f6dfba2631b"
+    },
+    "logName": "projects/black-moon-469217-u2/logs/run.googleapis.com%2Fvarlog%2Fsystem",
+    "receiveTimestamp": "2025-08-28T09:45:41.800591479Z"
+  },
+  {
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "status": {
+        "code": 9,
+        "message": "Ready condition status changed to False for Revision ms-ai-foundry-backend-00002-zwv with message: The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00002-zwv&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00002-zwv%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start"
+      },
+      "serviceName": "run.googleapis.com",
+      "methodName": "/Services.ReplaceService",
+      "resourceName": "namespaces/black-moon-469217-u2/revisions/ms-ai-foundry-backend-00002-zwv",
+      "response": {
+        "metadata": {
+          "name": "ms-ai-foundry-backend-00002-zwv",
+          "namespace": "387636570370",
+          "selfLink": "/apis/serving.knative.dev/v1/namespaces/387636570370/revisions/ms-ai-foundry-backend-00002-zwv",
+          "uid": "99852497-21a2-408c-bf4f-6d03e7ed09f6",
+          "resourceVersion": "AAY9acS5HaI",
+          "generation": 1,
+          "creationTimestamp": "2025-08-28T09:45:15.750969Z",
+          "labels": {
+            "client.knative.dev/nonce": "96d959e1-4075-489e-808b-325f4b683ac1",
+            "serving.knative.dev/configuration": "ms-ai-foundry-backend",
+            "serving.knative.dev/configurationGeneration": "2",
+            "serving.knative.dev/service": "ms-ai-foundry-backend",
+            "serving.knative.dev/serviceUid": "09f447ae-2d4e-4173-8f42-23311811557c",
+            "serving.knative.dev/route": "ms-ai-foundry-backend",
+            "run.googleapis.com/satisfiesPzs": "true",
+            "cloud.googleapis.com/location": "asia-northeast3",
+            "run.googleapis.com/startupProbeType": "Default"
+          },
+          "annotations": {
+            "run.googleapis.com/client-name": "cloud-console",
+            "autoscaling.knative.dev/maxScale": "20",
+            "serving.knative.dev/creator": "seth000123@gmail.com",
+            "run.googleapis.com/operation-id": "35218ce8-b554-410f-be18-c366129e66eb",
+            "run.googleapis.com/startup-cpu-boost": "true"
+          },
+          "ownerReferences": [
+            {
+              "kind": "Configuration",
+              "name": "ms-ai-foundry-backend",
+              "uid": "7350fcc0-9b83-4b41-b27c-fc2a139fc86c",
+              "apiVersion": "serving.knative.dev/v1",
+              "controller": true,
+              "blockOwnerDeletion": true
+            }
+          ]
+        },
+        "apiVersion": "serving.knative.dev/v1",
+        "kind": "Revision",
+        "spec": {
+          "containerConcurrency": 80,
+          "timeoutSeconds": 300,
+          "serviceAccountName": "387636570370-compute@developer.gserviceaccount.com",
+          "containers": [
+            {
+              "name": "ms-ai-foundry-backend-1",
+              "image": "gcr.io/black-moon-469217-u2/ms-ai-foundry-backend@sha256:e76a942f81b6b6e4dc78910c1f268dc3384d1c9d07b617ff9bc24711d3e053f3",
+              "ports": [
+                {
+                  "name": "http1",
+                  "containerPort": 8080
+                }
+              ],
+              "env": [
+                {
+                  "name": "SUPABASE_URL",
+                  "value": "https://nrsftmbbcktetgbhtydb.supabase.co"
+                },
+                {
+                  "name": "SUPABASE_KEY",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ   zdXBhYmFzZSIsInJlZiI6Im5yc2Z0bWJiY2t0ZXRnYmh0eWRiIiwicm9sZSI6   ImFub24iLCJpYXQiOjE3NTYyMDMwNTAsImV4cCI6MjA3MTc3OTA1MH0.HPF5-   Tno6Y353RMH_KjtbOlA3Owsw9QrcgRlOQoc2f4"
+                },
+                {
+                  "name": "AZURE_OPENAI_ENDPOINT",
+                  "value": "https://seth0-mer0fg9g-eastus2.openai.a   zure.com/"
+                },
+                {
+                  "name": "AZURE_OPENAI_KEY",
+                  "value": "sSpDc9MiWtf3iPRvlwSWcp80o8x1NcRwYAvue9Ip753h   TuLsnFW4JQQJ99BHACHYHv6XJ3w3AAAAACOGD3cu"
+                },
+                {
+                  "name": "AZURE_OPENAI_VERSION",
+                  "value": "2023-12-01-preview"
+                },
+                {
+                  "name": "AZURE_OPENAI_DEPLOYMENT",
+                  "value": "gpt-4.1-mini"
+                },
+                {
+                  "name": "NAVER_CLIENT_ID",
+                  "value": "STMnzQVWIracp3Bd3tyd"
+                },
+                {
+                  "name": "NAVER_CLIENT_SECRET",
+                  "value": "OSDTwWvmxF"
+                },
+                {
+                  "name": "NEWS_API_KEY",
+                  "value": "36864d13002742aa9f94cacc2f10a4e8"
+                }
+              ],
+              "resources": {
+                "limits": {
+                  "cpu": "1000m",
+                  "memory": "512Mi"
+                }
+              },
+              "startupProbe": {
+                "timeoutSeconds": 240,
+                "periodSeconds": 240,
+                "failureThreshold": 1,
+                "tcpSocket": {
+                  "port": 8080
+                }
+              }
+            }
+          ]
+        },
+        "status": {
+          "observedGeneration": 1,
+          "conditions": [
+            {
+              "type": "Ready",
+              "status": "False",
+              "reason": "HealthCheckContainerError",
+              "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00002-zwv&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00002-zwv%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+              "lastTransitionTime": "2025-08-28T09:45:41.590434Z"
+            },
+            {
+              "type": "ContainerHealthy",
+              "status": "False",
+              "reason": "HealthCheckContainerError",
+              "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00002-zwv&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00002-zwv%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+              "lastTransitionTime": "2025-08-28T09:45:41.590434Z"
+            },
+            {
+              "type": "ContainerReady",
+              "status": "True",
+              "message": "Container image import completed in 12.73s.",
+              "lastTransitionTime": "2025-08-28T09:45:30.432357Z"
+            },
+            {
+              "type": "ResourcesAvailable",
+              "status": "True",
+              "message": "Provisioning imported containers completed in 3.61s. Checking container health. This will wait for up to 4m for the configured startup probe, including an initial delay of 0s.",
+              "lastTransitionTime": "2025-08-28T09:45:34.038995Z"
+            },
+            {
+              "type": "Retry",
+              "status": "True",
+              "reason": "ImmediateRetry",
+              "message": "System will retry after 0:00:00 from lastTransitionTime for attempt 0.",
+              "lastTransitionTime": "2025-08-28T09:45:34.038995Z",
+              "severity": "Info"
+            }
+          ],
+          "logUrl": "https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00002-zwv&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00002-zwv%22",
+          "imageDigest": "gcr.io/black-moon-469217-u2/ms-ai-foundry-backend@sha256:e76a942f81b6b6e4dc78910c1f268dc3384d1c9d07b617ff9bc24711d3e053f3",
+          "containerStatuses": [
+            {
+              "name": "ms-ai-foundry-backend-1",
+              "imageDigest": "gcr.io/black-moon-469217-u2/ms-ai-foundry-backend@sha256:e76a942f81b6b6e4dc78910c1f268dc3384d1c9d07b617ff9bc24711d3e053f3"
+            }
+          ]
+        },
+        "@type": "type.googleapis.com/google.cloud.run.v1.Revision"
+      }
+    },
+    "insertId": "-4yhtxxd4bvk",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "service_name": "ms-ai-foundry-backend",
+        "location": "asia-northeast3",
+        "configuration_name": "ms-ai-foundry-backend",
+        "revision_name": "ms-ai-foundry-backend-00002-zwv",
+        "project_id": "black-moon-469217-u2"
+      }
+    },
+    "timestamp": "2025-08-28T09:45:41.599086Z",
+    "severity": "ERROR",
+    "logName": "projects/black-moon-469217-u2/logs/cloudaudit.googleapis.com%2Fsystem_event",
+    "receiveTimestamp": "2025-08-28T09:45:42.031927184Z"
+  },
+  {
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "status": {
+        "code": 9,
+        "message": "Ready condition status changed to False for Service ms-ai-foundry-backend with message: Revision 'ms-ai-foundry-backend-00002-zwv' is not ready and cannot serve traffic. The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00002-zwv&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00002-zwv%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start"
+      },
+      "serviceName": "run.googleapis.com",
+      "methodName": "/Services.ReplaceService",
+      "resourceName": "namespaces/black-moon-469217-u2/services/ms-ai-foundry-backend",
+      "response": {
+        "metadata": {
+          "name": "ms-ai-foundry-backend",
+          "namespace": "387636570370",
+          "selfLink": "/apis/serving.knative.dev/v1/namespaces/387636570370/services/ms-ai-foundry-backend",
+          "uid": "09f447ae-2d4e-4173-8f42-23311811557c",
+          "resourceVersion": "AAY9acS6tEk",
+          "generation": 2,
+          "creationTimestamp": "2025-08-28T09:33:23.798096Z",
+          "labels": {
+            "run.googleapis.com/satisfiesPzs": "true",
+            "cloud.googleapis.com/location": "asia-northeast3"
+          },
+          "annotations": {
+            "serving.knative.dev/creator": "seth000123@gmail.com",
+            "serving.knative.dev/lastModifier": "seth000123@gmail.com",
+            "run.googleapis.com/client-name": "cloud-console",
+            "run.googleapis.com/operation-id": "35218ce8-b554-410f-be18-c366129e66eb",
+            "run.googleapis.com/ingress": "all",
+            "run.googleapis.com/ingress-status": "all",
+            "run.googleapis.com/invoker-iam-disabled": "true",
+            "run.googleapis.com/maxScale": "3",
+            "run.googleapis.com/urls": "[\"https://ms-ai-foundry-backend-387636570370.asia-northeast3.run.app\"]"
+          }
+        },
+        "apiVersion": "serving.knative.dev/v1",
+        "kind": "Service",
+        "spec": {
+          "template": {
+            "metadata": {
+              "labels": {
+                "client.knative.dev/nonce": "96d959e1-4075-489e-808b-325f4b683ac1",
+                "run.googleapis.com/startupProbeType": "Default"
+              },
+              "annotations": {
+                "run.googleapis.com/client-name": "cloud-console",
+                "autoscaling.knative.dev/maxScale": "20",
+                "run.googleapis.com/startup-cpu-boost": "true"
+              }
+            },
+            "spec": {
+              "containerConcurrency": 80,
+              "timeoutSeconds": 300,
+              "serviceAccountName": "387636570370-compute@developer.gserviceaccount.com",
+              "containers": [
+                {
+                  "name": "ms-ai-foundry-backend-1",
+                  "image": "gcr.io/black-moon-469217-u2/ms-ai-foundry-backend:latest",
+                  "ports": [
+                    {
+                      "name": "http1",
+                      "containerPort": 8080
+                    }
+                  ],
+                  "env": [
+                    {
+                      "name": "SUPABASE_URL",
+                      "value": "https://nrsftmbbcktetgbhtydb.supabase.co"
+                    },
+                    {
+                      "name": "SUPABASE_KEY",
+                      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ   zdXBhYmFzZSIsInJlZiI6Im5yc2Z0bWJiY2t0ZXRnYmh0eWRiIiwicm9sZSI6   ImFub24iLCJpYXQiOjE3NTYyMDMwNTAsImV4cCI6MjA3MTc3OTA1MH0.HPF5-   Tno6Y353RMH_KjtbOlA3Owsw9QrcgRlOQoc2f4"
+                    },
+                    {
+                      "name": "AZURE_OPENAI_ENDPOINT",
+                      "value": "https://seth0-mer0fg9g-eastus2.openai.a   zure.com/"
+                    },
+                    {
+                      "name": "AZURE_OPENAI_KEY",
+                      "value": "sSpDc9MiWtf3iPRvlwSWcp80o8x1NcRwYAvue9Ip753h   TuLsnFW4JQQJ99BHACHYHv6XJ3w3AAAAACOGD3cu"
+                    },
+                    {
+                      "name": "AZURE_OPENAI_VERSION",
+                      "value": "2023-12-01-preview"
+                    },
+                    {
+                      "name": "AZURE_OPENAI_DEPLOYMENT",
+                      "value": "gpt-4.1-mini"
+                    },
+                    {
+                      "name": "NAVER_CLIENT_ID",
+                      "value": "STMnzQVWIracp3Bd3tyd"
+                    },
+                    {
+                      "name": "NAVER_CLIENT_SECRET",
+                      "value": "OSDTwWvmxF"
+                    },
+                    {
+                      "name": "NEWS_API_KEY",
+                      "value": "36864d13002742aa9f94cacc2f10a4e8"
+                    }
+                  ],
+                  "resources": {
+                    "limits": {
+                      "cpu": "1000m",
+                      "memory": "512Mi"
+                    }
+                  },
+                  "startupProbe": {
+                    "timeoutSeconds": 240,
+                    "periodSeconds": 240,
+                    "failureThreshold": 1,
+                    "tcpSocket": {
+                      "port": 8080
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "traffic": [
+            {
+              "percent": 100,
+              "latestRevision": true
+            }
+          ]
+        },
+        "status": {
+          "observedGeneration": 2,
+          "conditions": [
+            {
+              "type": "Ready",
+              "status": "False",
+              "reason": "HealthCheckContainerError",
+              "message": "Revision 'ms-ai-foundry-backend-00002-zwv' is not ready and cannot serve traffic. The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00002-zwv&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00002-zwv%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+              "lastTransitionTime": "2025-08-28T09:45:41.630581Z"
+            },
+            {
+              "type": "ConfigurationsReady",
+              "status": "True",
+              "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00002-zwv&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00002-zwv%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+              "lastTransitionTime": "2025-08-28T09:45:41.621103Z"
+            },
+            {
+              "type": "RoutesReady",
+              "status": "False",
+              "reason": "HealthCheckContainerError",
+              "message": "Revision 'ms-ai-foundry-backend-00002-zwv' is not ready and cannot serve traffic. The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00002-zwv&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00002-zwv%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+              "lastTransitionTime": "2025-08-28T09:45:41.630581Z"
+            }
+          ],
+          "latestCreatedRevisionName": "ms-ai-foundry-backend-00002-zwv"
+        },
+        "@type": "type.googleapis.com/google.cloud.run.v1.Service"
+      }
+    },
+    "insertId": "mt4q8nch9u",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "service_name": "ms-ai-foundry-backend",
+        "revision_name": "",
+        "location": "asia-northeast3",
+        "project_id": "black-moon-469217-u2",
+        "configuration_name": ""
+      }
+    },
+    "timestamp": "2025-08-28T09:45:41.712901Z",
+    "severity": "ERROR",
+    "logName": "projects/black-moon-469217-u2/logs/cloudaudit.googleapis.com%2Fsystem_event",
+    "receiveTimestamp": "2025-08-28T09:45:42.310327775Z"
+  },
+  {
+    "textPayload": "Traceback (most recent call last):\n  File \"/usr/local/bin/uvicorn\", line 8, in <module>\n    sys.exit(main())",
+    "insertId": "68b02612000ca5b71b441b0b",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "location": "asia-northeast3",
+        "configuration_name": "ms-ai-foundry-backend",
+        "service_name": "ms-ai-foundry-backend",
+        "revision_name": "ms-ai-foundry-backend-00003-756",
+        "project_id": "black-moon-469217-u2"
+      }
+    },
+    "timestamp": "2025-08-28T09:49:06.828855Z",
+    "severity": "ERROR",
+    "labels": {
+      "instanceId": "0069c7a9886a5584a97be651fd177e04dac0c96a90380c2f164ecc71496dda1ad267e4594b4c2b81fa39f54a1be988e7f8bf090cc99d8bdde8250ba1b89725758a7138bbb6b7bab0377f60b4740e47c6e06d"
+    },
+    "logName": "projects/black-moon-469217-u2/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2025-08-28T09:49:06.830882829Z",
+    "errorGroups": [
+      {
+        "id": "COv40r3t68fvkQE"
+      }
+    ]
+  },
+  {
+    "textPayload": "Default STARTUP TCP probe failed 1 time consecutively for container \"ms-ai-foundry-backend-1\" on port 8080. The instance was not started.\nConnection failed with status CANCELLED.",
+    "insertId": "68b02613000402f32b4f2bc3",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "service_name": "ms-ai-foundry-backend",
+        "configuration_name": "ms-ai-foundry-backend",
+        "location": "asia-northeast3",
+        "revision_name": "ms-ai-foundry-backend-00003-756",
+        "project_id": "black-moon-469217-u2"
+      }
+    },
+    "timestamp": "2025-08-28T09:49:07.262899Z",
+    "severity": "ERROR",
+    "labels": {
+      "instanceId": "0069c7a9886a5584a97be651fd177e04dac0c96a90380c2f164ecc71496dda1ad267e4594b4c2b81fa39f54a1be988e7f8bf090cc99d8bdde8250ba1b89725758a7138bbb6b7bab0377f60b4740e47c6e06d"
+    },
+    "logName": "projects/black-moon-469217-u2/logs/run.googleapis.com%2Fvarlog%2Fsystem",
+    "receiveTimestamp": "2025-08-28T09:49:07.283480997Z"
+  },
+  {
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "status": {
+        "code": 9,
+        "message": "Ready condition status changed to False for Revision ms-ai-foundry-backend-00003-756 with message: The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00003-756&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00003-756%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start"
+      },
+      "serviceName": "run.googleapis.com",
+      "methodName": "/Services.ReplaceService",
+      "resourceName": "namespaces/black-moon-469217-u2/revisions/ms-ai-foundry-backend-00003-756",
+      "response": {
+        "metadata": {
+          "name": "ms-ai-foundry-backend-00003-756",
+          "namespace": "387636570370",
+          "selfLink": "/apis/serving.knative.dev/v1/namespaces/387636570370/revisions/ms-ai-foundry-backend-00003-756",
+          "uid": "6352feac-a2f2-45e7-b194-2fd645edda1a",
+          "resourceVersion": "AAY9adD7bMc",
+          "generation": 1,
+          "creationTimestamp": "2025-08-28T09:48:50.545635Z",
+          "labels": {
+            "client.knative.dev/nonce": "3da5305f-e111-4cf3-8096-58711447c5f1",
+            "serving.knative.dev/configuration": "ms-ai-foundry-backend",
+            "serving.knative.dev/configurationGeneration": "3",
+            "serving.knative.dev/service": "ms-ai-foundry-backend",
+            "serving.knative.dev/serviceUid": "09f447ae-2d4e-4173-8f42-23311811557c",
+            "serving.knative.dev/route": "ms-ai-foundry-backend",
+            "run.googleapis.com/satisfiesPzs": "true",
+            "cloud.googleapis.com/location": "asia-northeast3",
+            "run.googleapis.com/startupProbeType": "Default"
+          },
+          "annotations": {
+            "run.googleapis.com/client-name": "cloud-console",
+            "autoscaling.knative.dev/maxScale": "20",
+            "serving.knative.dev/creator": "seth000123@gmail.com",
+            "run.googleapis.com/operation-id": "c959b3d4-a38d-46d4-a9e4-ce851eb2dcb4",
+            "run.googleapis.com/startup-cpu-boost": "true"
+          },
+          "ownerReferences": [
+            {
+              "kind": "Configuration",
+              "name": "ms-ai-foundry-backend",
+              "uid": "7350fcc0-9b83-4b41-b27c-fc2a139fc86c",
+              "apiVersion": "serving.knative.dev/v1",
+              "controller": true,
+              "blockOwnerDeletion": true
+            }
+          ]
+        },
+        "apiVersion": "serving.knative.dev/v1",
+        "kind": "Revision",
+        "spec": {
+          "containerConcurrency": 80,
+          "timeoutSeconds": 300,
+          "serviceAccountName": "387636570370-compute@developer.gserviceaccount.com",
+          "containers": [
+            {
+              "name": "ms-ai-foundry-backend-1",
+              "image": "gcr.io/black-moon-469217-u2/ms-ai-foundry-backend@sha256:ce54f762a9b5ceaba4ac132fb789059d749d192b2ddc9d1cce051e6ac2a77a00",
+              "ports": [
+                {
+                  "name": "http1",
+                  "containerPort": 8080
+                }
+              ],
+              "env": [
+                {
+                  "name": "SUPABASE_URL",
+                  "value": "https://nrsftmbbcktetgbhtydb.supabase.co"
+                },
+                {
+                  "name": "SUPABASE_KEY",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ   zdXBhYmFzZSIsInJlZiI6Im5yc2Z0bWJiY2t0ZXRnYmh0eWRiIiwicm9sZSI6   ImFub24iLCJpYXQiOjE3NTYyMDMwNTAsImV4cCI6MjA3MTc3OTA1MH0.HPF5-   Tno6Y353RMH_KjtbOlA3Owsw9QrcgRlOQoc2f4"
+                },
+                {
+                  "name": "AZURE_OPENAI_ENDPOINT",
+                  "value": "https://seth0-mer0fg9g-eastus2.openai.a   zure.com/"
+                },
+                {
+                  "name": "AZURE_OPENAI_KEY",
+                  "value": "sSpDc9MiWtf3iPRvlwSWcp80o8x1NcRwYAvue9Ip753h   TuLsnFW4JQQJ99BHACHYHv6XJ3w3AAAAACOGD3cu"
+                },
+                {
+                  "name": "AZURE_OPENAI_VERSION",
+                  "value": "2023-12-01-preview"
+                },
+                {
+                  "name": "AZURE_OPENAI_DEPLOYMENT",
+                  "value": "gpt-4.1-mini"
+                },
+                {
+                  "name": "NAVER_CLIENT_ID",
+                  "value": "STMnzQVWIracp3Bd3tyd"
+                },
+                {
+                  "name": "NAVER_CLIENT_SECRET",
+                  "value": "OSDTwWvmxF"
+                },
+                {
+                  "name": "NEWS_API_KEY",
+                  "value": "36864d13002742aa9f94cacc2f10a4e8"
+                }
+              ],
+              "resources": {
+                "limits": {
+                  "cpu": "1000m",
+                  "memory": "512Mi"
+                }
+              },
+              "startupProbe": {
+                "timeoutSeconds": 240,
+                "periodSeconds": 240,
+                "failureThreshold": 1,
+                "tcpSocket": {
+                  "port": 8080
+                }
+              }
+            }
+          ]
+        },
+        "status": {
+          "observedGeneration": 1,
+          "conditions": [
+            {
+              "type": "Ready",
+              "status": "False",
+              "reason": "HealthCheckContainerError",
+              "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00003-756&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00003-756%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+              "lastTransitionTime": "2025-08-28T09:49:07.262663Z"
+            },
+            {
+              "type": "ContainerHealthy",
+              "status": "False",
+              "reason": "HealthCheckContainerError",
+              "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00003-756&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00003-756%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+              "lastTransitionTime": "2025-08-28T09:49:07.262663Z"
+            },
+            {
+              "type": "ContainerReady",
+              "status": "True",
+              "message": "Container image import completed in 7.01s.",
+              "lastTransitionTime": "2025-08-28T09:48:59.484410Z"
+            },
+            {
+              "type": "ResourcesAvailable",
+              "status": "True",
+              "message": "Provisioning imported containers completed in 1.35s. Checking container health. This will wait for up to 4m for the configured startup probe, including an initial delay of 0s.",
+              "lastTransitionTime": "2025-08-28T09:49:00.841713Z"
+            },
+            {
+              "type": "Retry",
+              "status": "True",
+              "reason": "ImmediateRetry",
+              "message": "System will retry after 0:00:00 from lastTransitionTime for attempt 0.",
+              "lastTransitionTime": "2025-08-28T09:49:00.841713Z",
+              "severity": "Info"
+            }
+          ],
+          "logUrl": "https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00003-756&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00003-756%22",
+          "imageDigest": "gcr.io/black-moon-469217-u2/ms-ai-foundry-backend@sha256:ce54f762a9b5ceaba4ac132fb789059d749d192b2ddc9d1cce051e6ac2a77a00",
+          "containerStatuses": [
+            {
+              "name": "ms-ai-foundry-backend-1",
+              "imageDigest": "gcr.io/black-moon-469217-u2/ms-ai-foundry-backend@sha256:ce54f762a9b5ceaba4ac132fb789059d749d192b2ddc9d1cce051e6ac2a77a00"
+            }
+          ]
+        },
+        "@type": "type.googleapis.com/google.cloud.run.v1.Revision"
+      }
+    },
+    "insertId": "-iuwjf8d298s",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "location": "asia-northeast3",
+        "project_id": "black-moon-469217-u2",
+        "revision_name": "ms-ai-foundry-backend-00003-756",
+        "configuration_name": "ms-ai-foundry-backend",
+        "service_name": "ms-ai-foundry-backend"
+      }
+    },
+    "timestamp": "2025-08-28T09:49:07.273478Z",
+    "severity": "ERROR",
+    "logName": "projects/black-moon-469217-u2/logs/cloudaudit.googleapis.com%2Fsystem_event",
+    "receiveTimestamp": "2025-08-28T09:49:07.957523499Z"
+  },
+  {
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "status": {
+        "code": 9,
+        "message": "Ready condition status changed to False for Service ms-ai-foundry-backend with message: Revision 'ms-ai-foundry-backend-00003-756' is not ready and cannot serve traffic. The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00003-756&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00003-756%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start"
+      },
+      "serviceName": "run.googleapis.com",
+      "methodName": "/Services.ReplaceService",
+      "resourceName": "namespaces/black-moon-469217-u2/services/ms-ai-foundry-backend",
+      "response": {
+        "metadata": {
+          "name": "ms-ai-foundry-backend",
+          "namespace": "387636570370",
+          "selfLink": "/apis/serving.knative.dev/v1/namespaces/387636570370/services/ms-ai-foundry-backend",
+          "uid": "09f447ae-2d4e-4173-8f42-23311811557c",
+          "resourceVersion": "AAY9adD9Xrw",
+          "generation": 3,
+          "creationTimestamp": "2025-08-28T09:33:23.798096Z",
+          "labels": {
+            "run.googleapis.com/satisfiesPzs": "true",
+            "cloud.googleapis.com/location": "asia-northeast3"
+          },
+          "annotations": {
+            "serving.knative.dev/creator": "seth000123@gmail.com",
+            "serving.knative.dev/lastModifier": "seth000123@gmail.com",
+            "run.googleapis.com/client-name": "cloud-console",
+            "run.googleapis.com/operation-id": "c959b3d4-a38d-46d4-a9e4-ce851eb2dcb4",
+            "run.googleapis.com/ingress": "all",
+            "run.googleapis.com/ingress-status": "all",
+            "run.googleapis.com/invoker-iam-disabled": "true",
+            "run.googleapis.com/maxScale": "3",
+            "run.googleapis.com/urls": "[\"https://ms-ai-foundry-backend-387636570370.asia-northeast3.run.app\"]"
+          }
+        },
+        "apiVersion": "serving.knative.dev/v1",
+        "kind": "Service",
+        "spec": {
+          "template": {
+            "metadata": {
+              "labels": {
+                "client.knative.dev/nonce": "3da5305f-e111-4cf3-8096-58711447c5f1",
+                "run.googleapis.com/startupProbeType": "Default"
+              },
+              "annotations": {
+                "run.googleapis.com/client-name": "cloud-console",
+                "autoscaling.knative.dev/maxScale": "20",
+                "run.googleapis.com/startup-cpu-boost": "true"
+              }
+            },
+            "spec": {
+              "containerConcurrency": 80,
+              "timeoutSeconds": 300,
+              "serviceAccountName": "387636570370-compute@developer.gserviceaccount.com",
+              "containers": [
+                {
+                  "name": "ms-ai-foundry-backend-1",
+                  "image": "gcr.io/black-moon-469217-u2/ms-ai-foundry-backend:latest",
+                  "ports": [
+                    {
+                      "name": "http1",
+                      "containerPort": 8080
+                    }
+                  ],
+                  "env": [
+                    {
+                      "name": "SUPABASE_URL",
+                      "value": "https://nrsftmbbcktetgbhtydb.supabase.co"
+                    },
+                    {
+                      "name": "SUPABASE_KEY",
+                      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ   zdXBhYmFzZSIsInJlZiI6Im5yc2Z0bWJiY2t0ZXRnYmh0eWRiIiwicm9sZSI6   ImFub24iLCJpYXQiOjE3NTYyMDMwNTAsImV4cCI6MjA3MTc3OTA1MH0.HPF5-   Tno6Y353RMH_KjtbOlA3Owsw9QrcgRlOQoc2f4"
+                    },
+                    {
+                      "name": "AZURE_OPENAI_ENDPOINT",
+                      "value": "https://seth0-mer0fg9g-eastus2.openai.a   zure.com/"
+                    },
+                    {
+                      "name": "AZURE_OPENAI_KEY",
+                      "value": "sSpDc9MiWtf3iPRvlwSWcp80o8x1NcRwYAvue9Ip753h   TuLsnFW4JQQJ99BHACHYHv6XJ3w3AAAAACOGD3cu"
+                    },
+                    {
+                      "name": "AZURE_OPENAI_VERSION",
+                      "value": "2023-12-01-preview"
+                    },
+                    {
+                      "name": "AZURE_OPENAI_DEPLOYMENT",
+                      "value": "gpt-4.1-mini"
+                    },
+                    {
+                      "name": "NAVER_CLIENT_ID",
+                      "value": "STMnzQVWIracp3Bd3tyd"
+                    },
+                    {
+                      "name": "NAVER_CLIENT_SECRET",
+                      "value": "OSDTwWvmxF"
+                    },
+                    {
+                      "name": "NEWS_API_KEY",
+                      "value": "36864d13002742aa9f94cacc2f10a4e8"
+                    }
+                  ],
+                  "resources": {
+                    "limits": {
+                      "cpu": "1000m",
+                      "memory": "512Mi"
+                    }
+                  },
+                  "startupProbe": {
+                    "timeoutSeconds": 240,
+                    "periodSeconds": 240,
+                    "failureThreshold": 1,
+                    "tcpSocket": {
+                      "port": 8080
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "traffic": [
+            {
+              "percent": 100,
+              "latestRevision": true
+            }
+          ]
+        },
+        "status": {
+          "observedGeneration": 3,
+          "conditions": [
+            {
+              "type": "Ready",
+              "status": "False",
+              "reason": "HealthCheckContainerError",
+              "message": "Revision 'ms-ai-foundry-backend-00003-756' is not ready and cannot serve traffic. The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00003-756&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00003-756%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+              "lastTransitionTime": "2025-08-28T09:49:07.314228Z"
+            },
+            {
+              "type": "ConfigurationsReady",
+              "status": "True",
+              "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00003-756&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00003-756%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+              "lastTransitionTime": "2025-08-28T09:49:07.304515Z"
+            },
+            {
+              "type": "RoutesReady",
+              "status": "False",
+              "reason": "HealthCheckContainerError",
+              "message": "Revision 'ms-ai-foundry-backend-00003-756' is not ready and cannot serve traffic. The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00003-756&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00003-756%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+              "lastTransitionTime": "2025-08-28T09:49:07.314228Z"
+            }
+          ],
+          "latestCreatedRevisionName": "ms-ai-foundry-backend-00003-756"
+        },
+        "@type": "type.googleapis.com/google.cloud.run.v1.Service"
+      }
+    },
+    "insertId": "dmh3sdd2f2u",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "location": "asia-northeast3",
+        "revision_name": "",
+        "project_id": "black-moon-469217-u2",
+        "service_name": "ms-ai-foundry-backend",
+        "configuration_name": ""
+      }
+    },
+    "timestamp": "2025-08-28T09:49:07.409037Z",
+    "severity": "ERROR",
+    "logName": "projects/black-moon-469217-u2/logs/cloudaudit.googleapis.com%2Fsystem_event",
+    "receiveTimestamp": "2025-08-28T09:49:08.001166607Z"
+  },
+  {
+    "textPayload": "Traceback (most recent call last):\n  File \"/usr/local/bin/uvicorn\", line 8, in <module>\n    sys.exit(main())",
+    "insertId": "68b0333300081881c6af7d8c",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "configuration_name": "ms-ai-foundry-backend",
+        "location": "asia-northeast3",
+        "project_id": "black-moon-469217-u2",
+        "revision_name": "ms-ai-foundry-backend-00004-w9p",
+        "service_name": "ms-ai-foundry-backend"
+      }
+    },
+    "timestamp": "2025-08-28T10:45:07.530561Z",
+    "severity": "ERROR",
+    "labels": {
+      "instanceId": "0069c7a988168b1ee9e50e88749e3f2e63da98b79b0d2208609696cdd687a06dab401cd6695e0003b32fa01a068a199753aa74dd89ebf865420275bd564cb2d3b442c03d0f00c6e25867c513952633b92bc4"
+    },
+    "logName": "projects/black-moon-469217-u2/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2025-08-28T10:45:07.531341546Z",
+    "errorGroups": [
+      {
+        "id": "COv40r3t68fvkQE"
+      }
+    ]
+  },
+  {
+    "textPayload": "Default STARTUP TCP probe failed 1 time consecutively for container \"ms-ai-foundry-backend-1\" on port 8080. The instance was not started.\nConnection failed with status CANCELLED.",
+    "insertId": "68b033340002c888f4e2ff8d",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "location": "asia-northeast3",
+        "configuration_name": "ms-ai-foundry-backend",
+        "service_name": "ms-ai-foundry-backend",
+        "project_id": "black-moon-469217-u2",
+        "revision_name": "ms-ai-foundry-backend-00004-w9p"
+      }
+    },
+    "timestamp": "2025-08-28T10:45:08.182408Z",
+    "severity": "ERROR",
+    "labels": {
+      "instanceId": "0069c7a988168b1ee9e50e88749e3f2e63da98b79b0d2208609696cdd687a06dab401cd6695e0003b32fa01a068a199753aa74dd89ebf865420275bd564cb2d3b442c03d0f00c6e25867c513952633b92bc4"
+    },
+    "logName": "projects/black-moon-469217-u2/logs/run.googleapis.com%2Fvarlog%2Fsystem",
+    "receiveTimestamp": "2025-08-28T10:45:08.299858688Z"
+  },
+  {
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "status": {
+        "code": 9,
+        "message": "Ready condition status changed to False for Revision ms-ai-foundry-backend-00004-w9p with message: The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00004-w9p&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00004-w9p%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start"
+      },
+      "serviceName": "run.googleapis.com",
+      "methodName": "/Services.ReplaceService",
+      "resourceName": "namespaces/black-moon-469217-u2/revisions/ms-ai-foundry-backend-00004-w9p",
+      "response": {
+        "metadata": {
+          "name": "ms-ai-foundry-backend-00004-w9p",
+          "namespace": "387636570370",
+          "selfLink": "/apis/serving.knative.dev/v1/namespaces/387636570370/revisions/ms-ai-foundry-backend-00004-w9p",
+          "uid": "e3dd0bd0-0140-4a2a-9239-0970e5f0b254",
+          "resourceVersion": "AAY9aplPAvU",
+          "generation": 1,
+          "creationTimestamp": "2025-08-28T10:44:44.538591Z",
+          "labels": {
+            "client.knative.dev/nonce": "tfkukndjxh",
+            "serving.knative.dev/configuration": "ms-ai-foundry-backend",
+            "serving.knative.dev/configurationGeneration": "4",
+            "serving.knative.dev/service": "ms-ai-foundry-backend",
+            "serving.knative.dev/serviceUid": "09f447ae-2d4e-4173-8f42-23311811557c",
+            "serving.knative.dev/route": "ms-ai-foundry-backend",
+            "run.googleapis.com/satisfiesPzs": "true",
+            "cloud.googleapis.com/location": "asia-northeast3",
+            "run.googleapis.com/startupProbeType": "Default"
+          },
+          "annotations": {
+            "autoscaling.knative.dev/maxScale": "20",
+            "run.googleapis.com/client-name": "gcloud",
+            "run.googleapis.com/client-version": "536.0.1",
+            "serving.knative.dev/creator": "seth000123@gmail.com",
+            "run.googleapis.com/operation-id": "b4bea338-17a7-4640-93a2-7706a232308b",
+            "run.googleapis.com/startup-cpu-boost": "true"
+          },
+          "ownerReferences": [
+            {
+              "kind": "Configuration",
+              "name": "ms-ai-foundry-backend",
+              "uid": "7350fcc0-9b83-4b41-b27c-fc2a139fc86c",
+              "apiVersion": "serving.knative.dev/v1",
+              "controller": true,
+              "blockOwnerDeletion": true
+            }
+          ]
+        },
+        "apiVersion": "serving.knative.dev/v1",
+        "kind": "Revision",
+        "spec": {
+          "containerConcurrency": 80,
+          "timeoutSeconds": 300,
+          "serviceAccountName": "387636570370-compute@developer.gserviceaccount.com",
+          "containers": [
+            {
+              "name": "ms-ai-foundry-backend-1",
+              "image": "gcr.io/black-moon-469217-u2/ms-ai-foundry-backend@sha256:afcd921a3d576d3131455b904f6159bb63681bdf206cd14fabee422a03f50ab1",
+              "ports": [
+                {
+                  "name": "http1",
+                  "containerPort": 8080
+                }
+              ],
+              "env": [
+                {
+                  "name": "SUPABASE_URL",
+                  "value": "https://nrsftmbbcktetgbhtydb.supabase.co"
+                },
+                {
+                  "name": "SUPABASE_KEY",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ   zdXBhYmFzZSIsInJlZiI6Im5yc2Z0bWJiY2t0ZXRnYmh0eWRiIiwicm9sZSI6   ImFub24iLCJpYXQiOjE3NTYyMDMwNTAsImV4cCI6MjA3MTc3OTA1MH0.HPF5-   Tno6Y353RMH_KjtbOlA3Owsw9QrcgRlOQoc2f4"
+                },
+                {
+                  "name": "AZURE_OPENAI_ENDPOINT",
+                  "value": "https://seth0-mer0fg9g-eastus2.openai.a   zure.com/"
+                },
+                {
+                  "name": "AZURE_OPENAI_KEY",
+                  "value": "sSpDc9MiWtf3iPRvlwSWcp80o8x1NcRwYAvue9Ip753h   TuLsnFW4JQQJ99BHACHYHv6XJ3w3AAAAACOGD3cu"
+                },
+                {
+                  "name": "AZURE_OPENAI_VERSION",
+                  "value": "2023-12-01-preview"
+                },
+                {
+                  "name": "AZURE_OPENAI_DEPLOYMENT",
+                  "value": "gpt-4.1-mini"
+                },
+                {
+                  "name": "NAVER_CLIENT_ID",
+                  "value": "STMnzQVWIracp3Bd3tyd"
+                },
+                {
+                  "name": "NAVER_CLIENT_SECRET",
+                  "value": "OSDTwWvmxF"
+                },
+                {
+                  "name": "NEWS_API_KEY",
+                  "value": "36864d13002742aa9f94cacc2f10a4e8"
+                }
+              ],
+              "resources": {
+                "limits": {
+                  "cpu": "1000m",
+                  "memory": "512Mi"
+                }
+              },
+              "startupProbe": {
+                "timeoutSeconds": 240,
+                "periodSeconds": 240,
+                "failureThreshold": 1,
+                "tcpSocket": {
+                  "port": 8080
+                }
+              }
+            }
+          ]
+        },
+        "status": {
+          "observedGeneration": 1,
+          "conditions": [
+            {
+              "type": "Ready",
+              "status": "False",
+              "reason": "HealthCheckContainerError",
+              "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00004-w9p&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00004-w9p%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+              "lastTransitionTime": "2025-08-28T10:45:08.183797Z"
+            },
+            {
+              "type": "ContainerHealthy",
+              "status": "False",
+              "reason": "HealthCheckContainerError",
+              "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00004-w9p&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00004-w9p%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+              "lastTransitionTime": "2025-08-28T10:45:08.183797Z"
+            },
+            {
+              "type": "ContainerReady",
+              "status": "True",
+              "message": "Container image import completed in 13.77s.",
+              "lastTransitionTime": "2025-08-28T10:45:00.331247Z"
+            },
+            {
+              "type": "ResourcesAvailable",
+              "status": "True",
+              "message": "Provisioning imported containers completed in 2.47s. Checking container health. This will wait for up to 4m for the configured startup probe, including an initial delay of 0s.",
+              "lastTransitionTime": "2025-08-28T10:45:02.807663Z"
+            },
+            {
+              "type": "Retry",
+              "status": "True",
+              "reason": "ImmediateRetry",
+              "message": "System will retry after 0:00:00 from lastTransitionTime for attempt 0.",
+              "lastTransitionTime": "2025-08-28T10:45:02.807663Z",
+              "severity": "Info"
+            }
+          ],
+          "logUrl": "https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00004-w9p&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00004-w9p%22",
+          "imageDigest": "gcr.io/black-moon-469217-u2/ms-ai-foundry-backend@sha256:afcd921a3d576d3131455b904f6159bb63681bdf206cd14fabee422a03f50ab1",
+          "containerStatuses": [
+            {
+              "name": "ms-ai-foundry-backend-1",
+              "imageDigest": "gcr.io/black-moon-469217-u2/ms-ai-foundry-backend@sha256:afcd921a3d576d3131455b904f6159bb63681bdf206cd14fabee422a03f50ab1"
+            }
+          ]
+        },
+        "@type": "type.googleapis.com/google.cloud.run.v1.Revision"
+      }
+    },
+    "insertId": "-6lgz5bd1xns",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "location": "asia-northeast3",
+        "configuration_name": "ms-ai-foundry-backend",
+        "project_id": "black-moon-469217-u2",
+        "service_name": "ms-ai-foundry-backend",
+        "revision_name": "ms-ai-foundry-backend-00004-w9p"
+      }
+    },
+    "timestamp": "2025-08-28T10:45:08.192829Z",
+    "severity": "ERROR",
+    "logName": "projects/black-moon-469217-u2/logs/cloudaudit.googleapis.com%2Fsystem_event",
+    "receiveTimestamp": "2025-08-28T10:45:08.331515677Z"
+  },
+  {
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "status": {
+        "code": 9,
+        "message": "Ready condition status changed to False for Service ms-ai-foundry-backend with message: Revision 'ms-ai-foundry-backend-00004-w9p' is not ready and cannot serve traffic. The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00004-w9p&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00004-w9p%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start"
+      },
+      "serviceName": "run.googleapis.com",
+      "methodName": "/Services.ReplaceService",
+      "resourceName": "namespaces/black-moon-469217-u2/services/ms-ai-foundry-backend",
+      "response": {
+        "metadata": {
+          "name": "ms-ai-foundry-backend",
+          "namespace": "387636570370",
+          "selfLink": "/apis/serving.knative.dev/v1/namespaces/387636570370/services/ms-ai-foundry-backend",
+          "uid": "09f447ae-2d4e-4173-8f42-23311811557c",
+          "resourceVersion": "AAY9aplQUis",
+          "generation": 4,
+          "creationTimestamp": "2025-08-28T09:33:23.798096Z",
+          "labels": {
+            "run.googleapis.com/satisfiesPzs": "true",
+            "cloud.googleapis.com/location": "asia-northeast3"
+          },
+          "annotations": {
+            "serving.knative.dev/creator": "seth000123@gmail.com",
+            "serving.knative.dev/lastModifier": "seth000123@gmail.com",
+            "run.googleapis.com/client-name": "gcloud",
+            "run.googleapis.com/client-version": "536.0.1",
+            "run.googleapis.com/operation-id": "b4bea338-17a7-4640-93a2-7706a232308b",
+            "run.googleapis.com/ingress": "all",
+            "run.googleapis.com/ingress-status": "all",
+            "run.googleapis.com/invoker-iam-disabled": "true",
+            "run.googleapis.com/maxScale": "3",
+            "run.googleapis.com/urls": "[\"https://ms-ai-foundry-backend-387636570370.asia-northeast3.run.app\"]"
+          }
+        },
+        "apiVersion": "serving.knative.dev/v1",
+        "kind": "Service",
+        "spec": {
+          "template": {
+            "metadata": {
+              "labels": {
+                "client.knative.dev/nonce": "tfkukndjxh",
+                "run.googleapis.com/startupProbeType": "Default"
+              },
+              "annotations": {
+                "autoscaling.knative.dev/maxScale": "20",
+                "run.googleapis.com/client-name": "gcloud",
+                "run.googleapis.com/client-version": "536.0.1",
+                "run.googleapis.com/startup-cpu-boost": "true"
+              }
+            },
+            "spec": {
+              "containerConcurrency": 80,
+              "timeoutSeconds": 300,
+              "serviceAccountName": "387636570370-compute@developer.gserviceaccount.com",
+              "containers": [
+                {
+                  "name": "ms-ai-foundry-backend-1",
+                  "image": "gcr.io/black-moon-469217-u2/ms-ai-foundry-backend",
+                  "ports": [
+                    {
+                      "name": "http1",
+                      "containerPort": 8080
+                    }
+                  ],
+                  "env": [
+                    {
+                      "name": "SUPABASE_URL",
+                      "value": "https://nrsftmbbcktetgbhtydb.supabase.co"
+                    },
+                    {
+                      "name": "SUPABASE_KEY",
+                      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ   zdXBhYmFzZSIsInJlZiI6Im5yc2Z0bWJiY2t0ZXRnYmh0eWRiIiwicm9sZSI6   ImFub24iLCJpYXQiOjE3NTYyMDMwNTAsImV4cCI6MjA3MTc3OTA1MH0.HPF5-   Tno6Y353RMH_KjtbOlA3Owsw9QrcgRlOQoc2f4"
+                    },
+                    {
+                      "name": "AZURE_OPENAI_ENDPOINT",
+                      "value": "https://seth0-mer0fg9g-eastus2.openai.a   zure.com/"
+                    },
+                    {
+                      "name": "AZURE_OPENAI_KEY",
+                      "value": "sSpDc9MiWtf3iPRvlwSWcp80o8x1NcRwYAvue9Ip753h   TuLsnFW4JQQJ99BHACHYHv6XJ3w3AAAAACOGD3cu"
+                    },
+                    {
+                      "name": "AZURE_OPENAI_VERSION",
+                      "value": "2023-12-01-preview"
+                    },
+                    {
+                      "name": "AZURE_OPENAI_DEPLOYMENT",
+                      "value": "gpt-4.1-mini"
+                    },
+                    {
+                      "name": "NAVER_CLIENT_ID",
+                      "value": "STMnzQVWIracp3Bd3tyd"
+                    },
+                    {
+                      "name": "NAVER_CLIENT_SECRET",
+                      "value": "OSDTwWvmxF"
+                    },
+                    {
+                      "name": "NEWS_API_KEY",
+                      "value": "36864d13002742aa9f94cacc2f10a4e8"
+                    }
+                  ],
+                  "resources": {
+                    "limits": {
+                      "cpu": "1000m",
+                      "memory": "512Mi"
+                    }
+                  },
+                  "startupProbe": {
+                    "timeoutSeconds": 240,
+                    "periodSeconds": 240,
+                    "failureThreshold": 1,
+                    "tcpSocket": {
+                      "port": 8080
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "traffic": [
+            {
+              "percent": 100,
+              "latestRevision": true
+            }
+          ]
+        },
+        "status": {
+          "observedGeneration": 4,
+          "conditions": [
+            {
+              "type": "Ready",
+              "status": "False",
+              "reason": "HealthCheckContainerError",
+              "message": "Revision 'ms-ai-foundry-backend-00004-w9p' is not ready and cannot serve traffic. The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00004-w9p&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00004-w9p%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+              "lastTransitionTime": "2025-08-28T10:45:08.220531Z"
+            },
+            {
+              "type": "ConfigurationsReady",
+              "status": "True",
+              "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00004-w9p&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00004-w9p%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+              "lastTransitionTime": "2025-08-28T10:45:08.209545Z"
+            },
+            {
+              "type": "RoutesReady",
+              "status": "False",
+              "reason": "HealthCheckContainerError",
+              "message": "Revision 'ms-ai-foundry-backend-00004-w9p' is not ready and cannot serve traffic. The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00004-w9p&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00004-w9p%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+              "lastTransitionTime": "2025-08-28T10:45:08.220531Z"
+            }
+          ],
+          "latestCreatedRevisionName": "ms-ai-foundry-backend-00004-w9p"
+        },
+        "@type": "type.googleapis.com/google.cloud.run.v1.Service"
+      }
+    },
+    "insertId": "-gwwvkad17z0",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "configuration_name": "",
+        "project_id": "black-moon-469217-u2",
+        "location": "asia-northeast3",
+        "revision_name": "",
+        "service_name": "ms-ai-foundry-backend"
+      }
+    },
+    "timestamp": "2025-08-28T10:45:08.282478Z",
+    "severity": "ERROR",
+    "logName": "projects/black-moon-469217-u2/logs/cloudaudit.googleapis.com%2Fsystem_event",
+    "receiveTimestamp": "2025-08-28T10:45:08.517977039Z"
+  },
+  {
+    "textPayload": "Traceback (most recent call last):\n  File \"/usr/local/bin/uvicorn\", line 8, in <module>\n    sys.exit(main())",
+    "insertId": "68b033dd00026e6d377e0487",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "location": "asia-northeast3",
+        "revision_name": "ms-ai-foundry-backend-00005-nz9",
+        "configuration_name": "ms-ai-foundry-backend",
+        "service_name": "ms-ai-foundry-backend",
+        "project_id": "black-moon-469217-u2"
+      }
+    },
+    "timestamp": "2025-08-28T10:47:57.159341Z",
+    "severity": "ERROR",
+    "labels": {
+      "instanceId": "0069c7a9884a79d18b1a9e1c942c9f81948289d2ca6de5abfa4b04561b71cd4f832397a4a29e307a27a59ae202118ba896ed662194c506b7684c72414b73a156a4c6d3126d2c4de525c8441acc97c0d4da"
+    },
+    "logName": "projects/black-moon-469217-u2/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2025-08-28T10:47:57.162193965Z",
+    "errorGroups": [
+      {
+        "id": "COv40r3t68fvkQE"
+      }
+    ]
+  },
+  {
+    "textPayload": "Default STARTUP TCP probe failed 1 time consecutively for container \"ms-ai-foundry-backend-1\" on port 8080. The instance was not started.\nConnection failed with status CANCELLED.",
+    "insertId": "68b033de00009449b35f293d",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "revision_name": "ms-ai-foundry-backend-00005-nz9",
+        "location": "asia-northeast3",
+        "configuration_name": "ms-ai-foundry-backend",
+        "project_id": "black-moon-469217-u2",
+        "service_name": "ms-ai-foundry-backend"
+      }
+    },
+    "timestamp": "2025-08-28T10:47:58.037961Z",
+    "severity": "ERROR",
+    "labels": {
+      "instanceId": "0069c7a9884a79d18b1a9e1c942c9f81948289d2ca6de5abfa4b04561b71cd4f832397a4a29e307a27a59ae202118ba896ed662194c506b7684c72414b73a156a4c6d3126d2c4de525c8441acc97c0d4da"
+    },
+    "logName": "projects/black-moon-469217-u2/logs/run.googleapis.com%2Fvarlog%2Fsystem",
+    "receiveTimestamp": "2025-08-28T10:47:58.090191571Z"
+  },
+  {
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "status": {
+        "code": 9,
+        "message": "Ready condition status changed to False for Revision ms-ai-foundry-backend-00005-nz9 with message: The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00005-nz9&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00005-nz9%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start"
+      },
+      "serviceName": "run.googleapis.com",
+      "methodName": "/Services.ReplaceService",
+      "resourceName": "namespaces/black-moon-469217-u2/revisions/ms-ai-foundry-backend-00005-nz9",
+      "response": {
+        "metadata": {
+          "name": "ms-ai-foundry-backend-00005-nz9",
+          "namespace": "387636570370",
+          "selfLink": "/apis/serving.knative.dev/v1/namespaces/387636570370/revisions/ms-ai-foundry-backend-00005-nz9",
+          "uid": "37d88dc3-624b-410b-8803-323cdaaedd74",
+          "resourceVersion": "AAY9aqNuyo8",
+          "generation": 1,
+          "creationTimestamp": "2025-08-28T10:47:37.223590Z",
+          "labels": {
+            "client.knative.dev/nonce": "igbmlzviti",
+            "serving.knative.dev/configuration": "ms-ai-foundry-backend",
+            "serving.knative.dev/configurationGeneration": "5",
+            "serving.knative.dev/service": "ms-ai-foundry-backend",
+            "serving.knative.dev/serviceUid": "09f447ae-2d4e-4173-8f42-23311811557c",
+            "serving.knative.dev/route": "ms-ai-foundry-backend",
+            "run.googleapis.com/satisfiesPzs": "true",
+            "cloud.googleapis.com/location": "asia-northeast3",
+            "run.googleapis.com/startupProbeType": "Default"
+          },
+          "annotations": {
+            "autoscaling.knative.dev/maxScale": "20",
+            "run.googleapis.com/client-name": "gcloud",
+            "run.googleapis.com/client-version": "536.0.1",
+            "serving.knative.dev/creator": "seth000123@gmail.com",
+            "run.googleapis.com/operation-id": "227358cf-fc22-43f1-a540-80778f3194d4",
+            "run.googleapis.com/startup-cpu-boost": "true"
+          },
+          "ownerReferences": [
+            {
+              "kind": "Configuration",
+              "name": "ms-ai-foundry-backend",
+              "uid": "7350fcc0-9b83-4b41-b27c-fc2a139fc86c",
+              "apiVersion": "serving.knative.dev/v1",
+              "controller": true,
+              "blockOwnerDeletion": true
+            }
+          ]
+        },
+        "apiVersion": "serving.knative.dev/v1",
+        "kind": "Revision",
+        "spec": {
+          "containerConcurrency": 80,
+          "timeoutSeconds": 300,
+          "serviceAccountName": "387636570370-compute@developer.gserviceaccount.com",
+          "containers": [
+            {
+              "name": "ms-ai-foundry-backend-1",
+              "image": "gcr.io/black-moon-469217-u2/ms-ai-foundry-backend@sha256:650dad74b5491646d9ec27b8c2d0ecbbb19c766c71b69f87d7bcdeaf5608e783",
+              "ports": [
+                {
+                  "name": "http1",
+                  "containerPort": 8080
+                }
+              ],
+              "env": [
+                {
+                  "name": "SUPABASE_URL",
+                  "value": "https://nrsftmbbcktetgbhtydb.supabase.co"
+                },
+                {
+                  "name": "SUPABASE_KEY",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ   zdXBhYmFzZSIsInJlZiI6Im5yc2Z0bWJiY2t0ZXRnYmh0eWRiIiwicm9sZSI6   ImFub24iLCJpYXQiOjE3NTYyMDMwNTAsImV4cCI6MjA3MTc3OTA1MH0.HPF5-   Tno6Y353RMH_KjtbOlA3Owsw9QrcgRlOQoc2f4"
+                },
+                {
+                  "name": "AZURE_OPENAI_ENDPOINT",
+                  "value": "https://seth0-mer0fg9g-eastus2.openai.a   zure.com/"
+                },
+                {
+                  "name": "AZURE_OPENAI_KEY",
+                  "value": "sSpDc9MiWtf3iPRvlwSWcp80o8x1NcRwYAvue9Ip753h   TuLsnFW4JQQJ99BHACHYHv6XJ3w3AAAAACOGD3cu"
+                },
+                {
+                  "name": "AZURE_OPENAI_VERSION",
+                  "value": "2023-12-01-preview"
+                },
+                {
+                  "name": "AZURE_OPENAI_DEPLOYMENT",
+                  "value": "gpt-4.1-mini"
+                },
+                {
+                  "name": "NAVER_CLIENT_ID",
+                  "value": "STMnzQVWIracp3Bd3tyd"
+                },
+                {
+                  "name": "NAVER_CLIENT_SECRET",
+                  "value": "OSDTwWvmxF"
+                },
+                {
+                  "name": "NEWS_API_KEY",
+                  "value": "36864d13002742aa9f94cacc2f10a4e8"
+                }
+              ],
+              "resources": {
+                "limits": {
+                  "cpu": "1000m",
+                  "memory": "512Mi"
+                }
+              },
+              "startupProbe": {
+                "timeoutSeconds": 240,
+                "periodSeconds": 240,
+                "failureThreshold": 1,
+                "tcpSocket": {
+                  "port": 8080
+                }
+              }
+            }
+          ]
+        },
+        "status": {
+          "observedGeneration": 1,
+          "conditions": [
+            {
+              "type": "Ready",
+              "status": "False",
+              "reason": "HealthCheckContainerError",
+              "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00005-nz9&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00005-nz9%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+              "lastTransitionTime": "2025-08-28T10:47:58.038671Z"
+            },
+            {
+              "type": "ContainerHealthy",
+              "status": "False",
+              "reason": "HealthCheckContainerError",
+              "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00005-nz9&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00005-nz9%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+              "lastTransitionTime": "2025-08-28T10:47:58.038671Z"
+            },
+            {
+              "type": "ContainerReady",
+              "status": "True",
+              "message": "Container image import completed in 10.24s.",
+              "lastTransitionTime": "2025-08-28T10:47:49.176170Z"
+            },
+            {
+              "type": "ResourcesAvailable",
+              "status": "True",
+              "message": "Provisioning imported containers completed in 2.49s. Checking container health. This will wait for up to 4m for the configured startup probe, including an initial delay of 0s.",
+              "lastTransitionTime": "2025-08-28T10:47:51.671588Z"
+            },
+            {
+              "type": "Retry",
+              "status": "True",
+              "reason": "ImmediateRetry",
+              "message": "System will retry after 0:00:00 from lastTransitionTime for attempt 0.",
+              "lastTransitionTime": "2025-08-28T10:47:51.671588Z",
+              "severity": "Info"
+            }
+          ],
+          "logUrl": "https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00005-nz9&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00005-nz9%22",
+          "imageDigest": "gcr.io/black-moon-469217-u2/ms-ai-foundry-backend@sha256:650dad74b5491646d9ec27b8c2d0ecbbb19c766c71b69f87d7bcdeaf5608e783",
+          "containerStatuses": [
+            {
+              "name": "ms-ai-foundry-backend-1",
+              "imageDigest": "gcr.io/black-moon-469217-u2/ms-ai-foundry-backend@sha256:650dad74b5491646d9ec27b8c2d0ecbbb19c766c71b69f87d7bcdeaf5608e783"
+            }
+          ]
+        },
+        "@type": "type.googleapis.com/google.cloud.run.v1.Revision"
+      }
+    },
+    "insertId": "-6lgz5bd1xs0",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "revision_name": "ms-ai-foundry-backend-00005-nz9",
+        "service_name": "ms-ai-foundry-backend",
+        "location": "asia-northeast3",
+        "project_id": "black-moon-469217-u2",
+        "configuration_name": "ms-ai-foundry-backend"
+      }
+    },
+    "timestamp": "2025-08-28T10:47:58.047332Z",
+    "severity": "ERROR",
+    "logName": "projects/black-moon-469217-u2/logs/cloudaudit.googleapis.com%2Fsystem_event",
+    "receiveTimestamp": "2025-08-28T10:47:58.512989209Z"
+  },
+  {
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "status": {
+        "code": 9,
+        "message": "Ready condition status changed to False for Service ms-ai-foundry-backend with message: Revision 'ms-ai-foundry-backend-00005-nz9' is not ready and cannot serve traffic. The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00005-nz9&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00005-nz9%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start"
+      },
+      "serviceName": "run.googleapis.com",
+      "methodName": "/Services.ReplaceService",
+      "resourceName": "namespaces/black-moon-469217-u2/services/ms-ai-foundry-backend",
+      "response": {
+        "metadata": {
+          "name": "ms-ai-foundry-backend",
+          "namespace": "387636570370",
+          "selfLink": "/apis/serving.knative.dev/v1/namespaces/387636570370/services/ms-ai-foundry-backend",
+          "uid": "09f447ae-2d4e-4173-8f42-23311811557c",
+          "resourceVersion": "AAY9aqNw0U4",
+          "generation": 5,
+          "creationTimestamp": "2025-08-28T09:33:23.798096Z",
+          "labels": {
+            "run.googleapis.com/satisfiesPzs": "true",
+            "cloud.googleapis.com/location": "asia-northeast3"
+          },
+          "annotations": {
+            "serving.knative.dev/creator": "seth000123@gmail.com",
+            "serving.knative.dev/lastModifier": "seth000123@gmail.com",
+            "run.googleapis.com/client-name": "gcloud",
+            "run.googleapis.com/client-version": "536.0.1",
+            "run.googleapis.com/operation-id": "227358cf-fc22-43f1-a540-80778f3194d4",
+            "run.googleapis.com/ingress": "all",
+            "run.googleapis.com/ingress-status": "all",
+            "run.googleapis.com/invoker-iam-disabled": "true",
+            "run.googleapis.com/maxScale": "3",
+            "run.googleapis.com/urls": "[\"https://ms-ai-foundry-backend-387636570370.asia-northeast3.run.app\"]"
+          }
+        },
+        "apiVersion": "serving.knative.dev/v1",
+        "kind": "Service",
+        "spec": {
+          "template": {
+            "metadata": {
+              "labels": {
+                "client.knative.dev/nonce": "igbmlzviti",
+                "run.googleapis.com/startupProbeType": "Default"
+              },
+              "annotations": {
+                "autoscaling.knative.dev/maxScale": "20",
+                "run.googleapis.com/client-name": "gcloud",
+                "run.googleapis.com/client-version": "536.0.1",
+                "run.googleapis.com/startup-cpu-boost": "true"
+              }
+            },
+            "spec": {
+              "containerConcurrency": 80,
+              "timeoutSeconds": 300,
+              "serviceAccountName": "387636570370-compute@developer.gserviceaccount.com",
+              "containers": [
+                {
+                  "name": "ms-ai-foundry-backend-1",
+                  "image": "gcr.io/black-moon-469217-u2/ms-ai-foundry-backend",
+                  "ports": [
+                    {
+                      "name": "http1",
+                      "containerPort": 8080
+                    }
+                  ],
+                  "env": [
+                    {
+                      "name": "SUPABASE_URL",
+                      "value": "https://nrsftmbbcktetgbhtydb.supabase.co"
+                    },
+                    {
+                      "name": "SUPABASE_KEY",
+                      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ   zdXBhYmFzZSIsInJlZiI6Im5yc2Z0bWJiY2t0ZXRnYmh0eWRiIiwicm9sZSI6   ImFub24iLCJpYXQiOjE3NTYyMDMwNTAsImV4cCI6MjA3MTc3OTA1MH0.HPF5-   Tno6Y353RMH_KjtbOlA3Owsw9QrcgRlOQoc2f4"
+                    },
+                    {
+                      "name": "AZURE_OPENAI_ENDPOINT",
+                      "value": "https://seth0-mer0fg9g-eastus2.openai.a   zure.com/"
+                    },
+                    {
+                      "name": "AZURE_OPENAI_KEY",
+                      "value": "sSpDc9MiWtf3iPRvlwSWcp80o8x1NcRwYAvue9Ip753h   TuLsnFW4JQQJ99BHACHYHv6XJ3w3AAAAACOGD3cu"
+                    },
+                    {
+                      "name": "AZURE_OPENAI_VERSION",
+                      "value": "2023-12-01-preview"
+                    },
+                    {
+                      "name": "AZURE_OPENAI_DEPLOYMENT",
+                      "value": "gpt-4.1-mini"
+                    },
+                    {
+                      "name": "NAVER_CLIENT_ID",
+                      "value": "STMnzQVWIracp3Bd3tyd"
+                    },
+                    {
+                      "name": "NAVER_CLIENT_SECRET",
+                      "value": "OSDTwWvmxF"
+                    },
+                    {
+                      "name": "NEWS_API_KEY",
+                      "value": "36864d13002742aa9f94cacc2f10a4e8"
+                    }
+                  ],
+                  "resources": {
+                    "limits": {
+                      "cpu": "1000m",
+                      "memory": "512Mi"
+                    }
+                  },
+                  "startupProbe": {
+                    "timeoutSeconds": 240,
+                    "periodSeconds": 240,
+                    "failureThreshold": 1,
+                    "tcpSocket": {
+                      "port": 8080
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "traffic": [
+            {
+              "percent": 100,
+              "latestRevision": true
+            }
+          ]
+        },
+        "status": {
+          "observedGeneration": 5,
+          "conditions": [
+            {
+              "type": "Ready",
+              "status": "False",
+              "reason": "HealthCheckContainerError",
+              "message": "Revision 'ms-ai-foundry-backend-00005-nz9' is not ready and cannot serve traffic. The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00005-nz9&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00005-nz9%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+              "lastTransitionTime": "2025-08-28T10:47:58.071598Z"
+            },
+            {
+              "type": "ConfigurationsReady",
+              "status": "True",
+              "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00005-nz9&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00005-nz9%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+              "lastTransitionTime": "2025-08-28T10:47:58.064826Z"
+            },
+            {
+              "type": "RoutesReady",
+              "status": "False",
+              "reason": "HealthCheckContainerError",
+              "message": "Revision 'ms-ai-foundry-backend-00005-nz9' is not ready and cannot serve traffic. The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00005-nz9&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00005-nz9%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+              "lastTransitionTime": "2025-08-28T10:47:58.071598Z"
+            }
+          ],
+          "latestCreatedRevisionName": "ms-ai-foundry-backend-00005-nz9"
+        },
+        "@type": "type.googleapis.com/google.cloud.run.v1.Service"
+      }
+    },
+    "insertId": "nli41fd21j8",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "revision_name": "",
+        "location": "asia-northeast3",
+        "project_id": "black-moon-469217-u2",
+        "service_name": "ms-ai-foundry-backend",
+        "configuration_name": ""
+      }
+    },
+    "timestamp": "2025-08-28T10:47:58.189624Z",
+    "severity": "ERROR",
+    "logName": "projects/black-moon-469217-u2/logs/cloudaudit.googleapis.com%2Fsystem_event",
+    "receiveTimestamp": "2025-08-28T10:47:58.788468131Z"
+  },
+  {
+    "textPayload": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/app/app/main.py\", line 5, in <module>\n    from app.api import auth_supabase, analysis_supabase, news_supabase, recommendations_supabase, news_v1, analysis_v1\n  File \"/app/app/api/analysis_supabase.py\", line 2, in <module>\n    from app.services.openai_service import OpenAIService\n  File \"/app/app/services/openai_service.py\", line 86\n    \"\"\"",
+    "insertId": "68b034cb0000242f23ff285a",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "service_name": "ms-ai-foundry-backend",
+        "configuration_name": "ms-ai-foundry-backend",
+        "location": "asia-northeast3",
+        "project_id": "black-moon-469217-u2",
+        "revision_name": "ms-ai-foundry-backend-00006-57m"
+      }
+    },
+    "timestamp": "2025-08-28T10:51:55.009263Z",
+    "severity": "ERROR",
+    "labels": {
+      "instanceId": "0069c7a9880a3a688ffcf586302d6ab8cc707298f35b4caa697cd1ccf49b036939f17a0fa17bff051b642628cb9d188e8fdaff2502d8b7a4899290b6ef2b5764733207c691fffc96b609f24ff0678f6f40"
+    },
+    "logName": "projects/black-moon-469217-u2/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2025-08-28T10:51:55.013180298Z",
+    "errorGroups": [
+      {
+        "id": "CNDTo6D639fqOw"
+      }
+    ]
+  },
+  {
+    "textPayload": "Default STARTUP TCP probe failed 1 time consecutively for container \"ms-ai-foundry-backend-1\" on port 8080. The instance was not started.\nConnection failed with status CANCELLED.",
+    "insertId": "68b034cc0001564af5144ad6",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "location": "asia-northeast3",
+        "service_name": "ms-ai-foundry-backend",
+        "revision_name": "ms-ai-foundry-backend-00006-57m",
+        "project_id": "black-moon-469217-u2",
+        "configuration_name": "ms-ai-foundry-backend"
+      }
+    },
+    "timestamp": "2025-08-28T10:51:56.087626Z",
+    "severity": "ERROR",
+    "labels": {
+      "instanceId": "0069c7a9880a3a688ffcf586302d6ab8cc707298f35b4caa697cd1ccf49b036939f17a0fa17bff051b642628cb9d188e8fdaff2502d8b7a4899290b6ef2b5764733207c691fffc96b609f24ff0678f6f40"
+    },
+    "logName": "projects/black-moon-469217-u2/logs/run.googleapis.com%2Fvarlog%2Fsystem",
+    "receiveTimestamp": "2025-08-28T10:51:56.340370992Z"
+  },
+  {
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "status": {
+        "code": 9,
+        "message": "Ready condition status changed to False for Revision ms-ai-foundry-backend-00006-57m with message: The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00006-57m&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00006-57m%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start"
+      },
+      "serviceName": "run.googleapis.com",
+      "methodName": "/Services.ReplaceService",
+      "resourceName": "namespaces/black-moon-469217-u2/revisions/ms-ai-foundry-backend-00006-57m",
+      "response": {
+        "metadata": {
+          "name": "ms-ai-foundry-backend-00006-57m",
+          "namespace": "387636570370",
+          "selfLink": "/apis/serving.knative.dev/v1/namespaces/387636570370/revisions/ms-ai-foundry-backend-00006-57m",
+          "uid": "b4af0828-77e0-4c7c-a6fb-b23c5dca9c6e",
+          "resourceVersion": "AAY9arGfIhw",
+          "generation": 1,
+          "creationTimestamp": "2025-08-28T10:51:36.092441Z",
+          "labels": {
+            "client.knative.dev/nonce": "awxwxfdkgj",
+            "serving.knative.dev/configuration": "ms-ai-foundry-backend",
+            "serving.knative.dev/configurationGeneration": "6",
+            "serving.knative.dev/service": "ms-ai-foundry-backend",
+            "serving.knative.dev/serviceUid": "09f447ae-2d4e-4173-8f42-23311811557c",
+            "serving.knative.dev/route": "ms-ai-foundry-backend",
+            "run.googleapis.com/satisfiesPzs": "true",
+            "cloud.googleapis.com/location": "asia-northeast3",
+            "run.googleapis.com/startupProbeType": "Default"
+          },
+          "annotations": {
+            "autoscaling.knative.dev/maxScale": "20",
+            "run.googleapis.com/client-name": "gcloud",
+            "run.googleapis.com/client-version": "536.0.1",
+            "serving.knative.dev/creator": "seth000123@gmail.com",
+            "run.googleapis.com/operation-id": "d05ecdf3-b4b0-48c3-b57a-dc1e81c8262a",
+            "run.googleapis.com/startup-cpu-boost": "true"
+          },
+          "ownerReferences": [
+            {
+              "kind": "Configuration",
+              "name": "ms-ai-foundry-backend",
+              "uid": "7350fcc0-9b83-4b41-b27c-fc2a139fc86c",
+              "apiVersion": "serving.knative.dev/v1",
+              "controller": true,
+              "blockOwnerDeletion": true
+            }
+          ]
+        },
+        "apiVersion": "serving.knative.dev/v1",
+        "kind": "Revision",
+        "spec": {
+          "containerConcurrency": 80,
+          "timeoutSeconds": 300,
+          "serviceAccountName": "387636570370-compute@developer.gserviceaccount.com",
+          "containers": [
+            {
+              "name": "ms-ai-foundry-backend-1",
+              "image": "gcr.io/black-moon-469217-u2/ms-ai-foundry-backend@sha256:10464c68db6dc5a1b52091df1945c5816a91f4de68afa50e89fe71577481afc2",
+              "ports": [
+                {
+                  "name": "http1",
+                  "containerPort": 8080
+                }
+              ],
+              "env": [
+                {
+                  "name": "SUPABASE_URL",
+                  "value": "https://nrsftmbbcktetgbhtydb.supabase.co"
+                },
+                {
+                  "name": "SUPABASE_KEY",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ   zdXBhYmFzZSIsInJlZiI6Im5yc2Z0bWJiY2t0ZXRnYmh0eWRiIiwicm9sZSI6   ImFub24iLCJpYXQiOjE3NTYyMDMwNTAsImV4cCI6MjA3MTc3OTA1MH0.HPF5-   Tno6Y353RMH_KjtbOlA3Owsw9QrcgRlOQoc2f4"
+                },
+                {
+                  "name": "AZURE_OPENAI_ENDPOINT",
+                  "value": "https://seth0-mer0fg9g-eastus2.openai.a   zure.com/"
+                },
+                {
+                  "name": "AZURE_OPENAI_KEY",
+                  "value": "sSpDc9MiWtf3iPRvlwSWcp80o8x1NcRwYAvue9Ip753h   TuLsnFW4JQQJ99BHACHYHv6XJ3w3AAAAACOGD3cu"
+                },
+                {
+                  "name": "AZURE_OPENAI_VERSION",
+                  "value": "2023-12-01-preview"
+                },
+                {
+                  "name": "AZURE_OPENAI_DEPLOYMENT",
+                  "value": "gpt-4.1-mini"
+                },
+                {
+                  "name": "NAVER_CLIENT_ID",
+                  "value": "STMnzQVWIracp3Bd3tyd"
+                },
+                {
+                  "name": "NAVER_CLIENT_SECRET",
+                  "value": "OSDTwWvmxF"
+                },
+                {
+                  "name": "NEWS_API_KEY",
+                  "value": "36864d13002742aa9f94cacc2f10a4e8"
+                }
+              ],
+              "resources": {
+                "limits": {
+                  "cpu": "1000m",
+                  "memory": "512Mi"
+                }
+              },
+              "startupProbe": {
+                "timeoutSeconds": 240,
+                "periodSeconds": 240,
+                "failureThreshold": 1,
+                "tcpSocket": {
+                  "port": 8080
+                }
+              }
+            }
+          ]
+        },
+        "status": {
+          "observedGeneration": 1,
+          "conditions": [
+            {
+              "type": "Ready",
+              "status": "False",
+              "reason": "HealthCheckContainerError",
+              "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00006-57m&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00006-57m%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+              "lastTransitionTime": "2025-08-28T10:51:56.087836Z"
+            },
+            {
+              "type": "ContainerHealthy",
+              "status": "False",
+              "reason": "HealthCheckContainerError",
+              "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00006-57m&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00006-57m%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+              "lastTransitionTime": "2025-08-28T10:51:56.087836Z"
+            },
+            {
+              "type": "ContainerReady",
+              "status": "True",
+              "message": "Container image import completed in 10.29s.",
+              "lastTransitionTime": "2025-08-28T10:51:48.044388Z"
+            },
+            {
+              "type": "ResourcesAvailable",
+              "status": "True",
+              "message": "Provisioning imported containers completed in 2.53s. Checking container health. This will wait for up to 4m for the configured startup probe, including an initial delay of 0s.",
+              "lastTransitionTime": "2025-08-28T10:51:50.577309Z"
+            },
+            {
+              "type": "Retry",
+              "status": "True",
+              "reason": "ImmediateRetry",
+              "message": "System will retry after 0:00:00 from lastTransitionTime for attempt 0.",
+              "lastTransitionTime": "2025-08-28T10:51:50.577309Z",
+              "severity": "Info"
+            }
+          ],
+          "logUrl": "https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00006-57m&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00006-57m%22",
+          "imageDigest": "gcr.io/black-moon-469217-u2/ms-ai-foundry-backend@sha256:10464c68db6dc5a1b52091df1945c5816a91f4de68afa50e89fe71577481afc2",
+          "containerStatuses": [
+            {
+              "name": "ms-ai-foundry-backend-1",
+              "imageDigest": "gcr.io/black-moon-469217-u2/ms-ai-foundry-backend@sha256:10464c68db6dc5a1b52091df1945c5816a91f4de68afa50e89fe71577481afc2"
+            }
+          ]
+        },
+        "@type": "type.googleapis.com/google.cloud.run.v1.Revision"
+      }
+    },
+    "insertId": "-4yhtxxd4dvi",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "revision_name": "ms-ai-foundry-backend-00006-57m",
+        "location": "asia-northeast3",
+        "configuration_name": "ms-ai-foundry-backend",
+        "service_name": "ms-ai-foundry-backend",
+        "project_id": "black-moon-469217-u2"
+      }
+    },
+    "timestamp": "2025-08-28T10:51:56.095671Z",
+    "severity": "ERROR",
+    "logName": "projects/black-moon-469217-u2/logs/cloudaudit.googleapis.com%2Fsystem_event",
+    "receiveTimestamp": "2025-08-28T10:51:56.547431505Z"
+  },
+  {
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "status": {
+        "code": 9,
+        "message": "Ready condition status changed to False for Service ms-ai-foundry-backend with message: Revision 'ms-ai-foundry-backend-00006-57m' is not ready and cannot serve traffic. The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00006-57m&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00006-57m%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start"
+      },
+      "serviceName": "run.googleapis.com",
+      "methodName": "/Services.ReplaceService",
+      "resourceName": "namespaces/black-moon-469217-u2/services/ms-ai-foundry-backend",
+      "response": {
+        "metadata": {
+          "name": "ms-ai-foundry-backend",
+          "namespace": "387636570370",
+          "selfLink": "/apis/serving.knative.dev/v1/namespaces/387636570370/services/ms-ai-foundry-backend",
+          "uid": "09f447ae-2d4e-4173-8f42-23311811557c",
+          "resourceVersion": "AAY9arGglpc",
+          "generation": 6,
+          "creationTimestamp": "2025-08-28T09:33:23.798096Z",
+          "labels": {
+            "run.googleapis.com/satisfiesPzs": "true",
+            "cloud.googleapis.com/location": "asia-northeast3"
+          },
+          "annotations": {
+            "serving.knative.dev/creator": "seth000123@gmail.com",
+            "serving.knative.dev/lastModifier": "seth000123@gmail.com",
+            "run.googleapis.com/client-name": "gcloud",
+            "run.googleapis.com/client-version": "536.0.1",
+            "run.googleapis.com/operation-id": "d05ecdf3-b4b0-48c3-b57a-dc1e81c8262a",
+            "run.googleapis.com/ingress": "all",
+            "run.googleapis.com/ingress-status": "all",
+            "run.googleapis.com/invoker-iam-disabled": "true",
+            "run.googleapis.com/maxScale": "3",
+            "run.googleapis.com/urls": "[\"https://ms-ai-foundry-backend-387636570370.asia-northeast3.run.app\"]"
+          }
+        },
+        "apiVersion": "serving.knative.dev/v1",
+        "kind": "Service",
+        "spec": {
+          "template": {
+            "metadata": {
+              "labels": {
+                "client.knative.dev/nonce": "awxwxfdkgj",
+                "run.googleapis.com/startupProbeType": "Default"
+              },
+              "annotations": {
+                "autoscaling.knative.dev/maxScale": "20",
+                "run.googleapis.com/client-name": "gcloud",
+                "run.googleapis.com/client-version": "536.0.1",
+                "run.googleapis.com/startup-cpu-boost": "true"
+              }
+            },
+            "spec": {
+              "containerConcurrency": 80,
+              "timeoutSeconds": 300,
+              "serviceAccountName": "387636570370-compute@developer.gserviceaccount.com",
+              "containers": [
+                {
+                  "name": "ms-ai-foundry-backend-1",
+                  "image": "gcr.io/black-moon-469217-u2/ms-ai-foundry-backend",
+                  "ports": [
+                    {
+                      "name": "http1",
+                      "containerPort": 8080
+                    }
+                  ],
+                  "env": [
+                    {
+                      "name": "SUPABASE_URL",
+                      "value": "https://nrsftmbbcktetgbhtydb.supabase.co"
+                    },
+                    {
+                      "name": "SUPABASE_KEY",
+                      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ   zdXBhYmFzZSIsInJlZiI6Im5yc2Z0bWJiY2t0ZXRnYmh0eWRiIiwicm9sZSI6   ImFub24iLCJpYXQiOjE3NTYyMDMwNTAsImV4cCI6MjA3MTc3OTA1MH0.HPF5-   Tno6Y353RMH_KjtbOlA3Owsw9QrcgRlOQoc2f4"
+                    },
+                    {
+                      "name": "AZURE_OPENAI_ENDPOINT",
+                      "value": "https://seth0-mer0fg9g-eastus2.openai.a   zure.com/"
+                    },
+                    {
+                      "name": "AZURE_OPENAI_KEY",
+                      "value": "sSpDc9MiWtf3iPRvlwSWcp80o8x1NcRwYAvue9Ip753h   TuLsnFW4JQQJ99BHACHYHv6XJ3w3AAAAACOGD3cu"
+                    },
+                    {
+                      "name": "AZURE_OPENAI_VERSION",
+                      "value": "2023-12-01-preview"
+                    },
+                    {
+                      "name": "AZURE_OPENAI_DEPLOYMENT",
+                      "value": "gpt-4.1-mini"
+                    },
+                    {
+                      "name": "NAVER_CLIENT_ID",
+                      "value": "STMnzQVWIracp3Bd3tyd"
+                    },
+                    {
+                      "name": "NAVER_CLIENT_SECRET",
+                      "value": "OSDTwWvmxF"
+                    },
+                    {
+                      "name": "NEWS_API_KEY",
+                      "value": "36864d13002742aa9f94cacc2f10a4e8"
+                    }
+                  ],
+                  "resources": {
+                    "limits": {
+                      "cpu": "1000m",
+                      "memory": "512Mi"
+                    }
+                  },
+                  "startupProbe": {
+                    "timeoutSeconds": 240,
+                    "periodSeconds": 240,
+                    "failureThreshold": 1,
+                    "tcpSocket": {
+                      "port": 8080
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "traffic": [
+            {
+              "percent": 100,
+              "latestRevision": true
+            }
+          ]
+        },
+        "status": {
+          "observedGeneration": 6,
+          "conditions": [
+            {
+              "type": "Ready",
+              "status": "False",
+              "reason": "HealthCheckContainerError",
+              "message": "Revision 'ms-ai-foundry-backend-00006-57m' is not ready and cannot serve traffic. The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00006-57m&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00006-57m%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+              "lastTransitionTime": "2025-08-28T10:51:56.126888Z"
+            },
+            {
+              "type": "ConfigurationsReady",
+              "status": "True",
+              "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00006-57m&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00006-57m%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+              "lastTransitionTime": "2025-08-28T10:51:56.112184Z"
+            },
+            {
+              "type": "RoutesReady",
+              "status": "False",
+              "reason": "HealthCheckContainerError",
+              "message": "Revision 'ms-ai-foundry-backend-00006-57m' is not ready and cannot serve traffic. The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=black-moon-469217-u2&resource=cloud_run_revision/service_name/ms-ai-foundry-backend/revision_name/ms-ai-foundry-backend-00006-57m&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22ms-ai-foundry-backend%22%0Aresource.labels.revision_name%3D%22ms-ai-foundry-backend-00006-57m%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+              "lastTransitionTime": "2025-08-28T10:51:56.126888Z"
+            }
+          ],
+          "latestCreatedRevisionName": "ms-ai-foundry-backend-00006-57m"
+        },
+        "@type": "type.googleapis.com/google.cloud.run.v1.Service"
+      }
+    },
+    "insertId": "78apw9cupw",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "location": "asia-northeast3",
+        "configuration_name": "",
+        "service_name": "ms-ai-foundry-backend",
+        "revision_name": "",
+        "project_id": "black-moon-469217-u2"
+      }
+    },
+    "timestamp": "2025-08-28T10:51:56.202364Z",
+    "severity": "ERROR",
+    "logName": "projects/black-moon-469217-u2/logs/cloudaudit.googleapis.com%2Fsystem_event",
+    "receiveTimestamp": "2025-08-28T10:51:57.017074090Z"
+  }
+]

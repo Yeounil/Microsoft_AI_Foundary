@@ -5,6 +5,9 @@ from app.services.supabase_data_service import SupabaseDataService
 from app.api.auth_supabase import get_current_active_user
 from typing import Dict, Any, Optional
 from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -40,17 +43,27 @@ async def get_stock_news_v1(
 ):
     """특정 주식 관련 뉴스 (v1 호환성)"""
     try:
-        # 기존 방식으로 뉴스 가져오기
-        news = NewsService.get_stock_related_news(symbol, limit)
-        
+        from app.services.news_db_service import NewsDBService
+
+        # 1. DB에서 뉴스 조회
+        news = await NewsDBService.get_latest_news_by_symbol(symbol=symbol, limit=limit)
+
+        # 2. 뉴스가 부족하면 크롤링
+        if len(news) < 5 or force_crawl:
+            logger.info(f"{symbol} 뉴스가 부족합니다 ({len(news)}개). 크롤링을 시작합니다.")
+            await NewsService.crawl_and_save_stock_news(symbol, limit)
+            # 크롤링 후 다시 조회
+            news = await NewsDBService.get_latest_news_by_symbol(symbol=symbol, limit=limit)
+
         return {
             "symbol": symbol,
             "total_count": len(news),
             "articles": news,
             "force_crawl": force_crawl
         }
-        
+
     except Exception as e:
+        logger.error(f"뉴스 조회 오류 ({symbol}): {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/stock/{symbol}/crawl")
@@ -60,18 +73,25 @@ async def crawl_stock_news_v1(
 ):
     """특정 주식 뉴스 크롤링 (v1 호환성)"""
     try:
-        # 뉴스 크롤링 시뮬레이션 (실제로는 기존 뉴스 반환)
-        news = NewsService.get_stock_related_news(symbol, limit)
-        
+        from app.services.news_db_service import NewsDBService
+
+        # 실제 크롤링 수행
+        logger.info(f"{symbol} 뉴스 크롤링 시작...")
+        crawled_news = await NewsService.crawl_and_save_stock_news(symbol, limit)
+
+        # 크롤링 후 DB에서 조회
+        news = await NewsDBService.get_latest_news_by_symbol(symbol=symbol, limit=limit)
+
         return {
             "symbol": symbol,
             "message": f"{symbol} 뉴스를 성공적으로 크롤링했습니다.",
-            "crawled_count": len(news),
+            "crawled_count": len(crawled_news),
             "total_count": len(news),
             "articles": news
         }
-        
+
     except Exception as e:
+        logger.error(f"뉴스 크롤링 오류 ({symbol}): {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/stock/{symbol}/analyze")
@@ -81,16 +101,29 @@ async def analyze_stock_with_news_v1(
     news_limit: int = Query(20, description="분석할 뉴스 개수")
 ):
     """뉴스 기반 주식 분석 (v1 호환성)"""
+    import logging
+    import traceback
+    
+    logger = logging.getLogger(__name__)
+    logger.info(f"주식 분석 시작: {symbol}, news_limit: {news_limit}")
+    
     try:
         # 뉴스 가져오기
+        logger.info(f"뉴스 서비스에서 {symbol} 뉴스 가져오는 중...")
         news = NewsService.get_stock_related_news(symbol, news_limit)
+        logger.info(f"뉴스 가져오기 완료: {len(news)}개")
         
         if not news:
+            logger.warning(f"{symbol} 관련 뉴스가 없음")
             raise HTTPException(status_code=404, detail=f"{symbol} 관련 뉴스가 없습니다.")
         
         # AI 분석 생성
+        logger.info(f"OpenAI 서비스 초기화 중...")
         openai_service = OpenAIService()
+        logger.info(f"OpenAI 서비스 초기화 완료, 분석 실행 중...")
+        
         analysis = await openai_service.analyze_stock_with_news(symbol, news)
+        logger.info(f"AI 분석 완료: {len(analysis) if analysis else 0}자")
         
         return {
             "symbol": symbol,
@@ -101,8 +134,12 @@ async def analyze_stock_with_news_v1(
             "generated_at": datetime.utcnow().isoformat()
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"주식 분석 오류 ({symbol}): {str(e)}")
+        logger.error(f"에러 트레이스백: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"주식 분석 중 오류가 발생했습니다: {str(e)}")
 
 @router.post("/summarize")
 async def summarize_news_v1(

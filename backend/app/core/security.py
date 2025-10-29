@@ -1,11 +1,9 @@
 import hashlib
+import bcrypt
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from app.core.config import settings
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def hash_password_sha256(password: str) -> str:
     """SHA-256으로 비밀번호 해싱"""
@@ -36,11 +34,37 @@ def verify_token(token: str) -> Optional[str]:
     except JWTError:
         return None
 
-# Supabase용 함수들 (passlib 사용)
+# Supabase용 함수들 (bcrypt 직접 사용)
 def get_password_hash(password: str) -> str:
-    """passlib을 사용한 비밀번호 해싱"""
-    return pwd_context.hash(password)
+    """bcrypt를 사용한 비밀번호 해싱"""
+    # 비밀번호를 바이트로 변환
+    password_bytes = password.encode('utf-8')
+
+    # bcrypt는 72바이트 제한이 있으므로, 긴 비밀번호는 SHA-256으로 먼저 해싱
+    if len(password_bytes) > 72:
+        password_bytes = hashlib.sha256(password_bytes).hexdigest().encode('utf-8')
+
+    # salt 생성 및 해싱
+    salt = bcrypt.gensalt(rounds=12)
+    hashed = bcrypt.hashpw(password_bytes, salt)
+
+    # 문자열로 변환하여 반환
+    return hashed.decode('utf-8')
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """passlib을 사용한 비밀번호 검증"""
-    return pwd_context.verify(plain_password, hashed_password)
+    """bcrypt를 사용한 비밀번호 검증"""
+    try:
+        # 비밀번호를 바이트로 변환
+        password_bytes = plain_password.encode('utf-8')
+
+        # 긴 비밀번호는 SHA-256으로 먼저 해싱
+        if len(password_bytes) > 72:
+            password_bytes = hashlib.sha256(password_bytes).hexdigest().encode('utf-8')
+
+        # 해시된 비밀번호를 바이트로 변환
+        hashed_bytes = hashed_password.encode('utf-8')
+
+        # 검증
+        return bcrypt.checkpw(password_bytes, hashed_bytes)
+    except Exception:
+        return False

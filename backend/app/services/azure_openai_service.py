@@ -2,38 +2,48 @@ import os
 import json
 import logging
 from typing import List, Dict, Optional
-from openai import AzureOpenAI
+from openai import OpenAI, AzureOpenAI
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
 class AzureOpenAIService:
-    """Azure OpenAI 서비스"""
-    
+    """OpenAI 서비스 (일반 OpenAI 우선 사용)"""
+
     def __init__(self):
         self.client = None
+        self.is_azure = False
+        self.model_name = "gpt-4o-mini"
         self._initialize_client()
-    
+
     def _initialize_client(self):
-        """Azure OpenAI 클라이언트 초기화"""
+        """OpenAI 클라이언트 초기화 (일반 OpenAI 우선)"""
         try:
-            if not all([
+            # 일반 OpenAI를 우선으로 사용
+            if settings.openai_api_key:
+                self.client = OpenAI(api_key=settings.openai_api_key)
+                self.is_azure = False
+                self.model_name = "gpt-4o-mini"
+                logger.info("일반 OpenAI 클라이언트 초기화 완료")
+            elif all([
                 settings.azure_openai_endpoint,
                 settings.azure_openai_key,
                 settings.azure_openai_deployment
             ]):
-                logger.warning("Azure OpenAI 설정이 완전하지 않음. AI 기능을 사용할 수 없습니다.")
+                self.client = AzureOpenAI(
+                    api_key=settings.azure_openai_key,
+                    api_version=settings.azure_openai_version,
+                    azure_endpoint=settings.azure_openai_endpoint
+                )
+                self.is_azure = True
+                self.model_name = settings.azure_openai_deployment
+                logger.info("Azure OpenAI 클라이언트 초기화 완료 (폴백)")
+            else:
+                logger.warning("OpenAI API 설정이 없음. AI 기능을 사용할 수 없습니다.")
                 return
-            
-            self.client = AzureOpenAI(
-                api_key=settings.azure_openai_key,
-                api_version=settings.azure_openai_version,
-                azure_endpoint=settings.azure_openai_endpoint
-            )
-            logger.info("Azure OpenAI 클라이언트 초기화 완료")
-            
+
         except Exception as e:
-            logger.error(f"Azure OpenAI 클라이언트 초기화 실패: {str(e)}")
+            logger.error(f"OpenAI 클라이언트 초기화 실패: {str(e)}")
             self.client = None
     
     async def analyze_news_relevance(
@@ -51,7 +61,7 @@ class AzureOpenAIService:
             prompt = self._build_relevance_prompt(news_article, user_interests, user_context)
             
             response = self.client.chat.completions.create(
-                model=settings.azure_openai_deployment,
+                model=self.model_name,
                 messages=[
                     {"role": "system", "content": "You are a financial news analyst specializing in personalized content recommendation."},
                     {"role": "user", "content": prompt}
@@ -83,7 +93,7 @@ class AzureOpenAIService:
             prompt = self._build_summary_prompt(top_articles, user_interests)
             
             response = self.client.chat.completions.create(
-                model=settings.azure_openai_deployment,
+                model=self.model_name,
                 messages=[
                     {"role": "system", "content": "You are a financial analyst creating personalized news summaries for investors."},
                     {"role": "user", "content": prompt}
@@ -112,7 +122,7 @@ class AzureOpenAIService:
             prompt = self._build_sentiment_prompt(news_articles, symbol)
             
             response = self.client.chat.completions.create(
-                model=settings.azure_openai_deployment,
+                model=self.model_name,
                 messages=[
                     {"role": "system", "content": "You are a financial sentiment analyst. Analyze news sentiment for stock investments."},
                     {"role": "user", "content": prompt}
@@ -141,7 +151,7 @@ class AzureOpenAIService:
             prompt = self._build_category_prompt(user_interaction_history, current_interests)
             
             response = self.client.chat.completions.create(
-                model=settings.azure_openai_deployment,
+                model=self.model_name,
                 messages=[
                     {"role": "system", "content": "You are a recommendation system analyst specializing in financial news categorization."},
                     {"role": "user", "content": prompt}
@@ -443,9 +453,9 @@ Respond with JSON array: ["category1", "category2", "category3"]
 응답은 반드시 유효한 JSON 형식이어야 하며, 한국어로 작성해주세요.
 """
 
-            # Azure OpenAI API 호출
-            response = await self.client.chat.completions.create(
-                model=self.deployment_name,
+            # OpenAI API 호출
+            response = self.client.chat.completions.create(
+                model=self.model_name,
                 messages=[
                     {"role": "system", "content": "당신은 금융 분석 전문가입니다. 뉴스를 바탕으로 종목별 전문적인 분석을 제공합니다."},
                     {"role": "user", "content": prompt}

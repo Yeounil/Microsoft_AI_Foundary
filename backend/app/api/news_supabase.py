@@ -72,12 +72,12 @@ async def test_supabase_connection():
     """테스트용 Supabase 연결 엔드포인트 (인증 없음)"""
     try:
         from app.db.supabase_client import get_supabase
-        
+
         supabase = get_supabase()
-        
+
         # 간단한 테이블 조회로 연결 테스트
         response = supabase.table("auth_users").select("count", count="exact").limit(1).execute()
-        
+
         return {
             "status": "success",
             "message": "Supabase connection successful",
@@ -88,6 +88,42 @@ async def test_supabase_connection():
             "status": "error",
             "message": f"Supabase connection failed: {str(e)}"
         }
+
+@router.get("/latest")
+async def get_latest_news_public(
+    limit: int = Query(10, description="가져올 뉴스 개수")
+):
+    """최신 뉴스 조회 (인증 불필요)"""
+    try:
+        from app.services.news_db_service import NewsDBService
+
+        news = await NewsDBService.get_latest_financial_news(limit=limit)
+
+        return {
+            "total_count": len(news),
+            "articles": news
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/stock/{symbol}/public")
+async def get_stock_news_public(
+    symbol: str,
+    limit: int = Query(10, description="가져올 뉴스 개수")
+):
+    """특정 종목 뉴스 조회 (인증 불필요)"""
+    try:
+        from app.services.news_db_service import NewsDBService
+
+        news = await NewsDBService.get_latest_news_by_symbol(symbol=symbol, limit=limit)
+
+        return {
+            "symbol": symbol,
+            "total_count": len(news),
+            "articles": news
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/financial")
 async def get_financial_news(
@@ -214,14 +250,14 @@ async def summarize_news(
             news = NewsService.get_korean_financial_news(limit)
         else:
             news = NewsService.get_financial_news(query, limit)
-        
+
         if not news:
             raise HTTPException(status_code=404, detail="요약할 뉴스가 없습니다.")
-        
+
         # OpenAI로 요약 생성
         openai_service = OpenAIService()
         summary = await openai_service.summarize_news(news)
-        
+
         # 뉴스 요약 데이터 구성
         news_summary_data = {
             "query": query,
@@ -231,14 +267,14 @@ async def summarize_news(
             "ai_summary": summary,
             "generated_at": datetime.utcnow().isoformat()
         }
-        
+
         # Supabase에 뉴스 요약 저장
         data_service = SupabaseDataService()
         saved_summary = await data_service.save_news_summary(
             user_id=current_user['id'],
             news_data=news_summary_data
         )
-        
+
         # 활동 로그 저장
         await data_service.log_user_activity(
             user_id=current_user['id'],
@@ -249,12 +285,49 @@ async def summarize_news(
                 "articles_count": len(news)
             }
         )
-        
+
         return {
             **news_summary_data,
             "saved_id": saved_summary['id'] if saved_summary else None
         }
-        
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/summarize-article")
+async def summarize_single_article(
+    article: Dict[str, Any],
+    current_user: Dict[str, Any] = Depends(get_current_active_user)
+):
+    """개별 뉴스 기사 AI 요약"""
+    try:
+        if not article:
+            raise HTTPException(status_code=400, detail="뉴스 기사 정보가 필요합니다.")
+
+        # OpenAI로 개별 기사 요약 생성
+        openai_service = OpenAIService()
+        summary = await openai_service.summarize_single_article(article)
+
+        # 활동 로그 저장
+        data_service = SupabaseDataService()
+        try:
+            await data_service.log_user_activity(
+                user_id=current_user['id'],
+                activity_type="article_summary",
+                details={
+                    "article_title": article.get('title', ''),
+                    "article_url": article.get('url', '')
+                }
+            )
+        except Exception as log_error:
+            print(f"활동 로그 실패: {log_error}")
+
+        return {
+            "article_title": article.get('title', ''),
+            "ai_summary": summary,
+            "generated_at": datetime.utcnow().isoformat()
+        }
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

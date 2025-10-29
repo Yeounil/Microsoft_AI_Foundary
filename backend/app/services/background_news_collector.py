@@ -22,46 +22,56 @@ class BackgroundNewsCollector:
         
     async def collect_popular_symbols_news(self, limit_per_symbol: int = 20) -> Dict:
         """인기 종목들의 뉴스를 백그라운드에서 수집"""
+        crawl_start_time = datetime.now()
+
         try:
             logger.info("백그라운드 뉴스 수집 시작")
-            
+
             # 1. 모든 사용자의 관심사에서 인기 종목 추출
             popular_symbols = await self._get_popular_symbols()
-            
+
             if not popular_symbols:
                 popular_symbols = ["AAPL", "GOOGL", "MSFT", "NVDA", "TSLA", "AMZN", "META"]  # 기본 인기 종목
-            
+
             logger.info(f"수집 대상 종목: {popular_symbols}")
-            
+
             # 2. 각 종목별로 뉴스 수집 (병렬 처리)
             collection_tasks = []
             for symbol in popular_symbols:
                 task = self._collect_and_analyze_symbol_news(symbol, limit_per_symbol)
                 collection_tasks.append(task)
-            
+
             # 병렬 실행
             results = await asyncio.gather(*collection_tasks, return_exceptions=True)
-            
+
             # 3. 결과 정리
             total_collected = 0
             successful_symbols = []
             failed_symbols = []
-            
+
             for i, result in enumerate(results):
                 symbol = popular_symbols[i]
                 if isinstance(result, Exception):
                     logger.error(f"종목 {symbol} 뉴스 수집 실패: {str(result)}")
                     failed_symbols.append(symbol)
+                    # 실패한 경우에도 이력 기록
+                    await self._record_crawl_history(
+                        symbol, 0, "scheduled", "failed", str(result)
+                    )
                 else:
                     collected_count = result.get('collected_count', 0)
                     total_collected += collected_count
                     successful_symbols.append({
-                        'symbol': symbol, 
+                        'symbol': symbol,
                         'count': collected_count
                     })
-            
+                    # 성공한 경우 이력 기록
+                    await self._record_crawl_history(
+                        symbol, collected_count, "scheduled", "completed"
+                    )
+
             logger.info(f"백그라운드 뉴스 수집 완료: 총 {total_collected}개")
-            
+
             return {
                 "status": "completed",
                 "total_collected": total_collected,
@@ -69,7 +79,7 @@ class BackgroundNewsCollector:
                 "failed_symbols": failed_symbols,
                 "collection_time": datetime.now().isoformat()
             }
-            
+
         except Exception as e:
             logger.error(f"백그라운드 뉴스 수집 중 오류: {str(e)}")
             return {
@@ -320,22 +330,51 @@ class BackgroundNewsCollector:
         except Exception as e:
             logger.error(f"분석된 기사 저장 오류: {str(e)}")
     
+    async def _record_crawl_history(
+        self,
+        symbol: str,
+        articles_collected: int,
+        crawl_type: str = "scheduled",
+        status: str = "completed",
+        error_message: str = None
+    ):
+        """크롤링 이력을 DB에 기록"""
+        try:
+            supabase = get_supabase()
+
+            crawl_data = {
+                "symbol": symbol,
+                "crawl_type": crawl_type,
+                "articles_collected": articles_collected,
+                "crawl_completed_at": datetime.now().isoformat(),
+                "status": status,
+                "error_message": error_message
+            }
+
+            result = supabase.table("news_crawl_history").insert(crawl_data).execute()
+
+            if result.data:
+                logger.info(f"크롤링 이력 기록 완료: {symbol} ({articles_collected}개)")
+
+        except Exception as e:
+            logger.error(f"크롤링 이력 기록 오류: {str(e)}")
+
     async def cleanup_old_news(self, days_old: int = 7):
         """오래된 뉴스 정리"""
         try:
             supabase = get_supabase()
             cutoff_date = (datetime.now() - timedelta(days=days_old)).isoformat()
-            
+
             result = supabase.table("news_articles")\
                 .delete()\
                 .lt("published_at", cutoff_date)\
                 .execute()
-            
+
             deleted_count = len(result.data) if result.data else 0
             logger.info(f"오래된 뉴스 {deleted_count}개 정리 완료")
-            
+
             return {"deleted_count": deleted_count}
-            
+
         except Exception as e:
             logger.error(f"뉴스 정리 중 오류: {str(e)}")
             return {"deleted_count": 0}

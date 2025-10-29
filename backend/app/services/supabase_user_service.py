@@ -14,7 +14,8 @@ class UserCreate(BaseModel):
     password: str
 
 class UserLogin(BaseModel):
-    username: str
+    username: Optional[str] = None
+    email: Optional[str] = None
     password: str
 
 class UserResponse(BaseModel):
@@ -238,3 +239,34 @@ class SupabaseUserService:
         except Exception as e:
             logger.error(f"관심사 삭제 중 오류 발생: {str(e)}")
             return False
+    
+    async def authenticate_user(self, username_or_email: str, password: str) -> Optional[Dict[str, Any]]:
+        """사용자 인증 (이메일 또는 사용자명으로 로그인)"""
+        try:
+            user = None
+            
+            # 먼저 사용자명으로 시도
+            if username_or_email:
+                user = await self.get_user_by_username(username_or_email)
+                
+                # 사용자명으로 찾지 못했으면 이메일로 시도
+                if not user:
+                    user = await self.get_user_by_email(username_or_email)
+            
+            if not user:
+                return None
+                
+            # 비밀번호 검증
+            if not verify_password(password, user.get("hashed_password", "")):
+                return None
+                
+            # 비밀번호 제외하고 반환
+            user_copy = user.copy()
+            if 'hashed_password' in user_copy:
+                del user_copy['hashed_password']
+                
+            return user_copy
+            
+        except Exception as e:
+            logger.error(f"사용자 인증 중 오류 발생: {str(e)}")
+            return None
