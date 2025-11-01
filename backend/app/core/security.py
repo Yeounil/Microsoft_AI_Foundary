@@ -20,15 +20,30 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
         expire = datetime.utcnow() + expires_delta
     else:
         expire = datetime.utcnow() + timedelta(minutes=15)
-    
-    to_encode.update({"exp": expire})
+
+    to_encode.update({"exp": expire, "type": "access"})
     encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
     return encoded_jwt
 
-def verify_token(token: str) -> Optional[str]:
+def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None):
+    """JWT 리프레시 토큰 생성"""
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(days=7)
+
+    to_encode.update({"exp": expire, "type": "refresh"})
+    encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
+    return encoded_jwt
+
+def verify_token(token: str, token_type: str = "access") -> Optional[str]:
     """JWT 토큰 검증하여 username 반환"""
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+        # 토큰 타입 확인
+        if payload.get("type") != token_type:
+            return None
         username: str = payload.get("sub")
         return username
     except JWTError:

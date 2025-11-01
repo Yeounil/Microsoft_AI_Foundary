@@ -82,23 +82,23 @@ export function RegisterPage({ onRegister, onSwitchToLogin }: RegisterPageProps)
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-secondary via-secondary/90 to-black flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-2xl">
-        <CardHeader className="text-center pb-4">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4">
+      <Card className="w-full max-w-[400px] shadow-lg border-0">
+        <CardHeader className="text-center pb-4 pt-8 px-8">
           <div className="flex justify-center mb-6">
             <Image
               src={myLogo}
               alt="I NEED RED Logo"
               width={200}
-              height={80}
+              height={60}
               priority
               className="object-contain"
             />
           </div>
-          <CardTitle className="text-2xl">회원가입</CardTitle>
-          <CardDescription>새로운 계정을 만들어 시작하세요</CardDescription>
+          <CardTitle className="text-2xl font-semibold text-[#333333]">회원가입</CardTitle>
+          <CardDescription className="text-[#666666]">새로운 계정을 만들어 시작하세요</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-8 pb-8">
           {error && (
             <Alert variant="destructive" className="mb-4">
               <AlertCircle className="h-4 w-4" />
@@ -114,56 +114,56 @@ export function RegisterPage({ onRegister, onSwitchToLogin }: RegisterPageProps)
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">사용자명</Label>
+              <Label htmlFor="username" className="text-[#333333] font-normal">사용자명</Label>
               <Input
                 id="username"
                 type="text"
                 placeholder="사용자명을 입력하세요"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="h-12 border-2 border-slate-300 focus:border-primary"
+                className="h-12 rounded border border-[#E0E0E0] focus:border-[#333333] focus-visible:ring-0 focus-visible:ring-offset-0"
                 required
                 disabled={loading}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">이메일</Label>
+              <Label htmlFor="email" className="text-[#333333] font-normal">이메일</Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="이메일을 입력하세요"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="h-12 border-2 border-slate-300 focus:border-primary"
+                className="h-12 rounded border border-[#E0E0E0] focus:border-[#333333] focus-visible:ring-0 focus-visible:ring-offset-0"
                 required
                 disabled={loading}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">비밀번호</Label>
+              <Label htmlFor="password" className="text-[#333333] font-normal">비밀번호</Label>
               <Input
                 id="password"
                 type="password"
                 placeholder="비밀번호를 입력하세요 (최소 6자)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="h-12 border-2 border-slate-300 focus:border-primary"
+                className="h-12 rounded border border-[#E0E0E0] focus:border-[#333333] focus-visible:ring-0 focus-visible:ring-offset-0"
                 required
                 disabled={loading}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">비밀번호 확인</Label>
+              <Label htmlFor="confirmPassword" className="text-[#333333] font-normal">비밀번호 확인</Label>
               <Input
                 id="confirmPassword"
                 type="password"
                 placeholder="비밀번호를 다시 입력하세요"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="h-12 border-2 border-slate-300 focus:border-primary"
+                className="h-12 rounded border border-[#E0E0E0] focus:border-[#333333] focus-visible:ring-0 focus-visible:ring-offset-0"
                 required
                 disabled={loading}
               />
@@ -172,22 +172,24 @@ export function RegisterPage({ onRegister, onSwitchToLogin }: RegisterPageProps)
               )}
             </div>
 
-            <Button
-              type="submit"
-              className="w-full bg-primary hover:bg-primary/90 text-secondary h-12"
-              size="lg"
-              disabled={loading || password !== confirmPassword}
-            >
-              {loading ? '회원가입 중...' : '회원가입'}
-            </Button>
+            <div className="pt-2">
+              <Button
+                type="submit"
+                className="w-full bg-primary hover:bg-primary/90 text-secondary h-11 rounded-lg font-semibold text-base shadow-none"
+                disabled={loading || password !== confirmPassword}
+              >
+                {loading ? '회원가입 중...' : '회원가입'}
+              </Button>
+            </div>
 
             <div className="text-center pt-4">
-              <p className="text-muted-foreground text-sm">
+              <p className="text-[#666666] text-sm">
                 이미 계정이 있으신가요?{' '}
                 <button
                   type="button"
                   onClick={onSwitchToLogin}
-                  className="text-primary hover:underline font-medium"
+                  className="text-secondary hover:underline font-medium"
+                  disabled={loading}
                 >
                   로그인
                 </button>

@@ -16,6 +16,25 @@ const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
+// 토큰 새로고침 상태 관리
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (value?: unknown) => void;
+  reject: (reason?: any) => void;
+}> = [];
+
+const processQueue = (error: any = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve();
+    }
+  });
+
+  failedQueue = [];
+};
+
 // 토큰 관리
 export const setAuthToken = (token: string) => {
   if (token) {
@@ -27,9 +46,93 @@ export const setAuthToken = (token: string) => {
     delete api.defaults.headers.common['Authorization'];
     if (typeof window !== 'undefined') {
       localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
     }
   }
 };
+
+// 리프레시 토큰 저장/조회
+export const setRefreshToken = (token: string) => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('refreshToken', token);
+  }
+};
+
+export const getRefreshToken = (): string | null => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('refreshToken');
+  }
+  return null;
+};
+
+// Response Interceptor - 토큰 자동 갱신
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    // 401 에러이고, 아직 재시도하지 않은 요청인 경우
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        // 이미 토큰을 새로고침 중이면 큐에 추가
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then(() => {
+            return api(originalRequest);
+          })
+          .catch((err) => {
+            return Promise.reject(err);
+          });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      const refreshToken = getRefreshToken();
+      if (!refreshToken) {
+        // 리프레시 토큰이 없으면 로그아웃 처리
+        setAuthToken('');
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+        return Promise.reject(error);
+      }
+
+      try {
+        // 리프레시 토큰으로 새 액세스 토큰 요청
+        const response = await axios.post(`${API_BASE_URL}/api/v2/auth/refresh`, {
+          refresh_token: refreshToken,
+        });
+
+        const { access_token, refresh_token } = response.data;
+
+        // 새 토큰 저장
+        setAuthToken(access_token);
+        setRefreshToken(refresh_token);
+
+        // 큐에 있는 요청들 처리
+        processQueue(null);
+        isRefreshing = false;
+
+        // 원래 요청 재시도
+        originalRequest.headers['Authorization'] = `Bearer ${access_token}`;
+        return api(originalRequest);
+      } catch (refreshError) {
+        // 리프레시 실패 시 로그아웃 처리
+        processQueue(refreshError);
+        isRefreshing = false;
+        setAuthToken('');
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+        return Promise.reject(refreshError);
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 // 로컬 스토리지에서 토큰 로드 (클라이언트 측에서만)
 if (typeof window !== 'undefined') {
@@ -38,29 +141,6 @@ if (typeof window !== 'undefined') {
     setAuthToken(token);
   }
 }
-
-// 인증 API (Legacy SQLite)
-export const authAPI = {
-  login: async (data: LoginRequest): Promise<AuthResponse> => {
-    const response = await api.post('/api/v1/auth/login', data);
-    return response.data;
-  },
-
-  register: async (data: RegisterRequest): Promise<User> => {
-    const response = await api.post('/api/v1/auth/register', data);
-    return response.data;
-  },
-
-  getCurrentUser: async (): Promise<User> => {
-    const response = await api.get('/api/v1/auth/me');
-    return response.data;
-  },
-
-  verifyToken: async (): Promise<{ valid: boolean; username: string }> => {
-    const response = await api.get('/api/v1/auth/verify');
-    return response.data;
-  }
-};
 
 // 인증 API (Supabase)
 export const authSupabaseAPI = {
@@ -157,60 +237,6 @@ export const analysisAPI = {
 
   getMarketSummary: async () => {
     const response = await api.get('/api/v1/analysis/market-summary');
-    return response.data;
-  }
-};
-
-// 뉴스 추천 API (Legacy SQLite)
-export const recommendationAPI = {
-  getRecommendedNews: async (limit: number = 10, daysBack: number = 7) => {
-    const response = await api.get(`/api/v1/recommendations/news?limit=${limit}&days_back=${daysBack}`);
-    return response.data;
-  },
-
-  getUserInterests: async () => {
-    const response = await api.get('/api/v1/recommendations/interests');
-    return response.data;
-  },
-
-  addUserInterest: async (interest: {
-    symbol: string;
-    market: string;
-    company_name?: string;
-    priority: number;
-  }) => {
-    const response = await api.post('/api/v1/recommendations/interests', interest);
-    return response.data;
-  },
-
-  removeUserInterest: async (symbol: string, market: string) => {
-    const response = await api.delete(`/api/v1/recommendations/interests/${symbol}?market=${market}`);
-    return response.data;
-  },
-
-  trackNewsInteraction: async (interaction: {
-    news_url: string;
-    action: string;
-    news_title?: string;
-    symbol?: string;
-    interaction_time?: number;
-  }) => {
-    const response = await api.post('/api/v1/recommendations/interactions', interaction);
-    return response.data;
-  },
-
-  getSymbolRelatedNews: async (symbol: string, market: string = 'us', limit: number = 10) => {
-    const response = await api.get(`/api/v1/recommendations/news/${symbol}?market=${market}&limit=${limit}`);
-    return response.data;
-  },
-
-  autoAddInterestFromNews: async (symbol: string, market: string = 'us') => {
-    const response = await api.post(`/api/v1/recommendations/news/${symbol}/auto-interest?market=${market}`);
-    return response.data;
-  },
-
-  getTrendingNews: async (limit: number = 20, hours: number = 24) => {
-    const response = await api.get(`/api/v1/recommendations/news/trending?limit=${limit}&hours=${hours}`);
     return response.data;
   }
 };

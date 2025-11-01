@@ -1,11 +1,12 @@
-from datetime import timedelta
-from fastapi import APIRouter, HTTPException, status, Depends
+from datetime import timedelta, datetime
+from fastapi import APIRouter, HTTPException, status, Depends, Response, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from app.services.supabase_user_service import SupabaseUserService, UserCreate, UserLogin, UserResponse
 from app.services.supabase_data_service import SupabaseDataService
 from app.services.direct_db_service import DirectDBService
-from app.core.security import create_access_token, verify_token
+from app.services.refresh_token_service import RefreshTokenService
+from app.core.security import create_access_token, create_refresh_token, verify_token
 from app.core.config import settings
 from typing import Dict, Any, Optional
 import jwt
@@ -15,7 +16,11 @@ security = HTTPBearer()
 
 class Token(BaseModel):
     access_token: str
+    refresh_token: str
     token_type: str
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
 
 # 의존성 함수들
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> Dict[str, Any]:
@@ -118,11 +123,12 @@ async def register(user: UserCreate):
         )
 
 @router.post("/login", response_model=Token)
-async def login(user_credentials: UserLogin):
+async def login(user_credentials: UserLogin, request: Request):
     """사용자 로그인"""
     user_service = SupabaseUserService()
     data_service = SupabaseDataService()
-    
+    token_service = RefreshTokenService()
+
     # username 또는 email 중 하나가 제공되어야 함
     username_or_email = user_credentials.username or user_credentials.email
     if not username_or_email:
@@ -130,27 +136,50 @@ async def login(user_credentials: UserLogin):
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Username or email is required"
         )
-    
+
     # 사용자 인증
     user = await user_service.authenticate_user(
-        username_or_email, 
+        username_or_email,
         user_credentials.password
     )
-    
+
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
-    # 액세스 토큰 생성
+
+    # 액세스 토큰 및 리프레시 토큰 생성
     access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
+    refresh_token_expires = timedelta(days=settings.refresh_token_expire_days)
+
     access_token = create_access_token(
         data={"sub": user['username'], "user_id": user['id']},
         expires_delta=access_token_expires
     )
-    
+
+    refresh_token = create_refresh_token(
+        data={"sub": user['username'], "user_id": user['id']},
+        expires_delta=refresh_token_expires
+    )
+
+    # Refresh Token을 DB에 저장
+    try:
+        client_ip = request.client.host if request.client else None
+        user_agent = request.headers.get("user-agent")
+
+        await token_service.store_refresh_token(
+            user_id=user['id'],
+            refresh_token=refresh_token,
+            expires_at=datetime.utcnow() + refresh_token_expires,
+            device_info=user_agent,
+            ip_address=client_ip
+        )
+    except Exception as e:
+        print(f"Refresh token 저장 실패: {e}")
+        # 토큰 저장 실패는 치명적이지 않으므로 계속 진행
+
     # 로그인 활동 로그 (선택적 - 실패해도 무시)
     try:
         await data_service.log_user_activity(
@@ -161,8 +190,12 @@ async def login(user_credentials: UserLogin):
     except Exception as log_error:
         # 로그 실패는 무시
         print(f"로그인 활동 로그 실패 (무시됨): {log_error}")
-    
-    return {"access_token": access_token, "token_type": "bearer"}
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer"
+    }
 
 @router.get("/me", response_model=Dict[str, Any])
 async def read_users_me(current_user: Dict[str, Any] = Depends(get_current_active_user)):
@@ -177,6 +210,78 @@ async def read_users_me(current_user: Dict[str, Any] = Depends(get_current_activ
 async def verify_token_endpoint(current_user: Dict[str, Any] = Depends(get_current_active_user)):
     """토큰 유효성 검증"""
     return {"valid": True, "username": current_user['username'], "user_id": current_user['id']}
+
+@router.post("/refresh", response_model=Token)
+async def refresh_token(refresh_request: RefreshTokenRequest, request: Request):
+    """리프레시 토큰을 사용하여 새로운 액세스 토큰 발급"""
+    user_service = SupabaseUserService()
+    token_service = RefreshTokenService()
+
+    # 리프레시 토큰 JWT 검증
+    username = verify_token(refresh_request.refresh_token, token_type="refresh")
+    if username is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # 사용자 정보 조회
+    user = await user_service.get_user_by_username(username=username)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+        )
+
+    # DB에서 Refresh Token 검증
+    is_valid = await token_service.verify_refresh_token(
+        user_id=user['id'],
+        refresh_token=refresh_request.refresh_token
+    )
+
+    if not is_valid:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token is invalid or expired",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # 새로운 액세스 토큰 및 리프레시 토큰 생성
+    access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
+    refresh_token_expires = timedelta(days=settings.refresh_token_expire_days)
+
+    new_access_token = create_access_token(
+        data={"sub": user['username'], "user_id": user['id']},
+        expires_delta=access_token_expires
+    )
+
+    new_refresh_token = create_refresh_token(
+        data={"sub": user['username'], "user_id": user['id']},
+        expires_delta=refresh_token_expires
+    )
+
+    # Refresh Token 회전 (기존 토큰 폐기 + 새 토큰 저장)
+    try:
+        client_ip = request.client.host if request.client else None
+        user_agent = request.headers.get("user-agent")
+
+        await token_service.rotate_refresh_token(
+            user_id=user['id'],
+            old_refresh_token=refresh_request.refresh_token,
+            new_refresh_token=new_refresh_token,
+            expires_at=datetime.utcnow() + refresh_token_expires,
+            device_info=user_agent,
+            ip_address=client_ip
+        )
+    except Exception as e:
+        print(f"Refresh token 회전 실패: {e}")
+
+    return {
+        "access_token": new_access_token,
+        "refresh_token": new_refresh_token,
+        "token_type": "bearer"
+    }
 
 @router.put("/profile")
 async def update_profile(
@@ -300,13 +405,59 @@ async def remove_user_interest(
 ):
     """사용자 관심사 제거"""
     user_service = SupabaseUserService()
-    
+
     success = await user_service.remove_user_interest(
         current_user['id'],
         interest_id
     )
-    
+
     if not success:
         raise HTTPException(status_code=404, detail="Interest not found")
-    
+
     return {"message": "Interest removed successfully"}
+
+@router.post("/logout")
+async def logout(
+    refresh_request: RefreshTokenRequest,
+    current_user: Dict[str, Any] = Depends(get_current_active_user)
+):
+    """로그아웃 - Refresh Token 폐기"""
+    token_service = RefreshTokenService()
+
+    try:
+        await token_service.revoke_refresh_token(
+            user_id=current_user['id'],
+            refresh_token=refresh_request.refresh_token
+        )
+    except Exception as e:
+        print(f"Logout token revoke failed: {e}")
+
+    return {"message": "Logged out successfully"}
+
+@router.post("/logout-all")
+async def logout_all(current_user: Dict[str, Any] = Depends(get_current_active_user)):
+    """모든 기기에서 로그아웃 - 사용자의 모든 Refresh Token 폐기"""
+    token_service = RefreshTokenService()
+
+    try:
+        await token_service.revoke_all_user_tokens(user_id=current_user['id'])
+    except Exception as e:
+        print(f"Logout all failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to logout from all devices")
+
+    return {"message": "Logged out from all devices successfully"}
+
+@router.get("/sessions")
+async def get_active_sessions(current_user: Dict[str, Any] = Depends(get_current_active_user)):
+    """사용자의 활성 세션 목록 조회"""
+    token_service = RefreshTokenService()
+
+    try:
+        sessions = await token_service.get_user_active_tokens(user_id=current_user['id'])
+        return {
+            "total_sessions": len(sessions),
+            "sessions": sessions
+        }
+    except Exception as e:
+        print(f"Get sessions failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve sessions")

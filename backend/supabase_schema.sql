@@ -152,3 +152,38 @@ CREATE TABLE news_crawl_history (
 CREATE INDEX idx_news_crawl_history_symbol ON news_crawl_history (symbol);
 CREATE INDEX idx_news_crawl_history_completed_at ON news_crawl_history (crawl_completed_at DESC);
 CREATE INDEX idx_news_crawl_history_status ON news_crawl_history (status);
+
+-- 10. refresh_tokens 테이블 (JWT Refresh Token 관리)
+CREATE TABLE refresh_tokens (
+    id SERIAL PRIMARY KEY,
+    user_id VARCHAR NOT NULL,
+    token_hash VARCHAR NOT NULL UNIQUE, -- 토큰의 해시값 저장 (보안)
+    device_info VARCHAR, -- 디바이스 정보 (선택사항)
+    ip_address VARCHAR, -- IP 주소 (선택사항)
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    revoked_at TIMESTAMP WITH TIME ZONE, -- 토큰 폐기 시각
+    is_revoked BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (user_id) REFERENCES auth_users (id) ON DELETE CASCADE
+);
+
+-- 인덱스 생성
+CREATE INDEX idx_refresh_tokens_user_id ON refresh_tokens (user_id);
+CREATE INDEX idx_refresh_tokens_token_hash ON refresh_tokens (token_hash);
+CREATE INDEX idx_refresh_tokens_expires_at ON refresh_tokens (expires_at);
+
+-- RLS 정책 설정
+ALTER TABLE refresh_tokens ENABLE ROW LEVEL SECURITY;
+
+-- 사용자 자신의 토큰만 조회 가능
+CREATE POLICY "Users can view own tokens" ON refresh_tokens FOR SELECT USING (auth.uid()::text = user_id);
+
+-- 만료된 토큰 자동 삭제 함수 (선택사항 - 정기적으로 실행)
+CREATE OR REPLACE FUNCTION delete_expired_refresh_tokens()
+RETURNS void AS $$
+BEGIN
+    DELETE FROM refresh_tokens
+    WHERE expires_at < NOW()
+    OR (is_revoked = TRUE AND revoked_at < NOW() - INTERVAL '30 days');
+END;
+$$ LANGUAGE plpgsql;

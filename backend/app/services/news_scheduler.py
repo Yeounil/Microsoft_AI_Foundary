@@ -70,7 +70,12 @@ class NewsScheduler:
 
         logger.info("뉴스 크롤링 스케줄러 중지")
         self.scheduler.shutdown()
+
+        # 백그라운드 수집기의 스레드 풀 정리
+        self.collector.shutdown()
+
         self.is_running = False
+        logger.info("스케줄러 및 스레드 풀 정리 완료")
 
     async def _scheduled_crawl(self):
         """정기 크롤링 작업 (2시간마다 실행)"""
@@ -160,22 +165,42 @@ class NewsScheduler:
             logger.error(f"뉴스 정리 중 오류: {str(e)}")
 
     async def trigger_manual_crawl(self, symbols: List[str] = None) -> Dict:
-        """수동 크롤링 트리거 (API로 호출 가능)"""
+        """수동 크롤링 트리거 (API로 호출 가능, 멀티스레드 지원)"""
         try:
-            logger.info(f"수동 크롤링 시작: {symbols if symbols else '전체'}")
+            logger.info(f"수동 크롤링 시작 (멀티스레드): {symbols if symbols else '전체'}")
 
             if symbols:
-                # 특정 종목만 크롤링
+                # 특정 종목만 크롤링 (멀티스레드로 병렬 처리)
+                loop = asyncio.get_event_loop()
+                futures = []
+
+                for symbol in symbols:
+                    # 각 종목을 별도 스레드에서 수집
+                    future = loop.run_in_executor(
+                        self.collector.collection_executor,
+                        self.collector._collect_and_analyze_symbol_news_sync,
+                        symbol,
+                        20
+                    )
+                    futures.append((symbol, future))
+
+                # 모든 스레드 작업 완료 대기
                 total_collected = 0
                 results = []
 
-                for symbol in symbols:
+                for symbol, future in futures:
                     try:
-                        result = await self.collector._collect_and_analyze_symbol_news(symbol, 20)
+                        result = await future
                         total_collected += result.get('collected_count', 0)
                         results.append(result)
+                        logger.info(f"[수동 크롤링] 종목 {symbol}: {result.get('collected_count', 0)}개 수집")
                     except Exception as e:
                         logger.error(f"종목 {symbol} 크롤링 실패: {str(e)}")
+                        results.append({
+                            "symbol": symbol,
+                            "collected_count": 0,
+                            "error": str(e)
+                        })
 
                 return {
                     "status": "completed",
@@ -183,7 +208,7 @@ class NewsScheduler:
                     "results": results
                 }
             else:
-                # 전체 인기 종목 크롤링
+                # 전체 인기 종목 크롤링 (멀티스레드 버전)
                 return await self.collector.collect_popular_symbols_news(limit_per_symbol=20)
 
         except Exception as e:

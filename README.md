@@ -1,235 +1,631 @@
-# AI Finance News Recommendation System
+# 🤖 AI Finance News Recommendation System
 
-AI 기반 개인화 금융 뉴스 추천 및 분석 시스템
+AI 기반 금융 뉴스 추천 및 분석 시스템 - Microsoft Azure OpenAI와 Supabase를 활용한 개인화된 투자 정보 플랫폼
 
-## 📋 프로젝트 개요
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/yourusername/MS_AI_FOUNDRY)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-**AI Finance News Recommendation System**은 사용자 관심사를 기반으로 Azure OpenAI와 Supabase Cloud를 활용하여 개인화된 금융 뉴스를 추천하고 AI 분석 요약을 제공하는 시스템입니다.
+## 📋 목차
 
-### 🎯 핵심 기능
-- **개인화 뉴스 추천**: 사용자 관심 종목 기반 AI 추천
-- **종목별 뉴스 분석**: 특정 종목에 대한 전문적인 AI 분석
-- **다양성 알고리즘**: 소스/시간대/카테고리 균형잡힌 뉴스 제공  
-- **실시간 감정분석**: Azure OpenAI 기반 시장 감정 분석
-- **백그라운드 수집**: 인기 종목 뉴스 자동 수집 및 사전 분석
+- [프로젝트 개요](#-프로젝트-개요)
+- [주요 기능](#-주요-기능)
+- [기술 스택](#-기술-스택)
+- [시스템 아키텍처](#-시스템-아키텍처)
+- [설치 및 실행](#-설치-및-실행)
+- [환경 변수 설정](#-환경-변수-설정)
+- [API 문서](#-api-문서)
+- [AI 추천 알고리즘](#-ai-추천-알고리즘)
+- [데이터베이스 스키마](#-데이터베이스-스키마)
+- [프로젝트 구조](#-프로젝트-구조)
 
-## 🏗️ 시스템 구조
+## 🎯 프로젝트 개요
+
+AI Finance News Recommendation System은 개인 투자자들에게 맞춤형 금융 뉴스와 종목 분석을 제공하는 AI 기반 플랫폼입니다. 사용자의 관심 종목을 학습하여 관련성 높은 뉴스를 자동으로 수집하고, OpenAI를 활용하여 심층 분석 및 요약을 제공합니다.
+
+### 핵심 가치
+
+- **개인화**: 사용자 관심사 기반 맞춤형 뉴스 추천
+- **AI 분석**: OpenAI를 활용한 전문적인 투자 인사이트
+- **실시간성**: 자동화된 뉴스 크롤링 및 실시간 업데이트
+- **다양성**: 여러 소스에서 균형잡힌 정보 제공
+
+## ✨ 주요 기능
+
+### 1. 🎯 AI 기반 뉴스 추천
+- 사용자 관심 종목 기반 개인화 추천
+- 기본 점수(60%) + AI 분석(40%)을 결합한 정교한 관련성 평가
+- 다양성 알고리즘으로 균형잡힌 뉴스 제공
+
+### 2. 📊 종목 분석 및 차트
+- 실시간 주가 데이터 조회 (Yahoo Finance API)
+- 인터랙티브 차트 (Recharts)
+- OpenAI 기반 종목 분석 및 투자 인사이트
+
+### 3. 🤖 AI 요약 및 분석
+- 뉴스 자동 요약
+- 시장 전망 및 투자 조언
+- 리스크 요인 분석
+
+### 4. 📰 자동화된 뉴스 수집
+- 백그라운드 스케줄러 (APScheduler) - 2시간마다 자동 실행
+- 다중 소스 크롤링: News API, Yahoo Finance, Naver News
+- 인기 종목 자동 추출 및 뉴스 수집
+
+### 5. 👤 사용자 관리
+- JWT 기반 인증 (Access Token + Refresh Token)
+- Supabase Auth 통합
+- 관심 종목 관리
+- 검색 및 뉴스 열람 히스토리
+
+### 6. 🌐 실시간 데이터
+- 주가 정보 실시간 조회
+- 관심 종목 모니터링
+- 뉴스 알림 (예정)
+
+## 🛠 기술 스택
+
+### Backend
+- **Framework**: FastAPI 0.104+
+- **Database**: Supabase (PostgreSQL)
+- **AI/ML**:
+  - OpenAI(GPT-4.0 mini)
+- **Authentication**: JWT (python-jose)
+- **Web Scraping**:
+  - BeautifulSoup4
+  - aiohttp
+  - httpx
+- **Task Scheduling**: APScheduler
+- **Financial Data**:
+  - yfinance
+  - News API
+  - Naver API
+
+### Frontend
+- **Framework**: Next.js 16 (React 19)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS 4
+- **UI Components**:
+  - Radix UI
+  - Material-UI (MUI)
+  - shadcn/ui
+- **State Management**: React Hooks
+- **Charts**: Recharts
+- **HTTP Client**: Axios
+- **Authentication**: Supabase Client
+
+### DevOps & Cloud
+- **Cloud Platform**: Google Cloud Platform (Cloud Run)
+- **Database**: Supabase Cloud
+- **AI Service**: OpenAI API
+- **Container**: Docker
+- **CI/CD**: Google Cloud Build
+
+## 🏗 시스템 아키텍처
 
 ```
-MS_AI_FOUNDRY/
-├── backend/                     # Python FastAPI 백엔드
-│   ├── .env                     # 환경 설정
-│   ├── requirements.txt         # Python 의존성
-│   ├── supabase_schema.sql     # 데이터베이스 스키마
-│   └── app/
-│       ├── main.py             # FastAPI 애플리케이션 진입점
-│       ├── api/                # REST API 엔드포인트
-│       │   ├── auth_supabase.py       # 인증 API (v2)
-│       │   ├── news_supabase.py       # 뉴스 API (v2)
-│       │   ├── recommendations_supabase.py  # AI 추천 API (v2)
-│       │   ├── analysis_supabase.py   # 분석 API (v2)
-│       │   └── stocks.py              # 주식 데이터 API (v1)
-│       ├── services/           # 비즈니스 로직
-│       │   ├── fast_recommendation_service.py     # 🔥 메인 AI 추천 엔진
-│       │   ├── azure_openai_service.py            # 🤖 Azure OpenAI 통합
-│       │   ├── background_news_collector.py       # 📰 백그라운드 뉴스 수집
-│       │   ├── news_service.py                    # 뉴스 크롤링
-│       │   └── supabase_*_service.py              # Supabase 연동 서비스들
-│       ├── core/               # 핵심 모듈
-│       ├── db/                 # 데이터베이스 연결
-│       └── models/             # 데이터 모델
-└── frontend/                   # React 프론트엔드
-    ├── src/
-    │   ├── components/         # React 컴포넌트
-    │   ├── services/          # API 서비스
-    │   └── types/             # TypeScript 타입
-    └── package.json
+┌─────────────────────────────────────────────────────────────┐
+│                        Frontend (Next.js)                    │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
+│  │  Login   │  │Dashboard │  │  News    │  │  Chart   │   │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘   │
+└───────────────────────────┬─────────────────────────────────┘
+                            │ HTTP/REST API
+┌───────────────────────────▼─────────────────────────────────┐
+│                    Backend (FastAPI)                         │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │            API Router Layer                          │   │
+│  │  /auth  /news  /analysis  /stocks  /recommendations │   │
+│  └────────────────────┬────────────────────────────────┘   │
+│  ┌────────────────────▼────────────────────────────────┐   │
+│  │           Service Layer                              │   │
+│  │  - News Collection Service                           │   │
+│  │  - AI Recommendation Service                         │   │
+│  │  - OpenAI Service                                    │   │
+│  │  - Stock Service                                     │   │
+│  └────────────────────┬────────────────────────────────┘   │
+│  ┌────────────────────▼────────────────────────────────┐   │
+│  │     Background Scheduler (APScheduler)               │   │
+│  │  - News Crawling (Every 2 hours)                     │   │
+│  │  - Popular Symbols Extraction                        │   │
+│  └──────────────────────────────────────────────────────┘   │
+└───────────────┬─────────────────┬────────────────────────────┘
+                │                 │
+    ┌───────────▼─────┐   ┌───────▼─────────┐
+    │   Supabase DB   │   │    OpenAI       │
+    │  - PostgreSQL   │   │    - GPT-4      │
+    │  - Auth         │   │    - Analysis   │
+    │  - RLS          │   │    - Summary    │
+    └─────────────────┘   └─────────────────┘
+            │
+    ┌───────▼────────┐
+    │ External APIs  │
+    │ - News API     │
+    │ - Yahoo Finance│
+    │ - Naver News   │
+    └────────────────┘
 ```
 
 ## 🚀 설치 및 실행
 
-### 📋 요구사항
+### 필수 요구사항
 
-**Backend:**
 - Python 3.9+
-- FastAPI
-- Supabase Cloud Account
-- Azure OpenAI Account
-- News API Key
+- Node.js 18+
+- Supabase 계정
+- OpenAI API 키
+- (선택) OpenAI API 키
 
-**Frontend:**
-- Node.js 16+
-- React 18+
-- TypeScript
+### Backend 설치 및 실행
 
-### 🔧 Backend 설정
-
-1. **환경 설정**
 ```bash
+# 1. 프로젝트 클론
+git clone https://github.com/yourusername/MS_AI_FOUNDRY.git
+cd MS_AI_FOUNDRY
+
+# 2. Backend 디렉토리로 이동
 cd backend
-cp .env.example .env
-```
 
-2. **필수 환경변수 설정** (`.env` 파일)
-```env
-# Supabase Cloud 설정
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_KEY=your_supabase_anon_key
+# 3. 가상환경 생성 및 활성화
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
 
-# Azure OpenAI 설정
-AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
-AZURE_OPENAI_API_KEY=your_azure_openai_key
-AZURE_OPENAI_API_VERSION=2024-02-01
-AZURE_OPENAI_DEPLOYMENT_NAME=your_deployment_name
-
-# 뉴스 API 설정
-NEWS_API_KEY=your_news_api_key
-
-# JWT 토큰 설정
-SECRET_KEY=your_super_secret_key_change_this_in_production
-ACCESS_TOKEN_EXPIRE_MINUTES=1440
-```
-
-3. **의존성 설치 및 실행**
-```bash
+# 4. 의존성 설치
 pip install -r requirements.txt
-python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# 5. 환경 변수 설정
+cp .env.example .env
+# .env 파일 편집 (아래 환경 변수 설정 섹션 참조)
+
+# 6. Supabase 데이터베이스 스키마 적용
+# Supabase Dashboard에서 SQL Editor를 열고
+# supabase_schema.sql 파일 내용 실행
+
+# 7. 서버 실행
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### 🌐 Frontend 설정
+Backend 서버: `http://localhost:8000`
+API 문서: `http://localhost:8000/docs`
+
+### Frontend 설치 및 실행
 
 ```bash
+# 1. Frontend 디렉토리로 이동
 cd frontend
+
+# 2. 의존성 설치
 npm install
-npm start
+
+# 3. 환경 변수 설정
+# .env.local 파일 생성 및 편집
+echo "NEXT_PUBLIC_API_URL=http://localhost:8000" > .env.local
+echo "NEXT_PUBLIC_SUPABASE_URL=your_supabase_url" >> .env.local
+echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key" >> .env.local
+
+# 4. 개발 서버 실행
+npm run dev
 ```
 
-### 🗄️ 데이터베이스 설정
+Frontend 서버: `http://localhost:3000`
 
-Supabase 대시보드에서 `supabase_schema.sql` 파일의 SQL을 실행하여 필요한 테이블들을 생성합니다:
+### Docker 실행 (선택사항)
 
-- `users` - 사용자 정보
-- `user_interests` - 사용자 관심 종목
-- `news_articles` - 뉴스 기사 (AI 분석 점수 포함)
-
-## 🔗 API 엔드포인트
-
-### 🔐 인증 (v2)
-```
-POST /api/v2/auth/register      # 회원가입
-POST /api/v2/auth/login         # 로그인
-GET  /api/v2/auth/me            # 사용자 정보 조회
-GET  /api/v2/auth/verify        # 토큰 검증
-```
-
-### 🤖 AI 뉴스 추천 (v2)
-```
-GET  /api/v2/recommendations/interests                      # 관심사 관리
-GET  /api/v2/recommendations/news/recommended?limit=10      # 🔥 AI 개인화 추천
-GET  /api/v2/news/stock/{symbol}?ai_mode=true              # 🔥 종목별 AI 뉴스
-GET  /api/v2/recommendations/news/trending                  # 트렌딩 뉴스
-```
-
-### 📈 주식 데이터 (v1)
-```
-GET  /api/v1/stocks/search?q={query}           # 종목 검색
-GET  /api/v1/stocks/{symbol}                   # 종목 차트 데이터
-```
-
-## 💡 사용법
-
-### 1. 사용자 등록 및 로그인
-```javascript
-// 회원가입
-const response = await fetch('/api/v2/auth/register', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    username: 'user',
-    email: 'user@example.com',
-    password: 'password123'
-  })
-});
-
-// 로그인
-const loginResponse = await fetch('/api/v2/auth/login', {
-  method: 'POST', 
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    username: 'user',
-    password: 'password123'
-  })
-});
-const { access_token } = await loginResponse.json();
-```
-
-### 2. AI 뉴스 추천 받기
-```javascript
-// 개인화 뉴스 추천
-const recommendations = await fetch('/api/v2/recommendations/news/recommended?limit=10', {
-  headers: { 'Authorization': `Bearer ${access_token}` }
-});
-
-// 종목별 AI 뉴스 (AAPL 예시)
-const stockNews = await fetch('/api/v2/news/stock/AAPL?ai_mode=true&limit=5', {
-  headers: { 'Authorization': `Bearer ${access_token}` }
-});
-```
-
-### 3. 관심사 관리
-```javascript
-// 관심사 추가
-await fetch('/api/v2/recommendations/interests', {
-  method: 'POST',
-  headers: { 
-    'Authorization': `Bearer ${access_token}`,
-    'Content-Type': 'application/json' 
-  },
-  body: JSON.stringify({ interest: 'NVDA' })
-});
-```
-
-## ⚙️ 시스템 특징
-
-### 🎯 AI 추천 엔진
-- **개인화 점수**: 기본 적합성(40%) + 종목 특화(30%) + 사용자 관심도(20%) + 신선도(10%)
-- **다양성 알고리즘**: 소스/시간대/카테고리/언어 다양성 보장
-- **실시간 분석**: Azure OpenAI 기반 뉴스 감정분석 및 요약
-
-### 🚀 성능 최적화
-- **백그라운드 처리**: 뉴스 수집과 AI 분석을 미리 완료
-- **빠른 응답**: 사전 분석된 데이터로 4-5초 응답
-- **확장성**: Supabase Cloud 기반 무제한 확장
-
-### 🔒 보안
-- **JWT 인증**: 안전한 토큰 기반 인증
-- **HTTPS**: 프로덕션 환경 SSL 적용
-- **API Rate Limiting**: 남용 방지
-
-## 🛠️ 개발 환경
-
-**개발 서버 실행:**
 ```bash
-# Backend
-cd backend && python -m uvicorn app.main:app --reload
-
-# Frontend  
-cd frontend && npm start
+# Backend Docker 빌드 및 실행
+cd backend
+docker build -t ai-finance-backend .
+docker run -p 8000:8000 --env-file .env ai-finance-backend
 ```
 
-**프로덕션 배포:**
-- Backend: Docker + Gunicorn 권장
-- Frontend: Vercel, Netlify 등
-- Database: Supabase Cloud (관리형)
+## 🔐 환경 변수 설정
 
-## 📚 추가 문서
+### Backend (.env)
 
-- [뉴스 추천 알고리즘 상세 설명](./NEWS_RECOMMENDATION_ALGORITHM.md)
+```bash
+# Supabase
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_KEY=your-supabase-anon-key
 
-## 📞 지원
+# JWT
+SECRET_KEY=your-secret-key-min-32-characters
+ALGORITHM=HS256
 
-문제가 있거나 기능 요청이 있으시면 이슈를 등록해 주세요.
+# Azure OpenAI (권장)
+AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
+AZURE_OPENAI_KEY=your-azure-openai-key
+AZURE_OPENAI_VERSION=2023-12-01-preview
+AZURE_OPENAI_DEPLOYMENT=your-deployment-name
+
+# OpenAI (대체 옵션)
+OPENAI_API_KEY=sk-your-openai-api-key
+
+# News APIs
+NEWS_API_KEY=your-newsapi-key
+NAVER_CLIENT_ID=your-naver-client-id
+NAVER_CLIENT_SECRET=your-naver-client-secret
+
+# Legacy Database (선택사항)
+DATABASE_URL=sqlite:///./finance_ai.db
+```
+
+### Frontend (.env.local)
+
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+```
+
+## 📚 API 문서
+
+### Authentication (v2)
+
+#### 회원가입
+```http
+POST /api/v2/auth/register
+Content-Type: application/json
+
+{
+  "username": "user123",
+  "email": "user@example.com",
+  "password": "securepassword"
+}
+```
+
+#### 로그인
+```http
+POST /api/v2/auth/login
+Content-Type: application/x-www-form-urlencoded
+
+username=user123&password=securepassword
+```
+
+응답:
+```json
+{
+  "access_token": "eyJ...",
+  "refresh_token": "eyJ...",
+  "token_type": "bearer"
+}
+```
+
+#### Refresh Token
+```http
+POST /api/v2/auth/refresh
+Authorization: Bearer {refresh_token}
+```
+
+### News APIs (v2)
+
+#### 추천 뉴스 조회
+```http
+GET /api/v2/recommendations/news/recommended?limit=10
+Authorization: Bearer {access_token}
+```
+
+응답:
+```json
+{
+  "recommendations": [
+    {
+      "id": 1,
+      "title": "NVIDIA Announces New AI Chip",
+      "description": "NVIDIA unveiled...",
+      "url": "https://...",
+      "source": "Reuters",
+      "published_at": "2025-01-15T10:30:00Z",
+      "relevance_score": 0.92,
+      "ai_summary": "..."
+    }
+  ],
+  "total": 20,
+  "ai_summary": {
+    "summary": "Overall market analysis...",
+    "highlights": ["Key point 1", "Key point 2"],
+    "market_outlook": "긍정적"
+  }
+}
+```
+
+#### 종목별 뉴스 조회
+```http
+GET /api/v2/news/stock/{symbol}?ai_mode=true&limit=5
+Authorization: Bearer {access_token}
+```
+
+### Stock APIs (v1)
+
+#### 주가 정보 조회
+```http
+GET /api/v1/stocks/{symbol}
+```
+
+#### 주가 차트 데이터
+```http
+GET /api/v1/stocks/{symbol}/chart?period=1mo&interval=1d
+```
+
+### Analysis APIs (v2)
+
+#### AI 종목 분석
+```http
+POST /api/v2/analysis/{symbol}
+Authorization: Bearer {access_token}
+```
+
+전체 API 문서: `http://localhost:8000/docs` (Swagger UI)
+
+## 🧠 AI 추천 알고리즘
+
+본 시스템은 다층 AI 추천 알고리즘을 사용합니다:
+
+### 1. 백그라운드 뉴스 수집 및 AI 분석
+
+**인기 종목 추출**
+```sql
+SELECT interest, COUNT(*) as count
+FROM user_interests
+GROUP BY interest
+ORDER BY count DESC
+LIMIT 15;
+```
+
+**AI 적합성 점수 계산**
+- 기본 적합성 점수 (60%): 종목 매칭, 신선도, 소스 신뢰도, 금융 키워드 밀도
+- AI 분석 점수 (40%): Azure OpenAI를 통한 관련성 분석
+
+### 2. 개인화 추천
+
+**개인화 점수 공식**
+```python
+personalization_score = (
+    base_relevance * 0.4 +           # 기본 적합성 40%
+    symbol_specific_score * 0.3 +    # 종목 특화 30%
+    user_interest_priority * 0.2 +   # 사용자 관심도 20%
+    freshness_bonus * 0.1            # 신선도 10%
+)
+```
+
+### 3. 다양성 알고리즘
+
+특정 종목이나 소스가 추천을 독점하지 않도록 균형 유지:
+
+- 소스 다양성 (40%)
+- 시간대 다양성 (30%)
+- 카테고리 다양성 (30%)
+
+**최종 점수**
+```python
+final_score = (
+    personalization_score * 0.85 +
+    diversity_bonus * 0.15
+)
+```
+
+자세한 알고리즘 설명: [NEWS_RECOMMENDATION_ALGORITHM.md](NEWS_RECOMMENDATION_ALGORITHM.md)
+
+## 🗄 데이터베이스 스키마
+
+### 주요 테이블
+
+#### auth_users
+```sql
+- id (VARCHAR, PK)
+- username (VARCHAR, UNIQUE)
+- email (VARCHAR, UNIQUE)
+- hashed_password (VARCHAR)
+```
+
+#### user_interests
+```sql
+- id (SERIAL, PK)
+- user_id (VARCHAR, FK)
+- interest (VARCHAR)
+```
+
+#### news_articles
+```sql
+- id (SERIAL, PK)
+- symbol (VARCHAR)
+- title (VARCHAR)
+- description (TEXT)
+- content (TEXT)
+- url (VARCHAR, UNIQUE)
+- source (VARCHAR)
+- published_at (TIMESTAMP)
+- relevance_score (FLOAT)
+- base_score (FLOAT)
+- ai_score (FLOAT)
+- analyzed_at (TIMESTAMP)
+```
+
+#### ai_analysis_history
+```sql
+- id (SERIAL, PK)
+- user_id (VARCHAR, FK)
+- symbol (VARCHAR)
+- analysis_type (VARCHAR)
+- analysis_content (TEXT)
+- additional_data (JSONB)
+- created_at (TIMESTAMP)
+```
+
+#### refresh_tokens
+```sql
+- id (SERIAL, PK)
+- user_id (VARCHAR, FK)
+- token_hash (VARCHAR, UNIQUE)
+- expires_at (TIMESTAMP)
+- is_revoked (BOOLEAN)
+```
+
+전체 스키마: [backend/supabase_schema.sql](backend/supabase_schema.sql)
+
+## 📁 프로젝트 구조
+
+```
+MS_AI_FOUNDRY/
+├── backend/
+│   ├── app/
+│   │   ├── api/
+│   │   │   ├── auth_supabase.py         # 인증 API
+│   │   │   ├── news_supabase.py         # 뉴스 API
+│   │   │   ├── recommendations_supabase.py  # 추천 API
+│   │   │   ├── analysis_supabase.py     # 분석 API
+│   │   │   └── stocks.py                # 주식 데이터 API
+│   │   ├── core/
+│   │   │   ├── config.py                # 설정
+│   │   │   ├── security.py              # JWT/암호화
+│   │   │   └── auth_supabase.py         # 인증 의존성
+│   │   ├── services/
+│   │   │   ├── ai_news_recommendation_service.py  # AI 추천
+│   │   │   ├── azure_openai_service.py  # Azure OpenAI
+│   │   │   ├── background_news_collector.py  # 뉴스 수집
+│   │   │   ├── news_scheduler.py        # 스케줄러
+│   │   │   ├── stock_service.py         # 주식 데이터
+│   │   │   ├── refresh_token_service.py # Refresh Token
+│   │   │   └── supabase_*.py           # Supabase 서비스들
+│   │   ├── models/
+│   │   │   ├── user.py
+│   │   │   ├── news_article.py
+│   │   │   └── ai_analysis_history.py
+│   │   ├── db/
+│   │   │   └── supabase_client.py
+│   │   └── main.py                      # FastAPI 앱
+│   ├── requirements.txt
+│   ├── supabase_schema.sql              # DB 스키마
+│   ├── Dockerfile
+│   └── .env
+├── frontend/
+│   ├── app/
+│   │   ├── page.tsx                     # 메인 페이지
+│   │   └── globals.css
+│   ├── components/
+│   │   ├── LoginPage.tsx
+│   │   ├── RegisterPage.tsx
+│   │   ├── MainPage.tsx
+│   │   ├── Dashboard.tsx
+│   │   ├── NewsSection.tsx
+│   │   ├── StockChart.tsx
+│   │   └── StockAnalysis.tsx
+│   ├── services/
+│   │   ├── api.ts                       # API 클라이언트
+│   │   └── authService.ts               # 인증 서비스
+│   ├── lib/
+│   │   └── supabase.ts                  # Supabase 클라이언트
+│   ├── types/
+│   │   └── api.ts                       # TypeScript 타입
+│   ├── package.json
+│   ├── next.config.js
+│   ├── tailwind.config.ts
+│   └── .env.local
+├── NEWS_RECOMMENDATION_ALGORITHM.md      # 알고리즘 상세 문서
+├── REFRESH_TOKEN_SETUP.md               # Refresh Token 가이드
+└── README.md
+```
+
+## 🔄 주요 워크플로우
+
+### 1. 뉴스 수집 프로세스
+
+```mermaid
+graph LR
+    A[스케줄러 시작] --> B[인기 종목 추출]
+    B --> C[뉴스 크롤링]
+    C --> D[AI 적합성 분석]
+    D --> E[DB 저장]
+    E --> F[다음 수집 대기]
+```
+
+### 2. 뉴스 추천 프로세스
+
+```mermaid
+graph LR
+    A[사용자 요청] --> B[관심사 조회]
+    B --> C[DB 뉴스 조회]
+    C --> D[개인화 점수 계산]
+    D --> E[다양성 알고리즘]
+    E --> F[AI 요약 생성]
+    F --> G[결과 반환]
+```
+
+## 🔒 보안
+
+- JWT 기반 인증 (Access Token + Refresh Token)
+- Refresh Token 해시 저장
+- Supabase Row Level Security (RLS)
+- CORS 설정
+- 비밀번호 해싱 (bcrypt)
+- SQL Injection 방지 (ORM 사용)
+
+## 🚢 배포
+
+### Google Cloud Run 배포
+
+```bash
+# 1. 프로젝트 설정
+gcloud config set project YOUR_PROJECT_ID
+
+# 2. 빌드 및 배포
+cd backend
+gcloud builds submit --config cloudbuild.yaml
+
+# 3. 환경 변수 설정
+gcloud run services update ai-finance-backend \
+  --set-env-vars SUPABASE_URL=...,SUPABASE_KEY=...,...
+```
+
+## 🧪 테스트
+
+```bash
+# Backend 테스트
+cd backend
+pytest
+
+# Frontend 테스트
+cd frontend
+npm test
+```
+
+## 📝 향후 계획
+
+- [ ] 실시간 뉴스 알림 (WebSocket)
+- [ ] 모바일 앱 개발 (React Native)
+- [ ] 포트폴리오 추적 기능
+- [ ] 커뮤니티 기능 (댓글, 공유)
+- [ ] 다국어 지원
+- [ ] 고급 차트 분석 도구
+- [ ] 백테스팅 기능
+
+## 🤝 기여
+
+기여를 환영합니다! Pull Request를 보내주세요.
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📄 라이선스
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 📧 문의
+
+프로젝트 관련 문의: your-email@example.com
+
+Project Link: [https://github.com/yourusername/MS_AI_FOUNDRY](https://github.com/yourusername/MS_AI_FOUNDRY)
+
+## 🙏 감사의 글
+
+- [FastAPI](https://fastapi.tiangolo.com/)
+- [Next.js](https://nextjs.org/)
+- [Supabase](https://supabase.com/)
+- [Microsoft Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Radix UI](https://www.radix-ui.com/)
 
 ---
 
-🤖 **AI-Powered Finance News Recommendation System** v2.0.0
+Made with ❤️ by AI Finance Team

@@ -17,7 +17,8 @@ class Settings(BaseSettings):
     # JWT
     secret_key: str = os.getenv("SECRET_KEY", "your-secret-key-here")
     algorithm: str = "HS256"
-    access_token_expire_minutes: int = 30
+    access_token_expire_minutes: int = 60  # Access token: 1시간
+    refresh_token_expire_days: int = 7  # Refresh token: 7일
     
     # OpenAI
     openai_api_key: str = os.getenv("OPENAI_API_KEY", "")

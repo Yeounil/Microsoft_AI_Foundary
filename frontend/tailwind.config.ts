@@ -10,8 +10,24 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        primary: "#BD2A2E",
-        secondary: "#FED501",
+        primary: "#FEE500", // Kakao Yellow - Main CTAs, highlights
+        secondary: "#3C1E1E", // Dark Brown - Text on primary, accents
+        // Kakao Color System
+        kakao: {
+          yellow: "#FEE500",
+          'yellow-dark': "#FFCD00",
+          'yellow-light': "#FFE812",
+          brown: "#5C4033",
+          'brown-dark': "#3C1E1E",
+          'brown-light': "#8B7355",
+          'bg-light': "#F9F7F4",
+          'bg-cream': "#FFFEF9",
+          'bg-dark': "#1E1E1E",
+          'bg-dark-secondary': "#2C2C2C",
+          'bg-dark-tertiary': "#3E3E3E",
+          'bg-dark-border': "#4E4E4E",
+          'border-light': "#E5E0D8",
+        },
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         card: {
