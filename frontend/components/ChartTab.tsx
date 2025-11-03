@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, memo } from 'react';
 import type { Stock } from './Dashboard';
 
 interface ChartTabProps {
@@ -8,39 +8,33 @@ interface ChartTabProps {
   market?: string;
 }
 
-export function ChartTab({ stock, market = 'us' }: ChartTabProps) {
+export const ChartTab = memo(({ stock, market = 'us' }: ChartTabProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isClient, setIsClient] = React.useState(false);
+
+  // Ensure we only render on client
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!isClient || !containerRef.current) {
+      return;
+    }
+
+    console.log('[ChartTab] Loading chart for symbol:', stock.symbol, 'market:', market);
+
+    // 기존 위젯 제거
+    containerRef.current.innerHTML = '';
 
     const symbol =
       market === 'kr' && !stock.symbol.includes('.')
         ? `KRX:${stock.symbol}`
         : stock.symbol;
 
-    // 컨테이너 초기화
-    containerRef.current.innerHTML = '';
+    console.log('[ChartTab] Converted symbol:', symbol);
 
-    // 공식 HTML 구조 작성
-    containerRef.current.innerHTML = `
-      <div class="tradingview-widget-container" style="height: 100%; width: 100%;">
-        <div class="tradingview-widget-container__widget"></div>
-        <div class="tradingview-widget-copyright" style="padding: 10px;">
-          <a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank">
-            <span class="blue-text">TradingView</span>
-          </a>
-        </div>
-      </div>
-    `;
-
-    // TradingView 스크립트 로드
-    const script = document.createElement('script');
-    script.type = 'text/javascript';
-    script.async = true;
-    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js';
-
-    // 설정 JSON
+    // TradingView 설정
     const config = {
       lineWidth: 2,
       lineType: 0,
@@ -79,18 +73,70 @@ export function ChartTab({ stock, market = 'us' }: ChartTabProps) {
       hideSymbolLogo: false
     };
 
-    script.textContent = JSON.stringify(config);
-
+    // TradingView 공식 방식: HTML 주입 후 스크립트 로드
     if (containerRef.current) {
-      containerRef.current.appendChild(script);
+      // Step 1: Create the container structure
+      const widgetContainer = document.createElement('div');
+      widgetContainer.className = 'tradingview-widget-container';
+      widgetContainer.style.width = '100%';
+      widgetContainer.style.height = '100%';
+
+      const widgetDiv = document.createElement('div');
+      widgetDiv.className = 'tradingview-widget-container__widget';
+      widgetContainer.appendChild(widgetDiv);
+
+      // Step 2: Create the script tag and set configuration BEFORE appending
+      const script = document.createElement('script');
+      script.type = 'text/javascript';
+      script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js';
+      script.async = true;
+      // Set configuration as textContent before appending to DOM
+      script.textContent = JSON.stringify(config);
+
+      console.log('[ChartTab] Widget configuration set:', {
+        configKeys: Object.keys(config),
+        symbolsCount: config.symbols?.length || 0,
+        configSize: JSON.stringify(config).length
+      });
+
+      widgetContainer.appendChild(script);
+
+      // Step 3: Clear existing content and append new structure
+      containerRef.current.innerHTML = '';
+      containerRef.current.appendChild(widgetContainer);
+
+      console.log('[ChartTab] Container structure created', {
+        containerWidth: containerRef.current.offsetWidth,
+        containerHeight: containerRef.current.offsetHeight
+      });
+
+      // Step 4: Monitor iframe creation
+      setTimeout(() => {
+        const iframe = containerRef.current?.querySelector('iframe');
+        if (iframe) {
+          const styles = window.getComputedStyle(iframe);
+          console.log('[ChartTab] iframe loaded:', {
+            found: true,
+            src: iframe.src ? iframe.src.substring(0, 100) : 'no src',
+            width: iframe.offsetWidth,
+            height: iframe.offsetHeight,
+            display: styles.display,
+            visibility: styles.visibility,
+            opacity: styles.opacity
+          });
+        } else {
+          console.warn('[ChartTab] iframe still not found after 1s');
+        }
+      }, 1000);
     }
 
+    // 클린업 함수
     return () => {
       if (containerRef.current) {
         containerRef.current.innerHTML = '';
       }
     };
-  }, [stock.symbol, stock.name, market]);
+  }, [stock.symbol, stock.name, market, isClient]);
 
   return (
     <div
@@ -98,9 +144,10 @@ export function ChartTab({ stock, market = 'us' }: ChartTabProps) {
       style={{
         width: '100%',
         height: '100%',
-        minHeight: '100vh',
+        flex: 1,
+        overflow: 'hidden',
         backgroundColor: '#FFFFFF'
       }}
     />
   );
-}
+});

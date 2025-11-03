@@ -240,7 +240,7 @@ export function Dashboard({ username, onLogout }: DashboardProps) {
   }, []);
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-slate-50 to-slate-100" style={{ display: 'flex', flexDirection: 'column' }}>
+    <div className="w-full bg-gradient-to-br from-slate-50 to-slate-100" style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       {/* Fixed Header - Only show when not viewing chart */}
       {activeTab !== 'chart' && (
       <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm">
