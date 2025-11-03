@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useTransition } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -46,6 +45,8 @@ export function Dashboard({ username, onLogout }: DashboardProps) {
   const [searching, setSearching] = useState(false);
   const [loadingWatchlist, setLoadingWatchlist] = useState(true);
   const [loadingStockData, setLoadingStockData] = useState(false);
+  const [activeTab, setActiveTab] = useState<'chart' | 'analysis' | 'news'>('chart');
+  const [showFloatingPanel, setShowFloatingPanel] = useState(true);
 
   // React 19 useTransition for async operations
   const [isPending, startTransition] = useTransition();
@@ -239,8 +240,9 @@ export function Dashboard({ username, onLogout }: DashboardProps) {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 pb-safe">
-      {/* Fixed Header */}
+    <div className="min-h-screen w-full bg-gradient-to-br from-slate-50 to-slate-100" style={{ display: 'flex', flexDirection: 'column' }}>
+      {/* Fixed Header - Only show when not viewing chart */}
+      {activeTab !== 'chart' && (
       <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm">
         <div className="px-4 py-3">
           <div className="flex items-center justify-between mb-3">
@@ -353,9 +355,11 @@ export function Dashboard({ username, onLogout }: DashboardProps) {
           </div>
         </div>
       </div>
+      )}
 
       {/* Main Content */}
-      <div className="px-4 py-4 space-y-4">
+      {activeTab !== 'chart' ? (
+      <div className="px-4 py-4 space-y-4 flex-1 overflow-y-auto">
         {/* Current Stock Info */}
         <Card className="shadow-md border-slate-200">
           <CardHeader className="pb-3">
@@ -401,27 +405,66 @@ export function Dashboard({ username, onLogout }: DashboardProps) {
           </CardContent>
         </Card>
 
-        {/* Tabs */}
-        <Tabs defaultValue="chart" className="space-y-4">
-          <TabsList className="grid grid-cols-3 w-full bg-white shadow-sm h-12">
-            <TabsTrigger value="chart" className="text-sm sm:text-base data-[state=active]:bg-primary data-[state=active]:text-secondary">차트</TabsTrigger>
-            <TabsTrigger value="analysis" className="text-sm sm:text-base data-[state=active]:bg-primary data-[state=active]:text-secondary">분석</TabsTrigger>
-            <TabsTrigger value="news" className="text-sm sm:text-base data-[state=active]:bg-primary data-[state=active]:text-secondary">뉴스</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="chart" className="mt-4">
-            <ChartTab stock={selectedStock} market={selectedStock.market || 'us'} />
-          </TabsContent>
-
-          <TabsContent value="analysis" className="mt-4">
+        {/* Analysis and News Content */}
+        <div className="space-y-4">
+          {activeTab === 'analysis' && (
             <DataAnalysisTab stock={selectedStock} />
-          </TabsContent>
-
-          <TabsContent value="news" className="mt-4">
+          )}
+          {activeTab === 'news' && (
             <NewsSection selectedSymbol={selectedStock.symbol} selectedMarket={selectedStock.market || 'us'} />
-          </TabsContent>
-        </Tabs>
+          )}
+        </div>
       </div>
+      ) : (
+      /* Chart Fullscreen */
+      <ChartTab stock={selectedStock} market={selectedStock.market || 'us'} />
+      )}
+
+      {/* Fixed Floating Button Panel */}
+      {showFloatingPanel && (
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3 sm:flex-row">
+          <Button
+            onClick={() => setActiveTab('chart')}
+            className="bg-primary hover:bg-primary/90 text-secondary shadow-lg h-14 px-5 flex items-center gap-2 rounded-full"
+          >
+            <span className="text-xl">📊</span>
+            <span className="hidden sm:inline">차트</span>
+          </Button>
+          <Button
+            onClick={() => setActiveTab('analysis')}
+            className="bg-primary hover:bg-primary/90 text-secondary shadow-lg h-14 px-5 flex items-center gap-2 rounded-full"
+          >
+            <span className="text-xl">📈</span>
+            <span className="hidden sm:inline">분석</span>
+          </Button>
+          <Button
+            onClick={() => setActiveTab('news')}
+            className="bg-primary hover:bg-primary/90 text-secondary shadow-lg h-14 px-5 flex items-center gap-2 rounded-full"
+          >
+            <span className="text-xl">📰</span>
+            <span className="hidden sm:inline">뉴스</span>
+          </Button>
+          <Button
+            onClick={() => setShowFloatingPanel(false)}
+            variant="outline"
+            className="shadow-lg h-14 px-5 flex items-center justify-center rounded-full"
+            title="패널 숨기기"
+          >
+            <span className="text-xl">✕</span>
+          </Button>
+        </div>
+      )}
+
+      {/* Show Panel Button (when hidden) */}
+      {!showFloatingPanel && (
+        <button
+          onClick={() => setShowFloatingPanel(true)}
+          className="fixed bottom-6 right-6 z-50 bg-primary hover:bg-primary/90 text-secondary shadow-lg h-14 w-14 rounded-full flex items-center justify-center text-xl transition-all"
+          title="패널 표시"
+        >
+          ▲
+        </button>
+      )}
     </div>
   );
 }

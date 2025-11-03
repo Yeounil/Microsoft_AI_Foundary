@@ -25,7 +25,6 @@ import { newsAPI } from '@/services/api';
 import { NewsArticle, NewsSummary } from '@/types/api';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import AIAnalysisModal from '@/components/AIAnalysisModal';
 
 interface NewsSectionProps {
   selectedSymbol?: string;
@@ -43,7 +42,6 @@ export default function NewsSection({ selectedSymbol, selectedMarket }: NewsSect
   const [expandedArticle, setExpandedArticle] = useState<number | null>(null);
   const [articleSummaries, setArticleSummaries] = useState<{ [key: number]: string }>({});
   const [loadingArticleSummary, setLoadingArticleSummary] = useState<number | null>(null);
-  const [analysisModalOpen, setAnalysisModalOpen] = useState<boolean>(false);
 
   // React 19 useTransition for async AI operations
   const [isAnalysisPending, startAnalysisTransition] = useTransition();
@@ -114,9 +112,6 @@ export default function NewsSection({ selectedSymbol, selectedMarket }: NewsSect
   const handleAnalyzeWithNews = useCallback(() => {
     if (!selectedSymbol) return;
 
-    // 모달 먼저 열기
-    setAnalysisModalOpen(true);
-
     startAnalysisTransition(async () => {
       setAnalysisLoading(true);
       setError('');
@@ -137,7 +132,6 @@ export default function NewsSection({ selectedSymbol, selectedMarket }: NewsSect
         console.error('❌ 뉴스 분석 오류:', err);
         console.error('❌ 응답 상세:', err.response?.data);
         setError(`뉴스 기반 AI 분석 오류: ${err.response?.data?.detail || err.message}`);
-        setAnalysisModalOpen(false);
       } finally {
         setAnalysisLoading(false);
       }
@@ -495,15 +489,6 @@ export default function NewsSection({ selectedSymbol, selectedMarket }: NewsSect
           </Typography>
         </Box>
       )}
-
-      {/* AI 분석 모달 */}
-      <AIAnalysisModal
-        open={analysisModalOpen}
-        onClose={() => setAnalysisModalOpen(false)}
-        analysis={aiAnalysis}
-        symbol={selectedSymbol || ''}
-        isLoading={analysisLoading}
-      />
     </Box>
   );
 }

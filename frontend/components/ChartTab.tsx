@@ -1,8 +1,6 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { useState, useCallback, useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import type { Stock } from './Dashboard';
 
 interface ChartTabProps {
@@ -10,131 +8,99 @@ interface ChartTabProps {
   market?: string;
 }
 
-// TradingView Widget script 타입
-declare global {
-  interface Window {
-    TradingView: any;
-  }
-}
-
 export function ChartTab({ stock, market = 'us' }: ChartTabProps) {
-  const [timeRange, setTimeRange] = useState<'1D' | '1W' | '1M' | '3M' | '1Y'>('1M');
-  const [scriptLoaded, setScriptLoaded] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const getIntervalFromRange = useCallback((range: string): string => {
-    switch (range) {
-      case '1D': return '5';
-      case '1W': return '60';
-      case '1M': return 'D';
-      case '3M': return 'D';
-      case '1Y': return 'W';
-      default: return 'D';
-    }
-  }, []);
-
-  // TradingView Widget 스크립트 로드
   useEffect(() => {
-    const existingScript = document.querySelector(
-      'script[src="https://s3.tradingview.com/tv.js"]'
-    );
+    if (!containerRef.current) return;
 
-    if (!existingScript) {
-      const script = document.createElement('script');
-      script.src = 'https://s3.tradingview.com/tv.js';
-      script.async = true;
-      script.onload = () => {
-        setScriptLoaded(true);
-      };
-      document.body.appendChild(script);
-    } else {
-      setScriptLoaded(true);
-    }
-  }, []);
+    const symbol =
+      market === 'kr' && !stock.symbol.includes('.')
+        ? `KRX:${stock.symbol}`
+        : stock.symbol;
 
-  // 위젯 생성 및 업데이트
-  useEffect(() => {
-    if (!scriptLoaded) return;
+    // 컨테이너 초기화
+    containerRef.current.innerHTML = '';
 
-    const createWidget = () => {
-      const container = document.getElementById('tradingview-widget');
-      if (container) {
-        container.innerHTML = '';
-      }
+    // 공식 HTML 구조 작성
+    containerRef.current.innerHTML = `
+      <div class="tradingview-widget-container" style="height: 100%; width: 100%;">
+        <div class="tradingview-widget-container__widget"></div>
+        <div class="tradingview-widget-copyright" style="padding: 10px;">
+          <a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank">
+            <span class="blue-text">TradingView</span>
+          </a>
+        </div>
+      </div>
+    `;
 
-      const symbol =
-        market === 'kr' && !stock.symbol.includes('.')
-          ? `KRX:${stock.symbol}`
-          : stock.symbol;
+    // TradingView 스크립트 로드
+    const script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.async = true;
+    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js';
 
-      if (typeof window !== 'undefined' && window.TradingView) {
-        try {
-          new window.TradingView.widget({
-            autosize: true,
-            symbol: symbol,
-            interval: getIntervalFromRange(timeRange),
-            timezone: 'Asia/Seoul',
-            theme: 'light',
-            style: '1',
-            locale: 'ko',
-            enable_publishing: false,
-            allow_symbol_change: false,
-            container_id: 'tradingview-widget',
-            hide_volume: false,
-            hide_legend: false,
-            save_image: true,
-            width: '100%',
-            height: 500
-          });
-        } catch (error) {
-          console.error('Failed to initialize TradingView widget:', error);
-        }
-      }
+    // 설정 JSON
+    const config = {
+      lineWidth: 2,
+      lineType: 0,
+      chartType: 'area',
+      fontColor: 'rgb(106, 109, 120)',
+      gridLineColor: 'rgba(242, 242, 242, 0.06)',
+      volumeUpColor: 'rgba(34, 171, 148, 0.5)',
+      volumeDownColor: 'rgba(247, 82, 95, 0.5)',
+      backgroundColor: '#FFFFFF',
+      widgetFontColor: '#131722',
+      upColor: '#089981',
+      downColor: '#f23645',
+      borderUpColor: '#089981',
+      borderDownColor: '#f23645',
+      wickUpColor: '#089981',
+      wickDownColor: '#f23645',
+      colorTheme: 'light',
+      isTransparent: false,
+      locale: 'ko',
+      chartOnly: false,
+      scalePosition: 'right',
+      scaleMode: 'Normal',
+      fontFamily: '-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif',
+      valuesTracking: '1',
+      changeMode: 'price-and-percent',
+      symbols: [[stock.name || stock.symbol, `${symbol}|1D`]],
+      dateRanges: ['1d|1', '1m|30', '3m|60', '12m|1D', '60m|1W', 'all|1M'],
+      fontSize: '10',
+      headerFontSize: 'medium',
+      autosize: true,
+      width: '100%',
+      height: '100%',
+      noTimeScale: false,
+      hideDateRanges: false,
+      hideMarketStatus: false,
+      hideSymbolLogo: false
     };
 
-    createWidget();
-  }, [scriptLoaded, stock.symbol, timeRange, market, getIntervalFromRange]);
+    script.textContent = JSON.stringify(config);
+
+    if (containerRef.current) {
+      containerRef.current.appendChild(script);
+    }
+
+    return () => {
+      if (containerRef.current) {
+        containerRef.current.innerHTML = '';
+      }
+    };
+  }, [stock.symbol, stock.name, market]);
 
   return (
-    <Card className="shadow-md border-slate-200">
-      <CardHeader className="pb-3">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <CardTitle>가격 차트</CardTitle>
-            <CardDescription className="hidden sm:block">TradingView 실시간 차트</CardDescription>
-          </div>
-          <div className="flex gap-1.5 overflow-x-auto pb-1">
-            {(['1D', '1W', '1M', '3M', '1Y'] as const).map(range => (
-              <Button
-                key={range}
-                variant={timeRange === range ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setTimeRange(range)}
-                className="min-w-[3.5rem] h-9"
-              >
-                {range}
-              </Button>
-            ))}
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* TradingView Widget Container */}
-        <div
-          id="tradingview-widget"
-          className="w-full min-h-96"
-          style={{ height: '500px' }}
-        />
-
-        {/* AI Insights */}
-        <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-          <h4 className="text-secondary mb-2">🤖 AI 분석 인사이트</h4>
-          <ul className="space-y-1.5 sm:space-y-2 text-slate-700">
-            <li>• 최근 {timeRange} 동안 {stock.change >= 0 ? '상승' : '하락'} 추세를 보이고 있습니다.</li>
-            <li>• 거래량이 평균 대비 {Math.floor(Math.random() * 30 + 10)}% 증가했습니다.</li>
-            <li>• 기술적 지표상 {stock.changePercent > 1 ? '강세' : stock.changePercent < -1 ? '약세' : '중립'} 신호를 나타냅니다.</li>
-          </ul>
-        </div>
-      </CardContent>
-    </Card>
+    <div
+      ref={containerRef}
+      style={{
+        width: '100%',
+        height: '100%',
+        minHeight: '100vh',
+        backgroundColor: '#FFFFFF'
+      }}
+    />
   );
 }

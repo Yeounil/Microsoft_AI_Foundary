@@ -23,7 +23,10 @@
       "Bash(gcloud logging read:*)",
       "Bash(gcloud run services update:*)",
       "Bash(npm install:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "WebFetch(domain:www.tradingview.com)",
+      "Bash(cat:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []
