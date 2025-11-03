@@ -1,7 +1,7 @@
 'use client';
 
 import logo from '@/assets/myLogo.png';
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Box,
@@ -75,7 +75,7 @@ export default function MainApp() {
     checkAuthStatus();
   }, []);
 
-  const checkAuthStatus = async () => {
+  const checkAuthStatus = useCallback(async () => {
     try {
       const token = authService.getToken();
       if (token) {
@@ -94,57 +94,58 @@ export default function MainApp() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const handleLogin = (token: string) => {
+  const handleLogin = useCallback((token: string) => {
     authService.saveToken(token);
     setIsAuthenticated(true);
     checkAuthStatus();
-  };
+  }, [checkAuthStatus]);
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     authService.logout();
     setIsAuthenticated(false);
     setUser(null);
     setSelectedStock(null);
     setViewMode('landing');
     setTabValue(0);
-  };
+  }, []);
 
-  const handleRegisterSuccess = () => {
+  const handleRegisterSuccess = useCallback(() => {
     setShowRegister(false);
-  };
+  }, []);
 
-  const handleStockSelect = (symbol: string, market: string, companyName?: string) => {
+  const handleStockSelect = useCallback((symbol: string, market: string, companyName?: string) => {
     setSelectedStock({ symbol, market, companyName });
     setTabValue(0);
     setViewMode('dashboard');
-  };
+  }, []);
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = useCallback((event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
-  };
+  }, []);
 
-  const handleGoHome = () => {
+  const handleGoHome = useCallback(() => {
     setSelectedStock(null);
     setViewMode('landing');
-  };
+  }, []);
 
-  const handleAlert = (message: string, severity: 'success' | 'error') => {
+  const handleAlert = useCallback((message: string, severity: 'success' | 'error') => {
     setAlertMessage(message);
     setAlertSeverity(severity);
     setAlertOpen(true);
     // 3초 후 자동 닫기
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       setAlertOpen(false);
     }, 3000);
-  };
+    return () => clearTimeout(timer);
+  }, []);
 
-  const handleAlertClose = () => {
+  const handleAlertClose = useCallback(() => {
     setAlertOpen(false);
-  };
+  }, []);
 
-  const handleNewsButtonClick = () => {
+  const handleNewsButtonClick = useCallback(() => {
     if (viewMode === 'landing') {
       // 메인 화면에 있으면 뉴스 섹션으로 스크롤
       setTimeout(() => {
@@ -165,7 +166,7 @@ export default function MainApp() {
         }
       }, 300);
     }
-  };
+  }, [viewMode]);
 
   // 로딩 중
   if (isLoading) {

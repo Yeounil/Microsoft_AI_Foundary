@@ -20,7 +20,7 @@ interface LoginProps {
   onSwitchToRegister: () => void;
 }
 
-const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToRegister }) => {
+export default function Login({ onLogin, onSwitchToRegister }: LoginProps) {
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -148,6 +148,4 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToRegister }) => {
       </Box>
     </Container>
   );
-};
-
-export default Login;
+}

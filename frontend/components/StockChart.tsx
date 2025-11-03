@@ -36,7 +36,7 @@ interface StockChartProps {
   market: string;
 }
 
-const StockChart: React.FC<StockChartProps> = ({ symbol, market }) => {
+export default function StockChart({ symbol, market }: StockChartProps) {
   const [stockData, setStockData] = useState<StockData | null>(null);
   const [period, setPeriod] = useState<string>('1y');
   const [interval, setInterval] = useState<string>('1d');
@@ -364,6 +364,4 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, market }) => {
       </CardContent>
     </Card>
   );
-};
-
-export default StockChart;
+}

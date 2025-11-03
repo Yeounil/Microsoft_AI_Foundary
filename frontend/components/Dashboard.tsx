@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useTransition } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -47,6 +47,9 @@ export function Dashboard({ username, onLogout }: DashboardProps) {
   const [loadingWatchlist, setLoadingWatchlist] = useState(true);
   const [loadingStockData, setLoadingStockData] = useState(false);
 
+  // React 19 useTransition for async operations
+  const [isPending, startTransition] = useTransition();
+
   // Load user interests from DB on mount
   useEffect(() => {
     loadUserInterests();
@@ -63,7 +66,7 @@ export function Dashboard({ username, onLogout }: DashboardProps) {
     }
   }, [selectedStock.symbol]);
 
-  const loadUserInterests = async () => {
+  const loadUserInterests = useCallback(async () => {
     try {
       setLoadingWatchlist(true);
       const response = await recommendationSupabaseAPI.getUserInterests();
@@ -116,39 +119,41 @@ export function Dashboard({ username, onLogout }: DashboardProps) {
     } finally {
       setLoadingWatchlist(false);
     }
-  };
+  }, []);
 
-  const handleSearch = async () => {
+  const handleSearch = useCallback(async () => {
     if (!searchQuery.trim()) {
       setSearchResults([]);
       return;
     }
 
-    try {
-      setSearching(true);
-      const response = await stockAPI.searchStocks(searchQuery);
+    startTransition(async () => {
+      try {
+        setSearching(true);
+        const response = await stockAPI.searchStocks(searchQuery);
 
-      // Convert search results to Stock format
-      const stocks: Stock[] = response.results.map((result: any) => ({
-        symbol: result.symbol,
-        name: result.name || result.longName || result.symbol,
-        price: result.regularMarketPrice || 0,
-        change: result.regularMarketChange || 0,
-        changePercent: result.regularMarketChangePercent || 0,
-        currency: result.currency || 'USD',
-        market: result.currency === 'KRW' ? 'kr' : 'us'
-      }));
+        // Convert search results to Stock format
+        const stocks: Stock[] = response.results.map((result: any) => ({
+          symbol: result.symbol,
+          name: result.name || result.longName || result.symbol,
+          price: result.regularMarketPrice || 0,
+          change: result.regularMarketChange || 0,
+          changePercent: result.regularMarketChangePercent || 0,
+          currency: result.currency || 'USD',
+          market: result.currency === 'KRW' ? 'kr' : 'us'
+        }));
 
-      setSearchResults(stocks);
-    } catch (error) {
-      console.error('Search failed:', error);
-      setSearchResults([]);
-    } finally {
-      setSearching(false);
-    }
-  };
+        setSearchResults(stocks);
+      } catch (error) {
+        console.error('Search failed:', error);
+        setSearchResults([]);
+      } finally {
+        setSearching(false);
+      }
+    });
+  }, [searchQuery]);
 
-  const loadStockData = async (stock: Stock) => {
+  const loadStockData = useCallback(async (stock: Stock) => {
     try {
       setLoadingStockData(true);
 
@@ -181,17 +186,17 @@ export function Dashboard({ username, onLogout }: DashboardProps) {
     } finally {
       setLoadingStockData(false);
     }
-  };
+  }, []);
 
-  const handleSelectStock = (stock: Stock) => {
+  const handleSelectStock = useCallback((stock: Stock) => {
     setSelectedStock(stock);
     setSearchResults([]);
     setSearchQuery('');
     setWatchlistOpen(false);
     // Stock data will be loaded by useEffect
-  };
+  }, []);
 
-  const toggleWatchlist = async (stock: Stock) => {
+  const toggleWatchlist = useCallback(async (stock: Stock) => {
     const exists = watchlist.find(s => s.symbol === stock.symbol);
 
     try {
@@ -213,25 +218,25 @@ export function Dashboard({ username, onLogout }: DashboardProps) {
       // Optionally show error to user
       alert(exists ? '관심 종목 삭제에 실패했습니다.' : '관심 종목 추가에 실패했습니다.');
     }
-  };
+  }, [watchlist]);
 
-  const isInWatchlist = (stock: Stock) => {
+  const isInWatchlist = useCallback((stock: Stock) => {
     return watchlist.some(s => s.symbol === stock.symbol);
-  };
+  }, [watchlist]);
 
-  const formatPrice = (price: number, currency?: string) => {
+  const formatPrice = useCallback((price: number, currency?: string) => {
     if (currency === 'KRW') {
       return `₩${price.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}`;
     }
     return `$${price.toFixed(2)}`;
-  };
+  }, []);
 
-  const formatChange = (change: number, currency?: string) => {
+  const formatChange = useCallback((change: number, currency?: string) => {
     if (currency === 'KRW') {
       return `₩${Math.abs(change).toLocaleString('ko-KR', { maximumFractionDigits: 0 })}`;
     }
     return `$${Math.abs(change).toFixed(2)}`;
-  };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 pb-safe">

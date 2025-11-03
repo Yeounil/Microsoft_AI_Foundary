@@ -46,7 +46,7 @@ interface UserInterest {
   created_at?: string;
 }
 
-const RecommendedNews: React.FC = () => {
+export default function RecommendedNews() {
   const [recommendedNews, setRecommendedNews] = useState<RecommendedNewsItem[]>([]);
   const [userInterests, setUserInterests] = useState<UserInterest[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -332,6 +332,4 @@ const RecommendedNews: React.FC = () => {
 
     </Box>
   );
-};
-
-export default RecommendedNews;
+}

@@ -26,7 +26,7 @@ interface StockAnalysisProps {
   companyName: string;
 }
 
-const StockAnalysis: React.FC<StockAnalysisProps> = ({ symbol, market, companyName }) => {
+export default function StockAnalysis({ symbol, market, companyName }: StockAnalysisProps) {
   const [analysis, setAnalysis] = useState<StockAnalysisType | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
@@ -181,6 +181,4 @@ const StockAnalysis: React.FC<StockAnalysisProps> = ({ symbol, market, companyNa
       </CardContent>
     </Card>
   );
-};
-
-export default StockAnalysis;
+}

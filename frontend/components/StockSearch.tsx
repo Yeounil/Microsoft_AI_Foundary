@@ -38,7 +38,7 @@ interface UserInterest {
   created_at?: string;
 }
 
-const StockSearch: React.FC<StockSearchProps> = ({ onStockSelect, onAlert }) => {
+export default function StockSearch({ onStockSelect, onAlert }: StockSearchProps) {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [stockOptions, setStockOptions] = useState<StockOption[]>([]);
   const [selectedStock, setSelectedStock] = useState<StockOption | null>(null);
@@ -276,6 +276,4 @@ const StockSearch: React.FC<StockSearchProps> = ({ onStockSelect, onAlert }) => 
       </Box>
     </Box>
   );
-};
-
-export default StockSearch;
+}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useTransition } from 'react';
 import {
   Card,
   CardContent,
@@ -25,13 +25,14 @@ import { newsAPI } from '@/services/api';
 import { NewsArticle, NewsSummary } from '@/types/api';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import AIAnalysisModal from '@/components/AIAnalysisModal';
 
 interface NewsSectionProps {
   selectedSymbol?: string;
   selectedMarket?: string;
 }
 
-const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarket }) => {
+export default function NewsSection({ selectedSymbol, selectedMarket }: NewsSectionProps) {
   const [news, setNews] = useState<NewsArticle[]>([]);
   const [aiAnalysis, setAiAnalysis] = useState<string>('');
   const [relatedNews, setRelatedNews] = useState<NewsArticle[]>([]);
@@ -42,6 +43,11 @@ const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarke
   const [expandedArticle, setExpandedArticle] = useState<number | null>(null);
   const [articleSummaries, setArticleSummaries] = useState<{ [key: number]: string }>({});
   const [loadingArticleSummary, setLoadingArticleSummary] = useState<number | null>(null);
+  const [analysisModalOpen, setAnalysisModalOpen] = useState<boolean>(false);
+
+  // React 19 useTransition for async AI operations
+  const [isAnalysisPending, startAnalysisTransition] = useTransition();
+  const [isSummaryPending, startSummaryTransition] = useTransition();
 
   useEffect(() => {
     if (selectedSymbol) {
@@ -51,10 +57,10 @@ const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarke
     }
   }, [selectedSymbol, selectedMarket]);
 
-  const fetchGeneralNews = async () => {
+  const fetchGeneralNews = useCallback(async () => {
     setLoading(true);
     setError('');
-    
+
     try {
       const response = await newsAPI.getFinancialNews('finance', 10, 'en');
       setNews(response.articles);
@@ -64,19 +70,19 @@ const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarke
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchStockNews = async () => {
+  const fetchStockNews = useCallback(async () => {
     if (!selectedSymbol) return;
-    
+
     setLoading(true);
     setError('');
-    
+
     try {
       // 먼저 기존 DB에서 많은 뉴스를 가져오기
       const response = await newsAPI.getStockNews(selectedSymbol, 20, false);
       console.log(`[DEBUG] ${selectedSymbol} 뉴스 로딩:`, response.articles.length, '개');
-      
+
       // 소스별 분포 로그
       const sourceCount = response.articles.reduce((acc: any, article: any) => {
         const source = article.api_source || article.source || 'unknown';
@@ -84,9 +90,9 @@ const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarke
         return acc;
       }, {});
       console.log('[DEBUG] 뉴스 소스 분포:', sourceCount);
-      
+
       setNews(response.articles);
-      
+
       // 뉴스가 부족한 경우 자동으로 크롤링 (백엔드에서 자동 처리됨)
       if (response.articles.length < 10) {
         console.log('[DEBUG] 뉴스가 부족하여 자동 크롤링 시도...');
@@ -103,46 +109,52 @@ const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarke
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedSymbol]);
 
-  const handleAnalyzeWithNews = async () => {
+  const handleAnalyzeWithNews = useCallback(() => {
     if (!selectedSymbol) return;
-    
-    setAnalysisLoading(true);
-    setError('');
-    
-    try {
-      console.log('🔍 뉴스 분석 시작:', selectedSymbol);
-      const response = await newsAPI.analyzeStockWithNews(selectedSymbol, 7, 20);
-      console.log('📊 분석 응답 받음:', response);
-      
-      if (response && response.ai_analysis) {
-        setAiAnalysis(response.ai_analysis);
-        setRelatedNews(response.related_news || []);
-        console.log('✅ 분석 완료');
-      } else {
-        throw new Error('응답 데이터가 올바르지 않습니다.');
+
+    // 모달 먼저 열기
+    setAnalysisModalOpen(true);
+
+    startAnalysisTransition(async () => {
+      setAnalysisLoading(true);
+      setError('');
+
+      try {
+        console.log('🔍 뉴스 분석 시작:', selectedSymbol);
+        const response = await newsAPI.analyzeStockWithNews(selectedSymbol, 7, 20);
+        console.log('📊 분석 응답 받음:', response);
+
+        if (response && response.ai_analysis) {
+          setAiAnalysis(response.ai_analysis);
+          setRelatedNews(response.related_news || []);
+          console.log('✅ 분석 완료');
+        } else {
+          throw new Error('응답 데이터가 올바르지 않습니다.');
+        }
+      } catch (err: any) {
+        console.error('❌ 뉴스 분석 오류:', err);
+        console.error('❌ 응답 상세:', err.response?.data);
+        setError(`뉴스 기반 AI 분석 오류: ${err.response?.data?.detail || err.message}`);
+        setAnalysisModalOpen(false);
+      } finally {
+        setAnalysisLoading(false);
       }
-    } catch (err: any) {
-      console.error('❌ 뉴스 분석 오류:', err);
-      console.error('❌ 응답 상세:', err.response?.data);
-      setError(`뉴스 기반 AI 분석 오류: ${err.response?.data?.detail || err.message}`);
-    } finally {
-      setAnalysisLoading(false);
-    }
-  };
+    });
+  }, [selectedSymbol]);
 
-  const handleCrawlNews = async () => {
+  const handleCrawlNews = useCallback(async () => {
     if (!selectedSymbol) return;
-    
+
     setCrawlingLoading(true);
     setError('');
-    
+
     try {
       console.log(`[DEBUG] ${selectedSymbol} 뉴스 크롤링 시작...`);
       const crawlResult = await newsAPI.crawlStockNews(selectedSymbol, 20);
       console.log('[DEBUG] 크롤링 결과:', crawlResult.crawled_count, '개 새 뉴스');
-      
+
       // 크롤링 후 뉴스 목록 새로고침
       await fetchStockNews();
     } catch (err: any) {
@@ -151,9 +163,9 @@ const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarke
     } finally {
       setCrawlingLoading(false);
     }
-  };
+  }, [selectedSymbol, fetchStockNews]);
 
-  const formatDate = (dateString: string) => {
+  const formatDate = useCallback((dateString: string) => {
     try {
       return new Date(dateString).toLocaleDateString('ko-KR', {
         year: 'numeric',
@@ -165,9 +177,9 @@ const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarke
     } catch {
       return dateString;
     }
-  };
+  }, []);
 
-  const handleToggleArticleSummary = async (index: number, article: NewsArticle) => {
+  const handleToggleArticleSummary = useCallback((index: number, article: NewsArticle) => {
     // If already expanded, just collapse
     if (expandedArticle === index) {
       setExpandedArticle(null);
@@ -177,37 +189,40 @@ const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarke
     // If not expanded and no summary exists, fetch it
     if (!articleSummaries[index]) {
       setLoadingArticleSummary(index);
-      try {
-        const articleData = {
-          title: article.title,
-          description: article.description || '',
-          content: article.description || '',
-          url: article.url,
-          source: article.source
-        };
 
-        const response = await newsAPI.summarizeSingleArticle(articleData);
+      startSummaryTransition(async () => {
+        try {
+          const articleData = {
+            title: article.title,
+            description: article.description || '',
+            content: article.description || '',
+            url: article.url,
+            source: article.source
+          };
 
-        // Store the summary
-        setArticleSummaries(prev => ({
-          ...prev,
-          [index]: response.ai_summary
-        }));
-      } catch (error) {
-        console.error('AI 요약 생성 실패:', error);
-        // Set error message
-        setArticleSummaries(prev => ({
-          ...prev,
-          [index]: 'AI 요약을 생성하는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
-        }));
-      } finally {
-        setLoadingArticleSummary(null);
-      }
+          const response = await newsAPI.summarizeSingleArticle(articleData);
+
+          // Store the summary
+          setArticleSummaries(prev => ({
+            ...prev,
+            [index]: response.ai_summary
+          }));
+        } catch (error) {
+          console.error('AI 요약 생성 실패:', error);
+          // Set error message
+          setArticleSummaries(prev => ({
+            ...prev,
+            [index]: 'AI 요약을 생성하는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+          }));
+        } finally {
+          setLoadingArticleSummary(null);
+        }
+      });
     }
 
     // Expand the article
     setExpandedArticle(index);
-  };
+  }, [expandedArticle, articleSummaries]);
 
   if (loading) {
     return (
@@ -247,114 +262,32 @@ const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarke
               </Button>
               <Button
                 variant="contained"
-                startIcon={analysisLoading ? <CircularProgress size={20} /> : <PsychologyIcon />}
+                startIcon={analysisLoading ? <CircularProgress size={20} color="inherit" /> : <PsychologyIcon />}
                 onClick={handleAnalyzeWithNews}
                 disabled={analysisLoading}
                 sx={{
-                  bgcolor: 'secondary.main',
+                  background: analysisLoading
+                    ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                    : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   color: '#FFFFFF',
+                  fontWeight: 600,
+                  transition: 'all 0.3s ease',
                   '&:hover': {
-                    bgcolor: 'secondary.dark',
-                    color: '#FFFFFF'
+                    transform: !analysisLoading ? 'translateY(-2px)' : 'none',
+                    boxShadow: !analysisLoading ? '0 8px 20px rgba(102, 126, 234, 0.4)' : 'none',
+                  },
+                  '&:disabled': {
+                    opacity: 0.8,
                   }
                 }}
               >
-                뉴스 기반 AI 분석
+                {analysisLoading ? '분석 진행 중...' : '뉴스 기반 AI 분석'}
               </Button>
             </>
           )}
         </Stack>
       </Box>
 
-      {aiAnalysis && (
-        <Card sx={{ mb: 3, backgroundColor: '#000000', color: '#FFFFFF' }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              🧠 뉴스 기반 AI 종목 분석
-            </Typography>
-            <Box sx={{
-              mb: 2,
-              color: '#FFFFFF',
-              '& h1, & h2, & h3, & h4, & h5, & h6': {
-                color: '#FFFFFF',
-                fontWeight: 'bold',
-                marginTop: '1rem',
-                marginBottom: '0.5rem'
-              },
-              '& h2': { fontSize: '1.5rem' },
-              '& h3': { fontSize: '1.25rem' },
-              '& p': {
-                marginBottom: '0.75rem',
-                lineHeight: 1.6
-              },
-              '& ul, & ol': {
-                paddingLeft: '1.5rem',
-                marginBottom: '0.75rem'
-              },
-              '& li': {
-                marginBottom: '0.25rem'
-              },
-              '& strong': {
-                fontWeight: 'bold',
-                color: '#FFEB3B'
-              },
-              '& em': {
-                fontStyle: 'italic',
-                color: '#FFD54F'
-              },
-              '& code': {
-                backgroundColor: 'rgba(255,255,255,0.1)',
-                padding: '0.2rem 0.4rem',
-                borderRadius: '3px',
-                fontSize: '0.875rem'
-              },
-              '& pre': {
-                backgroundColor: 'rgba(255,255,255,0.1)',
-                padding: '1rem',
-                borderRadius: '5px',
-                overflowX: 'auto',
-                marginBottom: '0.75rem'
-              }
-            }}>
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {aiAnalysis}
-              </ReactMarkdown>
-            </Box>
-            
-            {relatedNews.length > 0 && (
-              <>
-                <Typography variant="h6" gutterBottom sx={{ mt: 3, mb: 2 }}>
-                  📰 분석에 활용된 주요 뉴스
-                </Typography>
-                <Box sx={{ display: 'grid', gap: 1 }}>
-                  {relatedNews.slice(0, 5).map((article, index) => (
-                    <Card key={index} sx={{ bgcolor: 'rgba(255,255,255,0.1)' }}>
-                      <CardContent sx={{ py: 1 }}>
-                        <Typography variant="subtitle2" sx={{ color: 'inherit', mb: 0.5 }}>
-                          {article.title}
-                        </Typography>
-                        <Box display="flex" justifyContent="space-between" alignItems="center">
-                          <Typography variant="caption" sx={{ color: 'inherit', opacity: 0.8 }}>
-                            {article.source} • {formatDate(article.published_at)}
-                          </Typography>
-                          <Link
-                            href={article.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            sx={{ color: 'inherit', fontSize: '0.75rem' }}
-                          >
-                            원문보기
-                          </Link>
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </Box>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      )}
 
       {error && (
         <Typography color="error" align="center" sx={{ mb: 2 }}>
@@ -562,8 +495,15 @@ const NewsSection: React.FC<NewsSectionProps> = ({ selectedSymbol, selectedMarke
           </Typography>
         </Box>
       )}
+
+      {/* AI 분석 모달 */}
+      <AIAnalysisModal
+        open={analysisModalOpen}
+        onClose={() => setAnalysisModalOpen(false)}
+        analysis={aiAnalysis}
+        symbol={selectedSymbol || ''}
+        isLoading={analysisLoading}
+      />
     </Box>
   );
-};
-
-export default NewsSection;
+}

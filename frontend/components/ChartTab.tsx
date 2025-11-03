@@ -1,90 +1,98 @@
+'use client';
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useState, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { Stock } from './Dashboard';
-import { stockAPI } from '@/services/api';
-import { Loader2 } from 'lucide-react';
 
 interface ChartTabProps {
   stock: Stock;
   market?: string;
 }
 
-interface ChartDataPoint {
-  date: string;
-  price: number;
-  volume: number;
+// TradingView Widget script 타입
+declare global {
+  interface Window {
+    TradingView: any;
+  }
 }
 
 export function ChartTab({ stock, market = 'us' }: ChartTabProps) {
   const [timeRange, setTimeRange] = useState<'1D' | '1W' | '1M' | '3M' | '1Y'>('1M');
-  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [currency, setCurrency] = useState('USD');
+  const [scriptLoaded, setScriptLoaded] = useState(false);
 
-  const getPeriodFromRange = (range: string): string => {
+  const getIntervalFromRange = useCallback((range: string): string => {
     switch (range) {
-      case '1D': return '1d';
-      case '1W': return '5d';
-      case '1M': return '1mo';
-      case '3M': return '3mo';
-      case '1Y': return '1y';
-      default: return '1mo';
+      case '1D': return '5';
+      case '1W': return '60';
+      case '1M': return 'D';
+      case '3M': return 'D';
+      case '1Y': return 'W';
+      default: return 'D';
     }
-  };
+  }, []);
 
-  const getIntervalFromRange = (range: string): string => {
-    switch (range) {
-      case '1D': return '5m';
-      case '1W': return '1h';
-      case '1M': return '1d';
-      case '3M': return '1d';
-      case '1Y': return '1wk';
-      default: return '1d';
-    }
-  };
-
+  // TradingView Widget 스크립트 로드
   useEffect(() => {
-    loadChartData();
-  }, [stock.symbol, timeRange, market]);
+    const existingScript = document.querySelector(
+      'script[src="https://s3.tradingview.com/tv.js"]'
+    );
 
-  const loadChartData = async () => {
-    try {
-      setLoading(true);
-      const period = getPeriodFromRange(timeRange);
-      const interval = getIntervalFromRange(timeRange);
-
-      const response = await stockAPI.getChartData(stock.symbol, period, market, interval);
-
-      setCurrency(response.currency || 'USD');
-
-      // Transform API data to chart format
-      const formattedData: ChartDataPoint[] = response.chart_data.map((point: any) => ({
-        date: new Date(point.date).toLocaleDateString('ko-KR', {
-          month: 'short',
-          day: 'numeric',
-          ...(timeRange === '1D' ? { hour: '2-digit', minute: '2-digit' } : {})
-        }),
-        price: point.close,
-        volume: point.volume
-      }));
-
-      setChartData(formattedData);
-    } catch (error) {
-      console.error('Failed to load chart data:', error);
-      setChartData([]);
-    } finally {
-      setLoading(false);
+    if (!existingScript) {
+      const script = document.createElement('script');
+      script.src = 'https://s3.tradingview.com/tv.js';
+      script.async = true;
+      script.onload = () => {
+        setScriptLoaded(true);
+      };
+      document.body.appendChild(script);
+    } else {
+      setScriptLoaded(true);
     }
-  };
+  }, []);
 
-  const formatPrice = (value: number) => {
-    if (currency === 'KRW') {
-      return `₩${value.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}`;
-    }
-    return `$${value.toFixed(2)}`;
-  };
+  // 위젯 생성 및 업데이트
+  useEffect(() => {
+    if (!scriptLoaded) return;
+
+    const createWidget = () => {
+      const container = document.getElementById('tradingview-widget');
+      if (container) {
+        container.innerHTML = '';
+      }
+
+      const symbol =
+        market === 'kr' && !stock.symbol.includes('.')
+          ? `KRX:${stock.symbol}`
+          : stock.symbol;
+
+      if (typeof window !== 'undefined' && window.TradingView) {
+        try {
+          new window.TradingView.widget({
+            autosize: true,
+            symbol: symbol,
+            interval: getIntervalFromRange(timeRange),
+            timezone: 'Asia/Seoul',
+            theme: 'light',
+            style: '1',
+            locale: 'ko',
+            enable_publishing: false,
+            allow_symbol_change: false,
+            container_id: 'tradingview-widget',
+            hide_volume: false,
+            hide_legend: false,
+            save_image: true,
+            width: '100%',
+            height: 500
+          });
+        } catch (error) {
+          console.error('Failed to initialize TradingView widget:', error);
+        }
+      }
+    };
+
+    createWidget();
+  }, [scriptLoaded, stock.symbol, timeRange, market, getIntervalFromRange]);
 
   return (
     <Card className="shadow-md border-slate-200">
@@ -92,7 +100,7 @@ export function ChartTab({ stock, market = 'us' }: ChartTabProps) {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <CardTitle>가격 차트</CardTitle>
-            <CardDescription className="hidden sm:block">AI 기반 추세 분석</CardDescription>
+            <CardDescription className="hidden sm:block">TradingView 실시간 차트</CardDescription>
           </div>
           <div className="flex gap-1.5 overflow-x-auto pb-1">
             {(['1D', '1W', '1M', '3M', '1Y'] as const).map(range => (
@@ -109,63 +117,13 @@ export function ChartTab({ stock, market = 'us' }: ChartTabProps) {
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        {loading ? (
-          <div className="h-64 sm:h-80 md:h-96 flex items-center justify-center">
-            <div className="flex flex-col items-center gap-3">
-              <Loader2 className="w-8 h-8 animate-spin text-secondary" />
-              <p className="text-slate-600 text-sm">차트 데이터를 불러오는 중...</p>
-            </div>
-          </div>
-        ) : chartData.length === 0 ? (
-          <div className="h-64 sm:h-80 md:h-96 flex items-center justify-center">
-            <p className="text-slate-600">차트 데이터를 불러올 수 없습니다.</p>
-          </div>
-        ) : (
-          <div className="h-64 sm:h-80 md:h-96">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData}>
-                <defs>
-                  <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#FEE500" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#FEE500" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis
-                  dataKey="date"
-                  stroke="#64748b"
-                  tick={{ fontSize: 12 }}
-                  interval="preserveStartEnd"
-                />
-                <YAxis
-                  stroke="#64748b"
-                  domain={['auto', 'auto']}
-                  tick={{ fontSize: 12 }}
-                  width={currency === 'KRW' ? 80 : 60}
-                  tickFormatter={formatPrice}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'white',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                  }}
-                  formatter={(value: number) => [formatPrice(value), '가격']}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="price"
-                  stroke="#FEE500"
-                  strokeWidth={2}
-                  fillOpacity={1}
-                  fill="url(#colorPrice)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        )}
+      <CardContent className="space-y-4">
+        {/* TradingView Widget Container */}
+        <div
+          id="tradingview-widget"
+          className="w-full min-h-96"
+          style={{ height: '500px' }}
+        />
 
         {/* AI Insights */}
         <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-yellow-50 rounded-lg border border-yellow-200">
