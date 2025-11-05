@@ -4,14 +4,12 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from './ui/sheet';
-import { Search, Star, LogOut, Loader2 } from 'lucide-react';
+import { Search, Star, Loader2 } from 'lucide-react';
 import { ChartTab } from './ChartTab';
 import { DataAnalysisTab } from './DataAnalysisTab';
 import NewsSection from './NewsSection';
 import { WatchlistPanel } from './WatchlistPanel';
 import { stockAPI, recommendationSupabaseAPI } from '@/services/api';
-import Image from 'next/image';
-import myLogo from '@/assets/myLogo.png';
 
 export interface Stock {
   symbol: string;
@@ -241,25 +239,34 @@ export function Dashboard({ username, onLogout }: DashboardProps) {
 
   return (
     <div className="w-full bg-gradient-to-br from-slate-50 to-slate-100" style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-      {/* Fixed Header - Only show when not viewing chart */}
-      {activeTab !== 'chart' && (
-      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm">
-        <div className="px-4 py-3">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <Image
-                src={myLogo}
-                alt="I NEED RED Logo"
-                width={120}
-                height={48}
-                priority
-                className="object-contain"
-              />
-              <div>
-                <p className="text-xs text-slate-600">{username}님 환영합니다</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
+      {/* Watchlist Sheet */}
+      <Sheet open={watchlistOpen} onOpenChange={setWatchlistOpen}>
+        <SheetContent side="right" className="w-[85vw] sm:w-96">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <Star className="w-5 h-5 text-yellow-500" fill="currentColor" />
+              관심 종목
+            </SheetTitle>
+          </SheetHeader>
+          <div className="mt-6">
+            <WatchlistPanel
+              watchlist={watchlist}
+              onSelectStock={handleSelectStock}
+              onRemoveStock={toggleWatchlist}
+              selectedStock={selectedStock}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Main Content */}
+      {activeTab !== 'chart' ? (
+      <div className="px-4 py-4 space-y-4 flex-1 overflow-y-auto">
+        {/* Search Bar */}
+        <Card className="shadow-md border-slate-200">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-slate-800">종목 검색</h2>
               <Sheet open={watchlistOpen} onOpenChange={setWatchlistOpen}>
                 <SheetTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-2">
@@ -268,75 +275,47 @@ export function Dashboard({ username, onLogout }: DashboardProps) {
                     <Badge variant="secondary" className="ml-1">{watchlist.length}</Badge>
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-[85vw] sm:w-96">
-                  <SheetHeader>
-                    <SheetTitle className="flex items-center gap-2">
-                      <Star className="w-5 h-5 text-yellow-500" fill="currentColor" />
-                      관심 종목
-                    </SheetTitle>
-                  </SheetHeader>
-                  <div className="mt-6">
-                    <WatchlistPanel
-                      watchlist={watchlist}
-                      onSelectStock={handleSelectStock}
-                      onRemoveStock={toggleWatchlist}
-                      selectedStock={selectedStock}
-                    />
-                  </div>
-                </SheetContent>
               </Sheet>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={onLogout}
-                className="gap-2"
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">로그아웃</span>
-              </Button>
             </div>
-          </div>
-
-          {/* Search Bar */}
-          <div className="relative">
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <Input
-                  placeholder="종목 검색 (예: 애플, AAPL)"
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleSearch()}
-                  className="pl-10 bg-white shadow-sm h-11"
-                />
+            <div className="relative">
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <Input
+                    placeholder="종목 검색 (예: 애플, AAPL)"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                    className="pl-10 bg-white shadow-sm h-11"
+                  />
+                </div>
+                <Button
+                  onClick={handleSearch}
+                  disabled={searching}
+                  className="shadow-sm h-11 px-6 bg-primary hover:bg-primary/90 text-secondary"
+                >
+                  {searching ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      검색 중...
+                    </>
+                  ) : (
+                    '검색'
+                  )}
+                </Button>
               </div>
-              <Button
-                onClick={handleSearch}
-                disabled={searching}
-                className="shadow-sm h-11 px-6 bg-primary hover:bg-primary/90 text-secondary"
-              >
-                {searching ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    검색 중...
-                  </>
-                ) : (
-                  '검색'
-                )}
-              </Button>
-            </div>
 
-            {/* Search Results */}
-            {searchResults.length > 0 && (
-              <Card className="absolute z-30 w-full mt-2 shadow-xl max-h-80 overflow-y-auto">
-                <CardContent className="p-2">
-                  {searchResults.map(stock => (
-                    <button
-                      key={stock.symbol}
-                      onClick={() => handleSelectStock(stock)}
-                      className="w-full flex items-center justify-between p-4 hover:bg-slate-50 rounded-lg transition-colors active:bg-slate-100"
-                    >
-                      <div className="text-left">
+              {/* Search Results */}
+              {searchResults.length > 0 && (
+                <Card className="absolute z-30 w-full mt-2 shadow-xl max-h-80 overflow-y-auto">
+                  <CardContent className="p-2">
+                    {searchResults.map(stock => (
+                      <button
+                        key={stock.symbol}
+                        onClick={() => handleSelectStock(stock)}
+                        className="w-full flex items-center justify-between p-4 hover:bg-slate-50 rounded-lg transition-colors active:bg-slate-100"
+                      >
+                        <div className="text-left">
                         <div className="flex items-center gap-2">
                           <span className="text-slate-900">{stock.symbol}</span>
                           <span className="text-slate-600">{stock.name}</span>
@@ -353,13 +332,9 @@ export function Dashboard({ username, onLogout }: DashboardProps) {
               </Card>
             )}
           </div>
-        </div>
-      </div>
-      )}
+          </CardContent>
+        </Card>
 
-      {/* Main Content */}
-      {activeTab !== 'chart' ? (
-      <div className="px-4 py-4 space-y-4 flex-1 overflow-y-auto">
         {/* Current Stock Info */}
         <Card className="shadow-md border-slate-200">
           <CardHeader className="pb-3">

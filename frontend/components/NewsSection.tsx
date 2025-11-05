@@ -1,26 +1,19 @@
 'use client';
 
 import { useState, useEffect, useCallback, useTransition } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
-  Card,
-  CardContent,
-  Typography,
-  Box,
-  Button,
-  CircularProgress,
-  Avatar,
-  Link,
-  Stack
-} from '@mui/material';
-import {
-  Article as ArticleIcon,
-  Schedule as ScheduleIcon,
-  TrendingUp as TrendingUpIcon,
-  Refresh as RefreshIcon,
-  Psychology as PsychologyIcon,
-  AutoAwesome as AutoAwesomeIcon,
-  KeyboardArrowRight as KeyboardArrowRightIcon
-} from '@mui/icons-material';
+  Newspaper,
+  Clock,
+  TrendingUp,
+  RefreshCw,
+  Brain,
+  Sparkles,
+  ChevronRight,
+  Loader2
+} from 'lucide-react';
 import { newsAPI } from '@/services/api';
 import { NewsArticle, NewsSummary } from '@/types/api';
 import ReactMarkdown from 'react-markdown';
@@ -220,275 +213,198 @@ export default function NewsSection({ selectedSymbol, selectedMarket }: NewsSect
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="200px">
-        <CircularProgress />
-      </Box>
+      <div className="flex justify-center items-center h-[200px]">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
     );
   }
 
   return (
-    <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-        <Typography variant="h5" component="h2">
-          <ArticleIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-semibold flex items-center gap-2">
+          <Newspaper className="w-6 h-6" />
           {selectedSymbol ? `${selectedSymbol} 관련 뉴스` : '금융 뉴스'}
-        </Typography>
-        <Stack direction="row" spacing={1}>
+        </h2>
+        <div className="flex gap-2">
           {selectedSymbol && (
             <>
               <Button
-                variant="outlined"
-                size="small"
-                startIcon={crawlingLoading ? <CircularProgress size={16} /> : <RefreshIcon />}
+                variant="outline"
+                size="sm"
                 onClick={handleCrawlNews}
                 disabled={crawlingLoading}
-                sx={{
-                  color: '#2196F3',
-                  borderColor: '#2196F3',
-                  '&:hover': {
-                    borderColor: '#1976D2',
-                    backgroundColor: 'rgba(33, 150, 243, 0.04)',
-                    color: '#1976D2'
-                  }
-                }}
+                className="text-blue-600 border-blue-600 hover:bg-blue-50 hover:text-blue-700"
               >
+                {crawlingLoading ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                )}
                 뉴스 업데이트
               </Button>
               <Button
-                variant="contained"
-                startIcon={analysisLoading ? <CircularProgress size={20} color="inherit" /> : <PsychologyIcon />}
                 onClick={handleAnalyzeWithNews}
                 disabled={analysisLoading}
-                sx={{
-                  background: analysisLoading
-                    ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                    : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  color: '#FFFFFF',
-                  fontWeight: 600,
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    transform: !analysisLoading ? 'translateY(-2px)' : 'none',
-                    boxShadow: !analysisLoading ? '0 8px 20px rgba(102, 126, 234, 0.4)' : 'none',
-                  },
-                  '&:disabled': {
-                    opacity: 0.8,
-                  }
-                }}
+                className="bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white font-semibold"
               >
+                {analysisLoading ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Brain className="w-4 h-4 mr-2" />
+                )}
                 {analysisLoading ? '분석 진행 중...' : '뉴스 기반 AI 분석'}
               </Button>
             </>
           )}
-        </Stack>
-      </Box>
-
+        </div>
+      </div>
 
       {error && (
-        <Typography color="error" align="center" sx={{ mb: 2 }}>
+        <p className="text-destructive text-center mb-4">
           {error}
-        </Typography>
+        </p>
       )}
 
-      <Box 
-        sx={{ 
-          maxHeight: '600px', 
-          overflowY: 'auto',
-          pr: 1,
-          '&::-webkit-scrollbar': {
-            width: '8px',
-          },
-          '&::-webkit-scrollbar-track': {
-            background: 'rgba(0,0,0,0.1)',
-            borderRadius: '4px',
-          },
-          '&::-webkit-scrollbar-thumb': {
-            background: 'rgba(0,0,0,0.3)',
-            borderRadius: '4px',
-            '&:hover': {
-              background: 'rgba(0,0,0,0.5)',
-            },
-          },
-        }}
-      >
-        <Stack spacing={2}>
+      <div className="max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+        <div className="flex flex-col gap-4">
           {news.map((article, index) => (
-            <Card key={index} sx={{ display: 'flex', flexDirection: 'column' }}>
-              <CardContent>
-                <Box display="flex" alignItems="center" gap={1} sx={{ mb: 1 }}>
-                  <Avatar sx={{ width: 28, height: 28, fontSize: '0.8rem' }}>
-                    {article.source.charAt(0).toUpperCase()}
+            <Card key={index} className="flex flex-col">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <Avatar className="w-7 h-7">
+                    <AvatarFallback className="text-xs">
+                      {article.source.charAt(0).toUpperCase()}
+                    </AvatarFallback>
                   </Avatar>
-                  <Typography variant="caption" color="text.secondary">
+                  <span className="text-xs text-muted-foreground">
                     {article.source}
-                  </Typography>
-                  <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <ScheduleIcon sx={{ fontSize: 14 }} color="action" />
-                    <Typography variant="caption" color="text.secondary">
+                  </span>
+                  <div className="ml-auto flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">
                       {formatDate(article.published_at)}
-                    </Typography>
-                  </Box>
-                </Box>
+                    </span>
+                  </div>
+                </div>
 
-                <Typography variant="h6" component="h3" sx={{ mb: 1.5, lineHeight: 1.3, color: '#000000' }}>
+                <h3 className="text-lg font-semibold mb-3 leading-tight text-black">
                   {article.title}
-                </Typography>
+                </h3>
 
                 {article.description && (
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ mb: 2, lineHeight: 1.5 }}
-                  >
+                  <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
                     {article.description}
-                  </Typography>
+                  </p>
                 )}
 
                 {/* AI Summary Section */}
                 {expandedArticle === index && articleSummaries[index] && (
-                  <Box
-                    sx={{
-                      mb: 2,
-                      p: 2,
-                      backgroundColor: '#FFF9E6',
-                      borderRadius: 1,
-                      border: '1px solid #FFE082'
-                    }}
-                  >
-                    <Typography
-                      variant="subtitle2"
-                      sx={{
-                        mb: 1,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 0.5,
-                        color: '#F57C00',
-                        fontWeight: 600
-                      }}
-                    >
-                      <AutoAwesomeIcon sx={{ fontSize: 16 }} />
-                      AI 분석 요약
-                    </Typography>
-                    <Box
-                      sx={{
-                        color: '#424242',
-                        lineHeight: 1.6,
-                        '& h1, & h2, & h3, & h4, & h5, & h6': {
-                          color: '#424242',
-                          fontWeight: 'bold',
-                          marginTop: '0.5rem',
-                          marginBottom: '0.25rem'
-                        },
-                        '& p': {
-                          marginBottom: '0.5rem'
-                        },
-                        '& ul, & ol': {
-                          paddingLeft: '1.5rem',
-                          marginBottom: '0.5rem'
-                        },
-                        '& li': {
-                          marginBottom: '0.25rem'
-                        },
-                        '& strong': {
-                          fontWeight: 'bold',
-                          color: '#000000'
-                        }
-                      }}
-                    >
+                  <div className="mb-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <div className="flex items-center gap-1 mb-2 text-orange-600 font-semibold">
+                      <Sparkles className="w-4 h-4" />
+                      <span className="text-sm">AI 분석 요약</span>
+                    </div>
+                    <div className="text-gray-700 leading-relaxed prose prose-sm max-w-none">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
                         {articleSummaries[index]}
                       </ReactMarkdown>
-                    </Box>
-                  </Box>
+                    </div>
+                  </div>
                 )}
 
                 {/* Loading State */}
                 {loadingArticleSummary === index && (
-                  <Box
-                    sx={{
-                      mb: 2,
-                      p: 2,
-                      backgroundColor: '#FFF9E6',
-                      borderRadius: 1,
-                      border: '1px solid #FFE082',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 1
-                    }}
-                  >
-                    <CircularProgress size={16} sx={{ color: '#F57C00' }} />
-                    <Typography variant="body2" sx={{ color: '#F57C00' }}>
+                  <div className="mb-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200 flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 text-orange-600 animate-spin" />
+                    <span className="text-sm text-orange-600">
                       AI 요약을 생성하고 있습니다...
-                    </Typography>
-                  </Box>
+                    </span>
+                  </div>
                 )}
 
-                <Box
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="center"
-                  sx={{
-                    pt: 2,
-                    borderTop: '1px solid rgba(0,0,0,0.08)'
-                  }}
-                >
+                <div className="flex justify-between items-center pt-4 border-t">
                   <Button
-                    size="small"
-                    startIcon={loadingArticleSummary === index ? <CircularProgress size={16} /> : <AutoAwesomeIcon />}
-                    endIcon={<KeyboardArrowRightIcon sx={{
-                      transition: 'transform 0.2s',
-                      transform: expandedArticle === index ? 'rotate(90deg)' : 'rotate(0deg)'
-                    }} />}
+                    variant="ghost"
+                    size="sm"
                     onClick={() => handleToggleArticleSummary(index, article)}
                     disabled={loadingArticleSummary === index}
-                    sx={{
-                      color: '#F57C00',
-                      textTransform: 'none',
-                      fontWeight: 500,
-                      '&:hover': {
-                        backgroundColor: '#FFF9E6',
-                        color: '#E65100'
-                      },
-                      '&.Mui-disabled': {
-                        color: 'rgba(245, 124, 0, 0.5)'
-                      }
-                    }}
+                    className="text-orange-600 hover:bg-yellow-50 hover:text-orange-700"
                   >
+                    {loadingArticleSummary === index ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-4 h-4 mr-2" />
+                    )}
                     {loadingArticleSummary === index
                       ? 'AI 요약 생성 중...'
                       : `AI 요약 ${expandedArticle === index ? '숨기기' : '보기'}`
                     }
+                    <ChevronRight
+                      className={`w-4 h-4 ml-1 transition-transform ${
+                        expandedArticle === index ? 'rotate-90' : ''
+                      }`}
+                    />
                   </Button>
-                  <Link
+                  <a
                     href={article.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    underline="hover"
-                    variant="body2"
-                    sx={{
-                      color: 'primary.main',
-                      fontWeight: 500,
-                      '&:hover': {
-                        textDecoration: 'underline',
-                      }
-                    }}
+                    className="text-sm text-primary font-medium hover:underline"
                   >
                     원문 보기 →
-                  </Link>
-                </Box>
+                  </a>
+                </div>
               </CardContent>
             </Card>
           ))}
-        </Stack>
-      </Box>
+        </div>
+      </div>
 
       {news.length === 0 && !loading && (
-        <Box textAlign="center" sx={{ py: 4 }}>
-          <Typography variant="body1" color="text.secondary">
+        <div className="text-center py-8">
+          <p className="text-base text-muted-foreground">
             표시할 뉴스가 없습니다.
-          </Typography>
-        </Box>
+          </p>
+        </div>
       )}
-    </Box>
+
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(0,0,0,0.1);
+          border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(0,0,0,0.3);
+          border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(0,0,0,0.5);
+        }
+        .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+          color: #424242;
+          font-weight: bold;
+          margin-top: 0.5rem;
+          margin-bottom: 0.25rem;
+        }
+        .prose p {
+          margin-bottom: 0.5rem;
+        }
+        .prose ul, .prose ol {
+          padding-left: 1.5rem;
+          margin-bottom: 0.5rem;
+        }
+        .prose li {
+          margin-bottom: 0.25rem;
+        }
+        .prose strong {
+          font-weight: bold;
+          color: #000000;
+        }
+      `}</style>
+    </div>
   );
 }

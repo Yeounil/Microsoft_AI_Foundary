@@ -4,11 +4,9 @@ import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
-import { Search, Star, TrendingUp, Flame, ChevronRight, Clock, LogOut, Bell, Menu, X, Moon, Sun, ArrowUp, ArrowDown } from 'lucide-react';
+import { Search, Star, TrendingUp, Flame, ChevronRight, ArrowUp, ArrowDown, Moon, Sun } from 'lucide-react';
 import { authService } from '@/services/authService';
 import { newsDB, interestsDB } from '@/lib/supabase';
-import Image from 'next/image';
-import myLogo from '@/assets/myLogo.png';
 
 interface NewsArticle {
   title: string;
@@ -34,7 +32,6 @@ export function MainPage({ username, onLogout, onNavigateToAnalysis, onNavigateT
   const [todayNews, setTodayNews] = useState<NewsArticle[]>([]);
   const [loadingNews, setLoadingNews] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -110,11 +107,6 @@ export function MainPage({ username, onLogout, onNavigateToAnalysis, onNavigateT
     }
   };
 
-  const handleLogout = async () => {
-    await authService.logout();
-    onLogout();
-  };
-
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -127,100 +119,6 @@ export function MainPage({ username, onLogout, onNavigateToAnalysis, onNavigateT
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? 'bg-kakao-bg-dark' : 'bg-kakao-bg-light'}`}>
-      {/* Header - Kakao Style */}
-      <header className={`sticky top-0 z-50 border-b transition-colors ${isDarkMode ? 'bg-kakao-bg-dark-secondary border-kakao-bg-dark-tertiary' : 'bg-white border-kakao-border-light'}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <div className="flex items-center gap-8">
-              <Image src={myLogo} alt="Logo" width={100} height={32} priority className="cursor-pointer" />
-
-              {/* Desktop Navigation */}
-              <nav className="hidden md:flex items-center gap-1">
-                <Button variant="ghost" className={`font-semibold ${isDarkMode ? 'text-kakao-yellow-light hover:bg-kakao-bg-dark-tertiary' : 'text-kakao-brown-dark hover:bg-kakao-yellow/10'}`}>
-                  홈
-                </Button>
-                <Button variant="ghost" onClick={onNavigateToAnalysis} className={`font-medium ${isDarkMode ? 'text-gray-300 hover:bg-kakao-bg-dark-tertiary' : 'text-kakao-brown hover:bg-gray-100'}`}>
-                  종목분석
-                </Button>
-                <Button variant="ghost" onClick={onNavigateToWatchlist} className={`font-medium ${isDarkMode ? 'text-gray-300 hover:bg-kakao-bg-dark-tertiary' : 'text-kakao-brown hover:bg-gray-100'}`}>
-                  관심종목
-                </Button>
-              </nav>
-            </div>
-
-            {/* Right Actions */}
-            <div className="flex items-center gap-2">
-              {/* Dark Mode Toggle */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsDarkMode(!isDarkMode)}
-                className={`hidden sm:flex ${isDarkMode ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-600 hover:bg-slate-100'}`}
-              >
-                {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-              </Button>
-
-              {/* Notifications */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className={`hidden sm:flex relative ${isDarkMode ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-600 hover:bg-slate-100'}`}
-              >
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-blue-500 rounded-full"></span>
-              </Button>
-
-              {/* User Menu */}
-              <div className="hidden sm:flex items-center gap-3 ml-2">
-                <span className={`text-sm font-medium ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>{username}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleLogout}
-                  className={`gap-2 ${isDarkMode ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-600 hover:bg-slate-100'}`}
-                >
-                  <LogOut className="h-4 w-4" />
-                </Button>
-              </div>
-
-              {/* Mobile Menu Toggle */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowMobileMenu(!showMobileMenu)}
-                className={`md:hidden ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}
-              >
-                {showMobileMenu ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        {showMobileMenu && (
-          <div className={`md:hidden border-t ${isDarkMode ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-white'}`}>
-            <div className="px-4 py-3 space-y-1">
-              <Button variant="ghost" className={`w-full justify-start ${isDarkMode ? 'text-white hover:bg-slate-700' : 'text-slate-900 hover:bg-slate-100'}`}>
-                홈
-              </Button>
-              <Button variant="ghost" onClick={onNavigateToAnalysis} className={`w-full justify-start ${isDarkMode ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-600 hover:bg-slate-100'}`}>
-                종목분석
-              </Button>
-              <Button variant="ghost" onClick={onNavigateToWatchlist} className={`w-full justify-start ${isDarkMode ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-600 hover:bg-slate-100'}`}>
-                관심종목
-              </Button>
-              <div className={`flex items-center justify-between pt-2 border-t ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
-                <span className={`text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>{username}</span>
-                <Button variant="ghost" size="sm" onClick={handleLogout} className={`gap-2 ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-                  <LogOut className="h-4 w-4" />
-                  로그아웃
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-      </header>
 
       {/* Search Section - Kakao Style */}
       <div className={`${isDarkMode ? 'bg-kakao-bg-dark-secondary' : 'bg-white'} py-6`}>
@@ -431,6 +329,18 @@ export function MainPage({ username, onLogout, onNavigateToAnalysis, onNavigateT
           </div>
         )}
       </main>
+
+      {/* Dark Mode Toggle Button - Kakao Style */}
+      <button
+        onClick={() => setIsDarkMode(!isDarkMode)}
+        className={`fixed bottom-28 right-8 w-14 h-14 rounded-full shadow-xl flex items-center justify-center transition-all hover:scale-110 ${
+          isDarkMode
+            ? 'bg-slate-700 text-yellow-300 hover:bg-slate-600'
+            : 'bg-white text-slate-700 hover:bg-slate-100 border-2 border-slate-200'
+        }`}
+      >
+        {isDarkMode ? <Sun className="h-6 w-6" /> : <Moon className="h-6 w-6" />}
+      </button>
 
       {/* Help Button - Kakao Style */}
       <button className={`fixed bottom-8 right-8 w-16 h-16 rounded-full shadow-2xl flex items-center justify-center text-2xl font-bold transition-all hover:scale-110 ${

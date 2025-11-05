@@ -10,24 +10,18 @@ import {
   Tooltip,
   ResponsiveContainer
 } from 'recharts';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
   Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  CircularProgress,
-  Stack,
-  IconButton,
-  Switch,
-  FormControlLabel
-} from '@mui/material';
-import {
-  Refresh as RefreshIcon
-} from '@mui/icons-material';
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { RefreshCw, Loader2 } from 'lucide-react';
 import { StockData } from '@/types/api';
 import { stockAPI } from '@/services/api';
 
@@ -42,7 +36,7 @@ export default function StockChart({ symbol, market }: StockChartProps) {
   const [interval, setInterval] = useState<string>('1d');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
-  
+
   // 새로고침 관련 상태
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [autoRefresh, setAutoRefresh] = useState<boolean>(false);
@@ -75,7 +69,7 @@ export default function StockChart({ symbol, market }: StockChartProps) {
     ];
 
     if (['1mo', '3mo', '6mo', '1y', '2y', '5y'].includes(selectedPeriod)) {
-      return allIntervals.filter(interval => 
+      return allIntervals.filter(interval =>
         ['1d', '5d', '1wk', '1mo'].includes(interval.value)
       );
     }
@@ -90,7 +84,7 @@ export default function StockChart({ symbol, market }: StockChartProps) {
   const handlePeriodChange = (newPeriod: string) => {
     setPeriod(newPeriod);
     const validIntervals = getValidIntervalOptions(newPeriod);
-    
+
     if (!validIntervals.some(option => option.value === interval)) {
       if (['1mo', '3mo', '6mo', '1y', '2y', '5y'].includes(newPeriod)) {
         setInterval('1d');
@@ -104,14 +98,14 @@ export default function StockChart({ symbol, market }: StockChartProps) {
 
   const fetchStockData = useCallback(async (isRefresh: boolean = false) => {
     if (!symbol) return;
-    
+
     if (isRefresh) {
       setRefreshing(true);
     } else {
       setLoading(true);
     }
     setError('');
-    
+
     try {
       const data = await stockAPI.getStockData(symbol, period, market, interval);
       setStockData(data);
@@ -145,14 +139,14 @@ export default function StockChart({ symbol, market }: StockChartProps) {
   // 자동 새로고침 Effect
   useEffect(() => {
     let intervalId: number;
-    
+
     if (autoRefresh && symbol) {
       // 30초마다 자동 새로고침
       intervalId = window.setInterval(() => {
         handleRefresh();
       }, 30000);
     }
-    
+
     return () => {
       if (intervalId) {
         window.clearInterval(intervalId);
@@ -169,7 +163,7 @@ export default function StockChart({ symbol, market }: StockChartProps) {
 
   const formatPrice = (value: number): string => {
     if (!stockData) return value.toString();
-    
+
     if (stockData.currency === 'KRW') {
       return `₩${value.toLocaleString()}`;
     } else {
@@ -180,9 +174,9 @@ export default function StockChart({ symbol, market }: StockChartProps) {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     if (['1m', '2m', '5m', '15m', '30m', '60m', '90m'].includes(interval)) {
-      return date.toLocaleDateString('ko-KR') + ' ' + date.toLocaleTimeString('ko-KR', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
+      return date.toLocaleDateString('ko-KR') + ' ' + date.toLocaleTimeString('ko-KR', {
+        hour: '2-digit',
+        minute: '2-digit'
       });
     } else {
       return date.toLocaleDateString('ko-KR');
@@ -191,10 +185,10 @@ export default function StockChart({ symbol, market }: StockChartProps) {
 
   const calculateChange = () => {
     if (!stockData) return { value: 0, percent: 0 };
-    
+
     const change = stockData.current_price - stockData.previous_close;
     const percent = (change / stockData.previous_close) * 100;
-    
+
     return { value: change, percent };
   };
 
@@ -206,19 +200,19 @@ export default function StockChart({ symbol, market }: StockChartProps) {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="400px">
-        <CircularProgress />
-      </Box>
+      <div className="flex justify-center items-center h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
     );
   }
 
   if (error) {
     return (
       <Card>
-        <CardContent>
-          <Typography color="error" variant="h6" align="center">
+        <CardContent className="pt-6">
+          <h3 className="text-lg font-semibold text-destructive text-center">
             {error}
-          </Typography>
+          </h3>
         </CardContent>
       </Card>
     );
@@ -227,10 +221,10 @@ export default function StockChart({ symbol, market }: StockChartProps) {
   if (!stockData) {
     return (
       <Card>
-        <CardContent>
-          <Typography variant="h6" align="center">
+        <CardContent className="pt-6">
+          <h3 className="text-lg font-semibold text-center">
             주식을 검색해주세요
-          </Typography>
+          </h3>
         </CardContent>
       </Card>
     );
@@ -240,127 +234,113 @@ export default function StockChart({ symbol, market }: StockChartProps) {
 
   return (
     <Card>
-      <CardContent>
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="center" sx={{ mb: 3 }}>
-          <Box sx={{ flex: 1 }}>
-            <Typography variant="h5" component="h2" gutterBottom>
+      <CardContent className="pt-6">
+        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center mb-6">
+          <div className="flex-1">
+            <h2 className="text-2xl font-semibold mb-2">
               {stockData.company_name}
-            </Typography>
-            <Typography variant="h6" color={getChangeColor()}>
+            </h2>
+            <div className="text-xl font-medium" style={{ color: getChangeColor() }}>
               {formatPrice(stockData.current_price)}
-              <Typography component="span" sx={{ ml: 1, fontSize: '0.8em' }}>
-                {change.value >= 0 ? '+' : ''}{formatPrice(change.value)} 
+              <span className="text-sm ml-2">
+                {change.value >= 0 ? '+' : ''}{formatPrice(change.value)}
                 ({change.percent >= 0 ? '+' : ''}{change.percent.toFixed(2)}%)
-              </Typography>
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground mt-1">
               심볼: {stockData.symbol} | 전일종가: {formatPrice(stockData.previous_close)}
-            </Typography>
+            </p>
             {lastUpdated && (
-              <Typography variant="caption" color="text.secondary" display="block">
+              <p className="text-xs text-muted-foreground mt-1">
                 마지막 업데이트: {lastUpdated.toLocaleTimeString('ko-KR')}
-              </Typography>
+              </p>
             )}
-          </Box>
-          
-          <Box>
-            <Stack direction="column" spacing={2} alignItems="flex-end">
-              {/* 새로고침 컨트롤 */}
-              <Box display="flex" alignItems="center" gap={1}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={autoRefresh}
-                      onChange={handleAutoRefreshToggle}
-                      size="small"
-                      color="primary"
-                    />
-                  }
-                  label="자동 새로고침"
-                  sx={{ fontSize: '0.875rem' }}
-                />
-                <IconButton
-                  onClick={handleRefresh}
-                  disabled={refreshing || loading}
-                  color="primary"
-                  size="small"
-                  sx={{
-                    animation: refreshing ? 'spin 1s linear infinite' : 'none',
-                    '@keyframes spin': {
-                      '0%': { transform: 'rotate(0deg)' },
-                      '100%': { transform: 'rotate(360deg)' },
-                    },
-                  }}
-                >
-                  <RefreshIcon />
-                </IconButton>
-              </Box>
-              
-              {/* 기간 및 간격 컨트롤 */}
-              <Box display="flex" gap={2} flexWrap="wrap">
-                <FormControl size="small" sx={{ minWidth: 100 }}>
-                  <InputLabel>기간</InputLabel>
-                  <Select
-                    value={period}
-                    label="기간"
-                    onChange={(e) => handlePeriodChange(e.target.value)}
-                  >
-                    {periodOptions.map((option) => (
-                      <MenuItem key={option.value} value={option.value}>
-                        {option.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                
-                <FormControl size="small" sx={{ minWidth: 100 }}>
-                  <InputLabel>간격</InputLabel>
-                  <Select
-                    value={interval}
-                    label="간격"
-                    onChange={(e) => setInterval(e.target.value)}
-                  >
-                    {getValidIntervalOptions(period).map((option) => (
-                      <MenuItem key={option.value} value={option.value}>
-                        {option.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Box>
-            </Stack>
-          </Box>
-        </Stack>
+          </div>
 
-        <Box sx={{ width: '100%', height: 400 }}>
+          <div className="flex flex-col gap-4 items-end">
+            {/* 새로고침 컨트롤 */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="auto-refresh"
+                  checked={autoRefresh}
+                  onCheckedChange={handleAutoRefreshToggle}
+                />
+                <Label htmlFor="auto-refresh" className="text-sm">
+                  자동 새로고침
+                </Label>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleRefresh}
+                disabled={refreshing || loading}
+                className={refreshing ? 'animate-spin' : ''}
+              >
+                <RefreshCw className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {/* 기간 및 간격 컨트롤 */}
+            <div className="flex gap-2 flex-wrap">
+              <Select value={period} onValueChange={handlePeriodChange}>
+                <SelectTrigger className="w-[100px]">
+                  <SelectValue placeholder="기간" />
+                </SelectTrigger>
+                <SelectContent>
+                  {periodOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={interval} onValueChange={setInterval}>
+                <SelectTrigger className="w-[100px]">
+                  <SelectValue placeholder="간격" />
+                </SelectTrigger>
+                <SelectContent>
+                  {getValidIntervalOptions(period).map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+
+        <div className="w-full h-[400px]">
           <ResponsiveContainer>
             <LineChart data={stockData.price_data}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="date" 
+              <XAxis
+                dataKey="date"
                 tickFormatter={formatDate}
                 angle={-45}
                 textAnchor="end"
                 height={60}
               />
-              <YAxis 
+              <YAxis
                 tickFormatter={formatPrice}
                 domain={['auto', 'auto']}
               />
-              <Tooltip 
+              <Tooltip
                 labelFormatter={formatDate}
                 formatter={(value: number) => [formatPrice(value), '종가']}
               />
-              <Line 
-                type="monotone" 
-                dataKey="close" 
+              <Line
+                type="monotone"
+                dataKey="close"
                 stroke="#4CAF50"
                 strokeWidth={2}
                 dot={false}
               />
             </LineChart>
           </ResponsiveContainer>
-        </Box>
+        </div>
       </CardContent>
     </Card>
   );
