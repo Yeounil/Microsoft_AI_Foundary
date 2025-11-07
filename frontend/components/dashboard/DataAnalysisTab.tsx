@@ -1,8 +1,8 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Progress } from './ui/progress';
-import { Badge } from './ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, Activity, BarChart3 } from 'lucide-react';
-import type { Stock } from './Dashboard';
+import type { Stock } from '@/components/dashboard/Dashboard';
 
 interface DataAnalysisTabProps {
   stock: Stock;

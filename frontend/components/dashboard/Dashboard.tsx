@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback, useTransition } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Badge } from './ui/badge';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from './ui/sheet';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Search, Star, Loader2 } from 'lucide-react';
-import { ChartTab } from './ChartTab';
-import { DataAnalysisTab } from './DataAnalysisTab';
-import NewsSection from './NewsSection';
-import { WatchlistPanel } from './WatchlistPanel';
+import { ChartTab } from '@/components/dashboard/ChartTab';
+import { DataAnalysisTab } from '@/components/dashboard/DataAnalysisTab';
+import NewsSection from '@/components/main/NewsSection';
+import { WatchlistPanel } from '@/components/dashboard/WatchlistPanel';
 import { stockAPI, recommendationSupabaseAPI } from '@/services/api';
 
 export interface Stock {

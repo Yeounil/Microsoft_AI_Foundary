@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Button } from './ui/button';
+import { Button } from '@/components/ui/button';
 import { TrendingDown, ChevronDown, BarChart3, Newspaper, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
