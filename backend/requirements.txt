@@ -39,3 +39,6 @@ python-dateutil>=2.8.0
 
 # Task scheduling
 apscheduler>=3.10.4
+
+# Vector Database
+pinecone-client>=3.0.0
