@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { MainPage } from '@/components/MainPage';
+import { MainPage } from '@/components/main/MainPage';
 import { authService } from '@/services/authService';
 import {
   AlertDialog,

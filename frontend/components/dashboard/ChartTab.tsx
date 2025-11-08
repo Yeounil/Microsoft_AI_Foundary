@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, memo } from 'react';
-import type { Stock } from './Dashboard';
+import type { Stock } from '@/components/dashboard/Dashboard';
 
 interface ChartTabProps {
   stock: Stock;
