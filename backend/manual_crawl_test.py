@@ -77,28 +77,63 @@ class EventRegistryCrawler:
             "NEE", "D", "SO", "DUK", "EXC"
         ]
 
-    def get_news_from_event_registry(self, company_name: str, limit: int = 20) -> List[Dict]:
+    def get_news_from_event_registry(self, symbol: str, concept_uri: str, limit: int = 20) -> List[Dict]:
         """
-        Event Registry API에서 특정 회사의 뉴스 가져오기 (전체 본문 포함)
+        Event Registry API에서 특정 회사의 뉴스 가져오기 (공식 쿼리 형식)
+
+        공식 쿼리 형식을 사용:
+        - Source: Reuters.com, Bloomberg.com (고신뢰도)
+        - Category: Business/Investing/Stocks_and_Bonds
+        - Language: English
+        - 전체 기사 본문(body) 포함
 
         Args:
-            company_name: 회사명 (예: "Apple", "Microsoft")
+            symbol: 종목 코드 (예: "AAPL")
+            concept_uri: Wikipedia 개념 URI (예: "http://en.wikipedia.org/wiki/Apple_Inc.")
             limit: 가져올 기사 수
 
         Returns:
             뉴스 기사 리스트 (body 필드 포함)
         """
         try:
-            # POST 요청을 위한 JSON 파라미터
+            # 공식 쿼리 형식 (Query DSL)
+            query_dsl = {
+                "$query": {
+                    "$and": [
+                        {
+                            "conceptUri": concept_uri  # ✅ 회사 개념 URI
+                        },
+                        {
+                            "categoryUri": "dmoz/Business/Investing/Stocks_and_Bonds"  # ✅ 카테고리
+                        },
+                        {
+                            "$or": [
+                                {
+                                    "sourceUri": "reuters.com"  # ✅ Reuters
+                                },
+                                {
+                                    "sourceUri": "bloomberg.com"  # ✅ Bloomberg
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "$filter": {
+                    "forceMaxDataTimeWindow": "31"  # 최근 31일
+                }
+            }
+
+            # POST 요청을 위한 파라미터
             params = {
-                "keyword": company_name,
-                "articlesPage": 1,
-                "articlesCount": limit,
+                "query": json.dumps(query_dsl),  # ✅ JSON 쿼리
+                "resultType": "articles",
                 "articlesSortBy": "date",
                 "articlesSortByAsc": False,  # 최신순
+                "articlesPage": 1,
+                "articlesCount": limit,
                 "includeArticleTitle": True,
                 "includeArticleBasicInfo": True,
-                "includeArticleBody": True,  # ✅ 전체 기사 본문 포함
+                "includeArticleBody": True,  # ✅ 기사 본문 포함
                 "apiKey": self.api_key
             }
 
@@ -107,7 +142,7 @@ class EventRegistryCrawler:
                 "Content-Type": "application/json"
             }
 
-            logger.info(f"[API] Requesting articles from Event Registry for {company_name} (limit: {limit})")
+            logger.info(f"[API] Requesting articles from Event Registry for {symbol} (Reuters/Bloomberg, Stocks & Bonds, limit: {limit})")
 
             # POST 요청으로 데이터 전송
             response = requests.post(
@@ -122,7 +157,7 @@ class EventRegistryCrawler:
 
             # 에러 확인
             if "error" in data:
-                logger.warning(f"[WARN] API error: {data.get('error', 'Unknown error')}")
+                logger.warning(f"[WARN] API error for {symbol}: {data.get('error', 'Unknown error')}")
                 return []
 
             # 기사 데이터 추출
@@ -130,12 +165,12 @@ class EventRegistryCrawler:
             total_hits = articles_data.get("totalHits", 0)
             result_articles = articles_data.get("results", [])
 
-            logger.info(f"[OK] Retrieved {len(result_articles)} articles from {total_hits} total for {company_name}")
+            logger.info(f"[OK] Retrieved {len(result_articles)} articles from {total_hits} total for {symbol} (Reuters/Bloomberg)")
 
             return result_articles[:limit]
 
         except Exception as e:
-            logger.error(f"[ERROR] Failed to fetch news for {company_name}: {str(e)}")
+            logger.error(f"[ERROR] Failed to fetch news for {symbol}: {str(e)}")
             return []
 
     def format_articles(self, articles: List[Dict], symbol: str) -> List[Dict]:
@@ -176,13 +211,13 @@ async def test_single_symbol():
 
     crawler = EventRegistryCrawler()
     symbol = "AAPL"
-    company_name = "Apple"
+    concept_uri = "http://en.wikipedia.org/wiki/Apple_Inc."
     limit = 20
 
-    logger.info(f"[SINGLE_TEST] Starting test for {symbol} ({company_name})")
+    logger.info(f"[SINGLE_TEST] Starting test for {symbol}")
 
     try:
-        articles = crawler.get_news_from_event_registry(company_name, limit)
+        articles = crawler.get_news_from_event_registry(symbol, concept_uri, limit)
         formatted = crawler.format_articles(articles, symbol)
 
         if formatted:
@@ -217,32 +252,30 @@ async def test_multiple_symbols():
 
     crawler = EventRegistryCrawler()
 
-    # 테스트용 10개 종목 + 회사명 매핑
-    symbols = ["AAPL", "MSFT", "GOOGL", "NVDA", "AMZN", "META", "TSLA", "JPM", "JNJ", "WMT"]
-    company_mapping = {
-        "AAPL": "Apple",
-        "MSFT": "Microsoft",
-        "GOOGL": "Google",
-        "NVDA": "NVIDIA",
-        "AMZN": "Amazon",
-        "META": "Meta",
-        "TSLA": "Tesla",
-        "JPM": "JPMorgan",
-        "JNJ": "Johnson & Johnson",
-        "WMT": "Walmart"
+    # 테스트용 10개 종목 + Wikipedia URI 매핑
+    symbol_uri_mapping = {
+        "AAPL": "http://en.wikipedia.org/wiki/Apple_Inc.",
+        "MSFT": "http://en.wikipedia.org/wiki/Microsoft",
+        "GOOGL": "http://en.wikipedia.org/wiki/Alphabet_Inc.",
+        "NVDA": "http://en.wikipedia.org/wiki/Nvidia",
+        "AMZN": "http://en.wikipedia.org/wiki/Amazon_(company)",
+        "META": "http://en.wikipedia.org/wiki/Meta_Platforms",
+        "TSLA": "http://en.wikipedia.org/wiki/Tesla,_Inc.",
+        "JPM": "http://en.wikipedia.org/wiki/JPMorgan_Chase",
+        "JNJ": "http://en.wikipedia.org/wiki/Johnson_%26_Johnson",
+        "WMT": "http://en.wikipedia.org/wiki/Walmart"
     }
 
     results = {}
     total_collected = 0
 
-    logger.info(f"[MULTI_TEST] Starting test for {len(symbols)} symbols")
+    logger.info(f"[MULTI_TEST] Starting test for {len(symbol_uri_mapping)} symbols")
 
-    for symbol in symbols:
+    for symbol, concept_uri in symbol_uri_mapping.items():
         try:
-            company_name = company_mapping[symbol]
-            logger.info(f"[MULTI_TEST] Crawling {symbol} ({company_name})...")
+            logger.info(f"[MULTI_TEST] Crawling {symbol}...")
 
-            articles = crawler.get_news_from_event_registry(company_name, limit=20)
+            articles = crawler.get_news_from_event_registry(symbol, concept_uri, limit=20)
             formatted = crawler.format_articles(articles, symbol)
 
             results[symbol] = len(formatted)
@@ -278,38 +311,103 @@ async def test_all_100_symbols():
     crawler = EventRegistryCrawler()
     symbols = crawler.get_popular_symbols()
 
-    # 간단한 회사명 매핑 (심볼 -> 회사명)
-    company_mapping = {
-        "AAPL": "Apple", "MSFT": "Microsoft", "GOOGL": "Google", "GOOG": "Google",
-        "AMZN": "Amazon", "NVDA": "NVIDIA", "TSLA": "Tesla", "META": "Meta",
-        "NFLX": "Netflix", "CRM": "Salesforce", "BA": "Boeing", "JPM": "JPMorgan",
-        "JNJ": "Johnson & Johnson", "WMT": "Walmart", "UNH": "UnitedHealth",
-        "XOM": "ExxonMobil", "VZ": "Verizon", "PFE": "Pfizer", "PEP": "PepsiCo",
-        "KO": "Coca-Cola", "MCD": "McDonald's", "SBUX": "Starbucks", "NKE": "Nike",
-        "INTC": "Intel", "AMD": "Advanced Micro Devices", "CSCO": "Cisco",
-        "ORCL": "Oracle", "IBM": "IBM", "QCOM": "Qualcomm", "ADBE": "Adobe",
-        "PYPL": "PayPal", "SNOW": "Snowflake", "UBER": "Uber",
-        "BAC": "Bank of America", "WFC": "Wells Fargo", "GS": "Goldman Sachs",
-        "MS": "Morgan Stanley", "C": "Citigroup", "BLK": "BlackRock", "SCHW": "Charles Schwab",
-        "AXP": "American Express", "CB": "Chubb", "ALL": "Allstate", "MMC": "Marsh & McLennan",
-        "PGR": "Progressive", "TRV": "Travelers", "ICE": "Intercontinental Exchange",
-        "UNH": "UnitedHealth", "PFE": "Pfizer", "ABBV": "AbbVie", "MRK": "Merck",
-        "TMO": "Thermo Fisher", "LLY": "Eli Lilly", "ABT": "Abbott", "AMGN": "Amgen",
-        "GILD": "Gilead", "BIIB": "Biogen", "VRTX": "Vertex", "ILMN": "Illumina",
-        "REGN": "Regeneron", "VTRS": "Viatris",
-        "TGT": "Target", "HD": "Home Depot", "LOW": "Lowe's", "MCD": "McDonald's",
-        "SBUX": "Starbucks", "KO": "Coca-Cola", "PEP": "PepsiCo", "NKE": "Nike",
-        "VFC": "VF Corporation", "GPS": "Gap", "DECK": "Deckers", "DRI": "Darden",
-        "CMG": "Chipotle", "LULU": "Lululemon",
-        "CAT": "Caterpillar", "GE": "General Electric", "HON": "Honeywell", "MMM": "3M",
-        "RTX": "Raytheon", "LMT": "Lockheed Martin", "NOC": "Northrop Grumman",
-        "GD": "General Dynamics", "UTX": "United Technologies",
-        "CVX": "Chevron", "COP": "ConocoPhillips", "SLB": "Schlumberger", "EOG": "EOG Resources",
-        "T": "AT&T", "TMUS": "T-Mobile", "CMCSA": "Comcast", "CHTR": "Charter",
-        "PLD": "Prologis", "AMT": "American Tower", "CCI": "Crown Castle", "EQIX": "Equinix",
-        "DLR": "Digital Realty",
-        "NEE": "NextEra Energy", "D": "Dominion Energy", "SO": "Southern Company",
-        "DUK": "Duke Energy", "EXC": "Exelon"
+    # Wikipedia URI 매핑 (심볼 -> concept URI)
+    symbol_uri_mapping = {
+        "AAPL": "http://en.wikipedia.org/wiki/Apple_Inc.",
+        "MSFT": "http://en.wikipedia.org/wiki/Microsoft",
+        "GOOGL": "http://en.wikipedia.org/wiki/Alphabet_Inc.",
+        "GOOG": "http://en.wikipedia.org/wiki/Alphabet_Inc.",
+        "AMZN": "http://en.wikipedia.org/wiki/Amazon_(company)",
+        "NVDA": "http://en.wikipedia.org/wiki/Nvidia",
+        "TSLA": "http://en.wikipedia.org/wiki/Tesla,_Inc.",
+        "META": "http://en.wikipedia.org/wiki/Meta_Platforms",
+        "NFLX": "http://en.wikipedia.org/wiki/Netflix",
+        "CRM": "http://en.wikipedia.org/wiki/Salesforce",
+        "ADBE": "http://en.wikipedia.org/wiki/Adobe_Inc.",
+        "INTC": "http://en.wikipedia.org/wiki/Intel",
+        "CSCO": "http://en.wikipedia.org/wiki/Cisco",
+        "IBM": "http://en.wikipedia.org/wiki/IBM",
+        "ORCL": "http://en.wikipedia.org/wiki/Oracle_Corporation",
+        "QCOM": "http://en.wikipedia.org/wiki/Qualcomm",
+        "PYPL": "http://en.wikipedia.org/wiki/PayPal",
+        "AMD": "http://en.wikipedia.org/wiki/Advanced_Micro_Devices",
+        "SNOW": "http://en.wikipedia.org/wiki/Snowflake_(company)",
+        "UBER": "http://en.wikipedia.org/wiki/Uber",
+        "JPM": "http://en.wikipedia.org/wiki/JPMorgan_Chase",
+        "BAC": "http://en.wikipedia.org/wiki/Bank_of_America",
+        "WFC": "http://en.wikipedia.org/wiki/Wells_Fargo",
+        "GS": "http://en.wikipedia.org/wiki/Goldman_Sachs",
+        "MS": "http://en.wikipedia.org/wiki/Morgan_Stanley",
+        "C": "http://en.wikipedia.org/wiki/Citigroup",
+        "BLK": "http://en.wikipedia.org/wiki/BlackRock",
+        "SCHW": "http://en.wikipedia.org/wiki/Charles_Schwab",
+        "AXP": "http://en.wikipedia.org/wiki/American_Express",
+        "CB": "http://en.wikipedia.org/wiki/Chubb_Limited",
+        "ALL": "http://en.wikipedia.org/wiki/Allstate",
+        "MMC": "http://en.wikipedia.org/wiki/Marsh_%26_McLennan",
+        "PGR": "http://en.wikipedia.org/wiki/Progressive_Corporation",
+        "TRV": "http://en.wikipedia.org/wiki/Travelers_Companies",
+        "ICE": "http://en.wikipedia.org/wiki/Intercontinental_Exchange",
+        "JNJ": "http://en.wikipedia.org/wiki/Johnson_%26_Johnson",
+        "UNH": "http://en.wikipedia.org/wiki/UnitedHealth_Group",
+        "PFE": "http://en.wikipedia.org/wiki/Pfizer",
+        "ABBV": "http://en.wikipedia.org/wiki/AbbVie",
+        "MRK": "http://en.wikipedia.org/wiki/Merck_%26_Co.",
+        "TMO": "http://en.wikipedia.org/wiki/Thermo_Fisher_Scientific",
+        "LLY": "http://en.wikipedia.org/wiki/Eli_Lilly_and_Company",
+        "ABT": "http://en.wikipedia.org/wiki/Abbott_Laboratories",
+        "AMGN": "http://en.wikipedia.org/wiki/Amgen",
+        "GILD": "http://en.wikipedia.org/wiki/Gilead_Sciences",
+        "BIIB": "http://en.wikipedia.org/wiki/Biogen",
+        "VRTX": "http://en.wikipedia.org/wiki/Vertex_Pharmaceuticals",
+        "ILMN": "http://en.wikipedia.org/wiki/Illumina",
+        "REGN": "http://en.wikipedia.org/wiki/Regeneron_Pharmaceuticals",
+        "VTRS": "http://en.wikipedia.org/wiki/Viatris",
+        "WMT": "http://en.wikipedia.org/wiki/Walmart",
+        "TGT": "http://en.wikipedia.org/wiki/Target_Corporation",
+        "HD": "http://en.wikipedia.org/wiki/The_Home_Depot",
+        "LOW": "http://en.wikipedia.org/wiki/Lowe%27s",
+        "MCD": "http://en.wikipedia.org/wiki/McDonald%27s",
+        "SBUX": "http://en.wikipedia.org/wiki/Starbucks",
+        "KO": "http://en.wikipedia.org/wiki/The_Coca-Cola_Company",
+        "PEP": "http://en.wikipedia.org/wiki/PepsiCo",
+        "NKE": "http://en.wikipedia.org/wiki/Nike",
+        "VFC": "http://en.wikipedia.org/wiki/VF_Corporation",
+        "GPS": "http://en.wikipedia.org/wiki/Gap_Inc.",
+        "DECK": "http://en.wikipedia.org/wiki/Deckers_Outdoor_Corporation",
+        "DRI": "http://en.wikipedia.org/wiki/Darden_Restaurants",
+        "CMG": "http://en.wikipedia.org/wiki/Chipotle_Mexican_Grill",
+        "LULU": "http://en.wikipedia.org/wiki/Lululemon",
+        "BA": "http://en.wikipedia.org/wiki/Boeing",
+        "CAT": "http://en.wikipedia.org/wiki/Caterpillar_Inc.",
+        "GE": "http://en.wikipedia.org/wiki/General_Electric",
+        "HON": "http://en.wikipedia.org/wiki/Honeywell_International",
+        "MMM": "http://en.wikipedia.org/wiki/3M",
+        "RTX": "http://en.wikipedia.org/wiki/RTX_Corporation",
+        "LMT": "http://en.wikipedia.org/wiki/Lockheed_Martin",
+        "NOC": "http://en.wikipedia.org/wiki/Northrop_Grumman",
+        "GD": "http://en.wikipedia.org/wiki/General_Dynamics",
+        "UTX": "http://en.wikipedia.org/wiki/United_Technologies",
+        "XOM": "http://en.wikipedia.org/wiki/ExxonMobil",
+        "CVX": "http://en.wikipedia.org/wiki/Chevron",
+        "COP": "http://en.wikipedia.org/wiki/ConocoPhillips",
+        "SLB": "http://en.wikipedia.org/wiki/Schlumberger_Limited",
+        "EOG": "http://en.wikipedia.org/wiki/EOG_Resources",
+        "VZ": "http://en.wikipedia.org/wiki/Verizon_Communications",
+        "T": "http://en.wikipedia.org/wiki/AT%26T",
+        "TMUS": "http://en.wikipedia.org/wiki/T-Mobile",
+        "CMCSA": "http://en.wikipedia.org/wiki/Comcast",
+        "CHTR": "http://en.wikipedia.org/wiki/Charter_Communications",
+        "PLD": "http://en.wikipedia.org/wiki/Prologis",
+        "AMT": "http://en.wikipedia.org/wiki/American_Tower",
+        "CCI": "http://en.wikipedia.org/wiki/Crown_Castle",
+        "EQIX": "http://en.wikipedia.org/wiki/Equinix",
+        "DLR": "http://en.wikipedia.org/wiki/Digital_Realty",
+        "NEE": "http://en.wikipedia.org/wiki/NextEra_Energy",
+        "D": "http://en.wikipedia.org/wiki/Dominion_Energy",
+        "SO": "http://en.wikipedia.org/wiki/Southern_Company",
+        "DUK": "http://en.wikipedia.org/wiki/Duke_Energy",
+        "EXC": "http://en.wikipedia.org/wiki/Exelon"
     }
 
     results = {}
@@ -323,9 +421,9 @@ async def test_all_100_symbols():
 
     for i, symbol in enumerate(symbols, 1):
         try:
-            company_name = company_mapping.get(symbol, symbol)
+            concept_uri = symbol_uri_mapping.get(symbol, f"http://en.wikipedia.org/wiki/{symbol}")
 
-            articles = crawler.get_news_from_event_registry(company_name, limit=20)
+            articles = crawler.get_news_from_event_registry(symbol, concept_uri, limit=20)
             formatted = crawler.format_articles(articles, symbol)
 
             results[symbol] = len(formatted)

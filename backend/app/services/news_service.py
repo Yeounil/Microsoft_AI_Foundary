@@ -131,52 +131,92 @@ class NewsService:
     async def get_reuters_news(symbol: str, limit: int = 20) -> List[Dict]:
         """newsapi.ai (Event Registry)를 통해 금융 뉴스 가져오기
 
-        Event Registry API를 사용하여 전체 기사 본문(body)을 포함한 고품질 뉴스 수집
+        공식 쿼리 형식을 사용:
+        - Source: Reuters.com, Bloomberg.com (고신뢰도)
+        - Category: Business/Investing/Stocks_and_Bonds
+        - Language: English
+        - 전체 기사 본문(body) 포함
         """
         try:
             if not settings.news_api_key:
                 logger.warning("[NEWSAPI.AI] API 키가 설정되지 않았습니다")
                 return []
 
-            # 회사명 매핑
-            company_queries = {
-                "AAPL": "Apple",
-                "GOOGL": "Google Alphabet",
-                "MSFT": "Microsoft",
-                "TSLA": "Tesla",
-                "NVDA": "NVIDIA",
-                "AMZN": "Amazon",
-                "META": "Meta",
-                "005930.KS": "Samsung",
-                "000660.KS": "SK Hynix",
-                "035420.KS": "NAVER",
-                "035720.KS": "Kakao"
+            # Wikipedia 개념 URI 매핑 (회사명 -> Wikipedia URI)
+            concept_uri_mapping = {
+                "AAPL": "http://en.wikipedia.org/wiki/Apple_Inc.",
+                "GOOGL": "http://en.wikipedia.org/wiki/Alphabet_Inc.",
+                "GOOG": "http://en.wikipedia.org/wiki/Alphabet_Inc.",
+                "MSFT": "http://en.wikipedia.org/wiki/Microsoft",
+                "TSLA": "http://en.wikipedia.org/wiki/Tesla,_Inc.",
+                "NVDA": "http://en.wikipedia.org/wiki/Nvidia",
+                "AMZN": "http://en.wikipedia.org/wiki/Amazon_(company)",
+                "META": "http://en.wikipedia.org/wiki/Meta_Platforms",
+                "NFLX": "http://en.wikipedia.org/wiki/Netflix",
+                "JPM": "http://en.wikipedia.org/wiki/JPMorgan_Chase",
+                "JNJ": "http://en.wikipedia.org/wiki/Johnson_%26_Johnson",
+                "WMT": "http://en.wikipedia.org/wiki/Walmart",
+                "XOM": "http://en.wikipedia.org/wiki/ExxonMobil",
+                "VZ": "http://en.wikipedia.org/wiki/Verizon_Communications",
+                "PFE": "http://en.wikipedia.org/wiki/Pfizer",
+                "005930.KS": "http://en.wikipedia.org/wiki/Samsung_Electronics",
+                "000660.KS": "http://en.wikipedia.org/wiki/SK_Hynix",
+                "035420.KS": "http://en.wikipedia.org/wiki/Naver_Corporation",
+                "035720.KS": "http://en.wikipedia.org/wiki/Kakao_Corporation"
             }
 
-            query = company_queries.get(symbol, symbol)
+            concept_uri = concept_uri_mapping.get(symbol, f"http://en.wikipedia.org/wiki/{symbol}")
 
             # Event Registry API 엔드포인트
             eventregistry_url = "http://eventregistry.org/api/v1/article/getArticles"
 
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                "Content-Type": "application/json"
+            # 공식 쿼리 형식 (Query DSL)
+            query_dsl = {
+                "$query": {
+                    "$and": [
+                        {
+                            "conceptUri": concept_uri  # ✅ 회사 개념 URI
+                        },
+                        {
+                            "categoryUri": "dmoz/Business/Investing/Stocks_and_Bonds"  # ✅ 카테고리
+                        },
+                        {
+                            "$or": [
+                                {
+                                    "sourceUri": "reuters.com"  # ✅ Reuters
+                                },
+                                {
+                                    "sourceUri": "bloomberg.com"  # ✅ Bloomberg
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "$filter": {
+                    "forceMaxDataTimeWindow": "31"  # 최근 31일
+                }
             }
 
-            # POST 요청을 위한 JSON 파라미터
+            # POST 요청을 위한 파라미터
             params = {
-                "keyword": query,
-                "articlesPage": 1,
-                "articlesCount": limit,
+                "query": json.dumps(query_dsl),  # ✅ JSON 쿼리
+                "resultType": "articles",
                 "articlesSortBy": "date",
                 "articlesSortByAsc": False,  # 최신순
+                "articlesPage": 1,
+                "articlesCount": limit,
                 "includeArticleTitle": True,
                 "includeArticleBasicInfo": True,
                 "includeArticleBody": True,  # ✅ 기사 본문 포함
                 "apiKey": settings.news_api_key
             }
 
-            logger.info(f"[NEWSAPI.AI] Requesting articles for query: {query} (limit: {limit})")
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "Content-Type": "application/json"
+            }
+
+            logger.info(f"[NEWSAPI.AI] Requesting articles for symbol: {symbol} (Reuters/Bloomberg, Stocks & Bonds)")
 
             # POST 요청으로 데이터 전송
             response = requests.post(eventregistry_url, json=params, headers=headers, timeout=15)
@@ -194,7 +234,7 @@ class NewsService:
             total_articles = articles_data.get("totalHits", 0)
             result_articles = articles_data.get("results", [])
 
-            logger.info(f"[NEWSAPI.AI] Found {total_articles} articles for query: {query}, returning {len(result_articles)}")
+            logger.info(f"[NEWSAPI.AI] Found {total_articles} articles for {symbol} (Reuters/Bloomberg, returning {len(result_articles)})")
 
             articles = []
             for item in result_articles[:limit]:
@@ -212,7 +252,7 @@ class NewsService:
                         "author": item.get("author", ""),
                         "published_at": published_at,
                         "image_url": item.get("image", "") or item.get("image_url", ""),
-                        "language": item.get("lang", "en"),
+                        "language": "en",  # English only
                         "category": "stock",
                         "api_source": "newsapi.ai"
                     })
