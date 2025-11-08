@@ -298,8 +298,8 @@ async def test_multiple_symbols():
 
     print(f"\n[SUMMARY]")
     print(f"  - 총 수집 기사: {total_collected}개")
-    print(f"  - 성공 종목: {len([v for v in results.values() if v > 0])}개/{len(symbols)}")
-    print(f"  - 평균 기사/종목: {total_collected // len(symbols) if symbols else 0}개")
+    print(f"  - 성공 종목: {len([v for v in results.values() if v > 0])}개/{len(symbol_uri_mapping)}")
+    print(f"  - 평균 기사/종목: {total_collected // len(symbol_uri_mapping) if symbol_uri_mapping else 0}개")
 
 
 async def test_all_100_symbols():
