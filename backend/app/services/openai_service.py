@@ -389,3 +389,42 @@ class OpenAIService:
         except Exception as e:
             logger.error(f"[ERROR] Error generating embedding: {str(e)}")
             return None
+
+    async def async_chat_completion(
+        self,
+        messages: list,
+        model: str = "gpt-5",
+        temperature: float = 0.7,
+        max_tokens: int = 2000
+    ) -> str:
+        """
+        GPT-5를 사용한 비동기 채팅 완성 (RAG용)
+
+        Args:
+            messages: 메시지 리스트 (역할과 컨텐츠)
+            model: 사용할 모델 (기본값: gpt-5)
+            temperature: 창의성 정도 (0.0-2.0)
+            max_tokens: 최대 토큰 수
+
+        Returns:
+            GPT-5의 응답 텍스트
+        """
+        try:
+            logger.info(f"[GPT] Calling {model} with {len(messages)} messages")
+
+            response = self.client.chat.completions.create(
+                model=model,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens
+            )
+
+            # 응답 추출
+            result = response.choices[0].message.content
+
+            logger.info(f"[OK] GPT response generated ({len(result)} chars)")
+            return result
+
+        except Exception as e:
+            logger.error(f"[ERROR] Chat completion failed: {str(e)}")
+            return None

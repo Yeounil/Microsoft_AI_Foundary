@@ -7,7 +7,7 @@ from typing import Dict, Any
 
 from app.core.config import settings
 from app.api import stocks
-from app.api import auth_supabase, analysis_supabase, news_supabase, recommendations_supabase, news_v1, analysis_v1, embeddings
+from app.api import auth_supabase, analysis_supabase, news_supabase, recommendations_supabase, news_v1, analysis_v1, embeddings, rag
 from app.services.news_scheduler import get_scheduler
 from app.db.supabase_client import get_supabase
 
@@ -81,6 +81,9 @@ app.include_router(recommendations_supabase.router, prefix="/api/v2/recommendati
 
 # Financial Embeddings API (Pinecone)
 app.include_router(embeddings.router, prefix="/api/v2/embeddings", tags=["embeddings"])
+
+# RAG (Retrieval Augmented Generation) API
+app.include_router(rag.router, prefix="/api/v2/rag", tags=["rag"])
 
 @app.get("/")
 async def root():
