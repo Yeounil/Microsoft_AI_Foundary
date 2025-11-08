@@ -82,7 +82,7 @@ class EventRegistryCrawler:
         Event Registry API에서 특정 회사의 뉴스 가져오기 (공식 쿼리 형식)
 
         공식 쿼리 형식을 사용:
-        - Source: Reuters.com, Bloomberg.com (고신뢰도)
+        - Source: Reuters, Bloomberg, WSJ, CNBC, MarketWatch, Benzinga (고신뢰도 금융 뉴스)
         - Category: Business/Investing/Stocks_and_Bonds
         - Language: English
         - 전체 기사 본문(body) 포함
@@ -115,6 +115,18 @@ class EventRegistryCrawler:
                                 },
                                 {
                                     "sourceUri": "bloomberg.com"  # ✅ Bloomberg
+                                },
+                                {
+                                    "sourceUri": "wsj.com"  # ✅ Wall Street Journal
+                                },
+                                {
+                                    "sourceUri": "cnbc.com"  # ✅ CNBC
+                                },
+                                {
+                                    "sourceUri": "marketwatch.com"  # ✅ MarketWatch
+                                },
+                                {
+                                    "sourceUri": "benzinga.com"  # ✅ Benzinga
                                 }
                             ]
                         }
