@@ -12,10 +12,10 @@ logger = logging.getLogger(__name__)
 class NewsService:
     
     @staticmethod
-    async def crawl_and_save_stock_news(symbol: str, limit: int = 20) -> List[Dict]:
+    async def crawl_and_save_stock_news(symbol: str, limit: int = 100) -> List[Dict]:
         """특정 종목의 뉴스를 Reuters API에서만 크롤링하고 데이터베이스에 저장"""
         try:
-            logger.info(f"[CRAWL] Starting news crawl for symbol: {symbol} (limit: {limit}, Reuters only)")
+            logger.info(f"[CRAWL] Starting news crawl for symbol: {symbol} (no limit per symbol, Reuters only)")
 
             # Reuters API에서 뉴스 가져오기 (유일한 소스)
             reuters_articles = await NewsService.get_reuters_news(symbol, limit)
@@ -111,7 +111,7 @@ class NewsService:
         return []
     
     @staticmethod
-    async def get_stock_news_from_api(symbol: str, limit: int = 20) -> List[Dict]:
+    async def get_stock_news_from_api(symbol: str, limit: int = 100) -> List[Dict]:
         """Reuters API에서 특정 종목 뉴스 가져오기 (유일한 소스)"""
         try:
             # Reuters API 사용 (유일한 뉴스 소스)
@@ -128,7 +128,7 @@ class NewsService:
             return []
 
     @staticmethod
-    async def get_reuters_news(symbol: str, limit: int = 20) -> List[Dict]:
+    async def get_reuters_news(symbol: str, limit: int = 100) -> List[Dict]:
         """newsapi.ai (Event Registry)를 통해 금융 뉴스 가져오기
 
         공식 쿼리 형식을 사용:
@@ -136,6 +136,7 @@ class NewsService:
         - Category: Business/Investing/Stocks_and_Bonds
         - Language: English
         - 전체 기사 본문(body) 포함
+        - Time window: 150일 (5개월)
         """
         try:
             if not settings.news_api_key:
@@ -193,7 +194,7 @@ class NewsService:
                     ]
                 },
                 "$filter": {
-                    "forceMaxDataTimeWindow": "31"  # 최근 31일
+                    "forceMaxDataTimeWindow": "150"  # ✅ 최근 150일 (5개월)
                 }
             }
 

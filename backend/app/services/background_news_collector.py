@@ -25,20 +25,17 @@ class BackgroundNewsCollector:
         self.analysis_executor = ThreadPoolExecutor(max_workers=3, thread_name_prefix="ai-analyzer")
         self._lock = threading.Lock()
         
-    async def collect_popular_symbols_news(self, limit_per_symbol: int = 20) -> Dict:
-        """인기 종목들의 뉴스를 백그라운드에서 수집 (멀티스레드)"""
+    async def collect_popular_symbols_news(self, limit_per_symbol: int = 100) -> Dict:
+        """인기 해외 주식 100개의 뉴스를 Reuters API로만 백그라운드에서 수집 (멀티스레드)"""
         crawl_start_time = datetime.now()
 
         try:
-            logger.info("백그라운드 뉴스 수집 시작 (멀티스레드)")
+            logger.info("[BACKGROUND_CRAWL] Starting background news collection (multithreaded, Reuters only)")
 
-            # 1. 모든 사용자의 관심사에서 인기 종목 추출
-            popular_symbols = await self._get_popular_symbols()
+            # 1. 인기 해외 주식 100개 목록 (기본 목록 사용 - 사용자 관심사와 무관하게 항상 이들 종목 크롤링)
+            popular_symbols = self._get_default_popular_symbols()
 
-            if not popular_symbols:
-                popular_symbols = ["AAPL", "GOOGL", "MSFT", "NVDA", "TSLA", "AMZN", "META"]  # 기본 인기 종목
-
-            logger.info(f"수집 대상 종목: {popular_symbols} (스레드 풀 활용)")
+            logger.info(f"[BACKGROUND_CRAWL] Target symbols: {len(popular_symbols)} stocks (Reuters API only, no article limit per symbol)")
 
             # 2. 각 종목별로 뉴스 수집을 별도 스레드에서 실행
             loop = asyncio.get_event_loop()
@@ -72,16 +69,17 @@ class BackgroundNewsCollector:
                     await self._record_crawl_history(
                         symbol, collected_count, "scheduled", "completed"
                     )
-                    logger.info(f"[스레드] 종목 {symbol} 수집 완료: {collected_count}개")
+                    logger.info(f"[THREAD] Symbol {symbol} collection completed: {collected_count} articles")
                 except Exception as e:
-                    logger.error(f"[스레드] 종목 {symbol} 뉴스 수집 실패: {str(e)}")
+                    logger.error(f"[THREAD] Symbol {symbol} news collection failed: {str(e)}")
                     failed_symbols.append(symbol)
                     # 실패한 경우에도 이력 기록
                     await self._record_crawl_history(
                         symbol, 0, "scheduled", "failed", str(e)
                     )
 
-            logger.info(f"백그라운드 뉴스 수집 완료: 총 {total_collected}개 (멀티스레드)")
+            logger.info(f"[BACKGROUND_CRAWL] Collection completed: Total {total_collected} articles collected (multithreaded)")
+            logger.info(f"[BACKGROUND_CRAWL] Successful: {len(successful_symbols)}, Failed: {len(failed_symbols)}")
 
             return {
                 "status": "completed",
@@ -92,57 +90,94 @@ class BackgroundNewsCollector:
             }
 
         except Exception as e:
-            logger.error(f"백그라운드 뉴스 수집 중 오류: {str(e)}")
+            logger.error(f"[ERROR] Error during background news collection: {str(e)}")
             return {
                 "status": "error",
                 "error": str(e),
                 "total_collected": 0
             }
     
+    def _get_default_popular_symbols(self) -> List[str]:
+        """대중적인 해외 주식 100개 기본 목록 반환"""
+        # 기술주, 금융, 헬스케어, 소비재, 에너지, 산업재 등 다양한 섹터 포함
+        return [
+            # Tech (20개)
+            "AAPL", "MSFT", "GOOGL", "GOOG", "AMZN", "NVDA", "TSLA", "META", "NFLX", "CRM",
+            "ORACLE", "ADOBE", "INTEL", "AMD", "MU", "QCOM", "IBM", "CSCO", "HPQ", "AVGO",
+
+            # Finance (15개)
+            "JPM", "BAC", "WFC", "GS", "MS", "C", "BLK", "SCHW", "AXP", "CB",
+            "BLK", "AIG", "MMC", "ICE", "CBOE",
+
+            # Healthcare (15개)
+            "JNJ", "UNH", "PFE", "ABBV", "MRK", "TMO", "LLY", "ABT", "AMGN", "GILD",
+            "CVS", "AMAT", "REGN", "BIIB", "VRTX",
+
+            # Retail/Consumer (15개)
+            "WMT", "TGT", "HD", "LOW", "MCD", "SBUX", "KO", "PEP", "NKE", "VFC",
+            "LULU", "DKS", "RH", "ORCL", "COST",
+
+            # Industrials (10개)
+            "CAT", "BA", "MMM", "RTX", "HON", "JCI", "PCAR", "GE", "DE", "LMT",
+
+            # Energy (10개)
+            "XOM", "CVX", "COP", "MPC", "PSX", "VLO", "EOG", "OXY", "MRO", "SLB",
+
+            # Communications (5개)
+            "VZ", "T", "TMUS", "CMCSA", "CHTR",
+
+            # Real Estate (5개)
+            "SPG", "DLR", "PLD", "PSA", "EQIX",
+
+            # Utilities (5개)
+            "NEE", "DUK", "SO", "EXC", "AEP"
+        ]
+
     async def _get_popular_symbols(self) -> List[str]:
-        """모든 사용자 관심사에서 인기 종목 추출"""
+        """사용자 관심사 기반 인기 종목 추출 (현재 미사용 - 레거시)"""
         try:
             supabase = get_supabase()
-            
+
             # user_interests 테이블에서 가장 많이 등장하는 종목들을 추출
             result = supabase.table("user_interests")\
                 .select("interest")\
                 .execute()
-            
+
             if not result.data:
                 return []
-            
+
             # 종목별 등장 횟수 계산
             symbol_counts = {}
             for item in result.data:
                 symbol = item.get('interest', '')
                 if symbol:
                     symbol_counts[symbol] = symbol_counts.get(symbol, 0) + 1
-            
+
             # 상위 15개 종목 선택
             popular_symbols = sorted(symbol_counts.items(), key=lambda x: x[1], reverse=True)[:15]
             return [symbol for symbol, count in popular_symbols]
-            
+
         except Exception as e:
-            logger.error(f"인기 종목 추출 중 오류: {str(e)}")
+            logger.error(f"[ERROR] Error extracting popular symbols: {str(e)}")
             return []
     
     def _collect_and_analyze_symbol_news_sync(self, symbol: str, limit: int) -> Dict:
         """특정 종목의 뉴스를 수집하고 AI 분석 (동기 버전 - 스레드에서 실행)"""
         try:
-            logger.info(f"[스레드 {threading.current_thread().name}] 종목 {symbol} 뉴스 수집 시작")
+            logger.info(f"[THREAD_{threading.current_thread().name}] Starting news crawl for {symbol}")
 
             # 새로운 이벤트 루프 생성 (각 스레드마다 독립적인 루프)
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
 
             try:
-                # 1. 뉴스 크롤링
+                # 1. 뉴스 크롤링 (Reuters API만 사용, 상위 20개 기사)
                 news_articles = loop.run_until_complete(
                     NewsService.crawl_and_save_stock_news(symbol, limit)
                 )
 
                 if not news_articles:
+                    logger.warning(f"[THREAD_{threading.current_thread().name}] No articles collected for {symbol}")
                     return {"symbol": symbol, "collected_count": 0, "analyzed_count": 0}
 
                 # 2. AI 분석 및 적합 점수 계산 (멀티스레드로 병렬 처리)
@@ -151,7 +186,7 @@ class BackgroundNewsCollector:
                 # 3. 분석 결과를 DB에 저장
                 loop.run_until_complete(self._save_analyzed_articles(analyzed_articles))
 
-                logger.info(f"[스레드 {threading.current_thread().name}] 종목 {symbol}: {len(news_articles)}개 수집, {len(analyzed_articles)}개 분석 완료")
+                logger.info(f"[THREAD_{threading.current_thread().name}] {symbol}: {len(news_articles)} articles collected, {len(analyzed_articles)} analyzed")
 
                 return {
                     "symbol": symbol,
@@ -162,15 +197,15 @@ class BackgroundNewsCollector:
                 loop.close()
 
         except Exception as e:
-            logger.error(f"[스레드] 종목 {symbol} 뉴스 수집/분석 오류: {str(e)}")
+            logger.error(f"[THREAD] Error collecting/analyzing news for {symbol}: {str(e)}")
             raise e
 
     async def _collect_and_analyze_symbol_news(self, symbol: str, limit: int) -> Dict:
-        """특정 종목의 뉴스를 수집하고 AI 분석 (기존 async 버전 유지)"""
+        """특정 종목의 뉴스를 수집하고 AI 분석 (async 버전, 레거시)"""
         try:
-            logger.info(f"종목 {symbol} 뉴스 수집 시작")
+            logger.info(f"[ASYNC] Starting news crawl for {symbol}")
 
-            # 1. 뉴스 크롤링
+            # 1. 뉴스 크롤링 (Reuters API만)
             news_articles = await NewsService.crawl_and_save_stock_news(symbol, limit)
 
             if not news_articles:
@@ -182,7 +217,7 @@ class BackgroundNewsCollector:
             # 3. 분석 결과를 DB에 저장 (적합 점수 포함)
             await self._save_analyzed_articles(analyzed_articles)
 
-            logger.info(f"종목 {symbol}: {len(news_articles)}개 수집, {len(analyzed_articles)}개 분석 완료")
+            logger.info(f"[ASYNC] {symbol}: {len(news_articles)} articles collected, {len(analyzed_articles)} analyzed")
 
             return {
                 "symbol": symbol,
@@ -191,7 +226,7 @@ class BackgroundNewsCollector:
             }
 
         except Exception as e:
-            logger.error(f"종목 {symbol} 뉴스 수집/분석 오류: {str(e)}")
+            logger.error(f"[ASYNC] Error collecting/analyzing news for {symbol}: {str(e)}")
             raise e
     
     def _analyze_articles_relevance_sync(self, articles: List[Dict], symbol: str) -> List[Dict]:
@@ -235,7 +270,7 @@ class BackgroundNewsCollector:
                     return article
 
                 except Exception as article_error:
-                    logger.warning(f"기사 분석 실패: {str(article_error)}")
+                    logger.warning(f"[WARN] Article analysis failed: {str(article_error)}")
                     # 실패한 경우 기본 점수만 사용
                     article['relevance_score'] = 0.5
                     article['base_score'] = 0.5
@@ -246,11 +281,11 @@ class BackgroundNewsCollector:
             with ThreadPoolExecutor(max_workers=3) as executor:
                 analyzed_articles = list(executor.map(analyze_single_article, articles))
 
-            logger.info(f"[스레드] {len(analyzed_articles)}개 기사 AI 분석 완료 (병렬 처리)")
+            logger.info(f"[AI_ANALYSIS] Analyzed {len(analyzed_articles)} articles (parallel processing)")
             return analyzed_articles
 
         except Exception as e:
-            logger.error(f"기사 적합성 분석 오류: {str(e)}")
+            logger.error(f"[ERROR] Error analyzing article relevance: {str(e)}")
             # 폴백: 모든 기사에 기본 점수 설정
             for article in articles:
                 article['relevance_score'] = 0.5
@@ -292,7 +327,7 @@ class BackgroundNewsCollector:
                     analyzed_articles.append(article)
 
                 except Exception as article_error:
-                    logger.warning(f"기사 분석 실패: {str(article_error)}")
+                    logger.warning(f"[WARN] Article analysis failed: {str(article_error)}")
                     # 실패한 경우 기본 점수만 사용
                     article['relevance_score'] = 0.5
                     article['base_score'] = 0.5
@@ -302,16 +337,16 @@ class BackgroundNewsCollector:
             return analyzed_articles
 
         except Exception as e:
-            logger.error(f"기사 적합성 분석 오류: {str(e)}")
+            logger.error(f"[ERROR] Error analyzing article relevance: {str(e)}")
             # 폴백: 모든 기사에 기본 점수 설정
             for article in articles:
                 article['relevance_score'] = 0.5
                 article['base_score'] = 0.5
                 article['ai_score'] = 0.5
             return articles
-    
+
     def _calculate_base_relevance_score(self, article: Dict, symbol: str) -> float:
-        """기본 적합성 점수 계산 (수정된 버전)"""
+        """기본 적합성 점수 계산"""
         try:
             score = 0.0
             title = article.get('title', '').lower()
@@ -364,11 +399,11 @@ class BackgroundNewsCollector:
             return min(1.0, max(0.0, score))
             
         except Exception as e:
-            logger.warning(f"기본 점수 계산 오류: {str(e)}")
+            logger.warning(f"[WARN] Error calculating base score: {str(e)}")
             return 0.5
-    
+
     def _calculate_freshness_score(self, published_at: str) -> float:
-        """뉴스 신선도 점수 (수정된 버전)"""
+        """뉴스 신선도 점수"""
         try:
             if not published_at:
                 return 0.3
@@ -394,11 +429,11 @@ class BackgroundNewsCollector:
                 return 0.2      # 3일 이후: 낮은점수
                 
         except Exception as e:
-            logger.warning(f"신선도 점수 계산 오류: {str(e)}")
+            logger.warning(f"[WARN] Error calculating freshness score: {str(e)}")
             return 0.3
-    
+
     def _calculate_source_score(self, source: str) -> float:
-        """소스 신뢰도 점수 (수정된 버전)"""
+        """소스 신뢰도 점수"""
         if not source:
             return 0.5
         
@@ -441,8 +476,8 @@ class BackgroundNewsCollector:
                     logger.warning(f"기사 업데이트 실패: {article.get('url')}")
             
         except Exception as e:
-            logger.error(f"분석된 기사 저장 오류: {str(e)}")
-    
+            logger.error(f"[ERROR] Error saving analyzed articles: {str(e)}")
+
     async def _record_crawl_history(
         self,
         symbol: str,
@@ -467,10 +502,10 @@ class BackgroundNewsCollector:
             result = supabase.table("news_crawl_history").insert(crawl_data).execute()
 
             if result.data:
-                logger.info(f"크롤링 이력 기록 완료: {symbol} ({articles_collected}개)")
+                logger.info(f"[HISTORY] Crawl history recorded: {symbol} ({articles_collected} articles)")
 
         except Exception as e:
-            logger.error(f"크롤링 이력 기록 오류: {str(e)}")
+            logger.error(f"[ERROR] Error recording crawl history: {str(e)}")
 
     async def cleanup_old_news(self, days_old: int = 7):
         """오래된 뉴스 정리"""
@@ -484,17 +519,17 @@ class BackgroundNewsCollector:
                 .execute()
 
             deleted_count = len(result.data) if result.data else 0
-            logger.info(f"오래된 뉴스 {deleted_count}개 정리 완료")
+            logger.info(f"[CLEANUP] Old news cleanup completed: {deleted_count} articles deleted")
 
             return {"deleted_count": deleted_count}
 
         except Exception as e:
-            logger.error(f"뉴스 정리 중 오류: {str(e)}")
+            logger.error(f"[ERROR] Error cleaning up old news: {str(e)}")
             return {"deleted_count": 0}
 
     def shutdown(self):
         """스레드 풀 정리"""
-        logger.info("백그라운드 뉴스 수집기 종료 중...")
+        logger.info("[SHUTDOWN] Shutting down background news collector")
         self.collection_executor.shutdown(wait=True)
         self.analysis_executor.shutdown(wait=True)
-        logger.info("스레드 풀 정리 완료")
+        logger.info("[SHUTDOWN] Thread pool cleanup completed")

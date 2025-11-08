@@ -108,11 +108,11 @@ class NewsDBService:
         """AI 분석용 뉴스 데이터 가져오기"""
         try:
             supabase = get_supabase()
-            
+
             # 최근 N일간의 날짜 계산 (Python에서)
             from datetime import datetime, timedelta
             cutoff_date = (datetime.now() - timedelta(days=days)).isoformat()
-            
+
             # 최근 N일간의 뉴스 가져오기
             result = supabase.table("news_articles").select("*")\
                 .eq("symbol", symbol)\
@@ -120,9 +120,57 @@ class NewsDBService:
                 .order("published_at", desc=True)\
                 .limit(limit)\
                 .execute()
-            
+
             return result.data if result.data else []
-            
+
         except Exception as e:
             logger.error(f"분석용 뉴스 조회 중 오류: {str(e)}")
             return []
+
+    @staticmethod
+    async def delete_old_news(days: int = 365) -> int:
+        """N일 이상 된 뉴스 삭제 (기본값: 1년)
+
+        Args:
+            days: 삭제 대상 기한 (기본값 365일)
+
+        Returns:
+            삭제된 뉴스 개수
+        """
+        try:
+            supabase = get_supabase()
+
+            from datetime import datetime, timedelta
+            cutoff_date = (datetime.now() - timedelta(days=days)).isoformat()
+
+            # N일 이전의 뉴스 조회
+            result = supabase.table("news_articles").select("id")\
+                .lt("published_at", cutoff_date)\
+                .execute()
+
+            if not result.data:
+                logger.info(f"[CLEANUP] {days}일 이상 된 뉴스가 없습니다")
+                return 0
+
+            old_article_ids = [article["id"] for article in result.data]
+            deleted_count = 0
+
+            # 배치로 삭제 (Supabase 제한: 한 번에 많은 개수 삭제 불가)
+            batch_size = 100
+            for i in range(0, len(old_article_ids), batch_size):
+                batch_ids = old_article_ids[i:i+batch_size]
+
+                # OR 조건으로 삭제
+                delete_result = supabase.table("news_articles").delete()\
+                    .in_("id", batch_ids)\
+                    .execute()
+
+                deleted_count += len(batch_ids)
+                logger.info(f"[CLEANUP] {len(batch_ids)}개 뉴스 삭제 완료")
+
+            logger.info(f"[CLEANUP] 총 {deleted_count}개의 {days}일 이상 된 뉴스 삭제 완료")
+            return deleted_count
+
+        except Exception as e:
+            logger.error(f"뉴스 삭제 중 오류: {str(e)}")
+            return 0

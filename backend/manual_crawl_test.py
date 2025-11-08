@@ -77,7 +77,7 @@ class EventRegistryCrawler:
             "NEE", "D", "SO", "DUK", "EXC"
         ]
 
-    def get_news_from_event_registry(self, symbol: str, concept_uri: str, limit: int = 20) -> List[Dict]:
+    def get_news_from_event_registry(self, symbol: str, concept_uri: str, limit: int = 100) -> List[Dict]:
         """
         Event Registry API에서 특정 회사의 뉴스 가져오기 (공식 쿼리 형식)
 
@@ -86,6 +86,7 @@ class EventRegistryCrawler:
         - Category: Business/Investing/Stocks_and_Bonds
         - Language: English
         - 전체 기사 본문(body) 포함
+        - Time window: 150일 (5개월)
 
         Args:
             symbol: 종목 코드 (예: "AAPL")
@@ -97,6 +98,7 @@ class EventRegistryCrawler:
         """
         try:
             # 공식 쿼리 형식 (Query DSL)
+            # 5개월(150일) 이내의 뉴스 수집
             query_dsl = {
                 "$query": {
                     "$and": [
@@ -119,7 +121,7 @@ class EventRegistryCrawler:
                     ]
                 },
                 "$filter": {
-                    "forceMaxDataTimeWindow": "31"  # 최근 31일
+                    "forceMaxDataTimeWindow": "150"  # ✅ 최근 5개월(150일)
                 }
             }
 
