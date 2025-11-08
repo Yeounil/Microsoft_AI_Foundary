@@ -29,6 +29,7 @@ class NewsDBService:
                     "title": article.get("title", ""),
                     "description": article.get("description", ""),
                     "content": article.get("content", ""),
+                    "body": article.get("body", ""),  # ✅ newsapi.ai 기사 본문
                     "url": article["url"],
                     "source": article.get("source", ""),
                     "author": article.get("author", ""),

@@ -12,44 +12,37 @@ logger = logging.getLogger(__name__)
 class NewsService:
     
     @staticmethod
-    async def crawl_and_save_stock_news(symbol: str, limit: int = 10) -> List[Dict]:
-        """특정 종목의 뉴스를 크롤링하고 데이터베이스에 저장"""
+    async def crawl_and_save_stock_news(symbol: str, limit: int = 20) -> List[Dict]:
+        """특정 종목의 뉴스를 Reuters API에서만 크롤링하고 데이터베이스에 저장"""
         try:
-            # 각 소스당 최대 개수 계산
-            per_source_limit = max(3, limit // 3)
-            
-            # News API에서 뉴스 가져오기
-            news_api_articles = await NewsService.get_stock_news_from_api(symbol, per_source_limit)
-            
-            # Yahoo Finance에서 뉴스 가져오기
-            yahoo_articles = await NewsService.get_yahoo_finance_news(symbol, per_source_limit)
-            
-            # Naver에서 한국 종목 뉴스 가져오기 (한국 종목인 경우)
-            naver_articles = []
-            if symbol.endswith(('.KS', '.KQ')) or any(korean_char in symbol for korean_char in ['삼성', '네이버', '카카오']):
-                naver_articles = await NewsService.get_naver_stock_news(symbol, per_source_limit)
-            
-            # 모든 기사 통합
-            all_articles = news_api_articles + yahoo_articles + naver_articles
-            print(f"[DEBUG] 뉴스 소스별 수집: News API({len(news_api_articles)}), Yahoo({len(yahoo_articles)}), Naver({len(naver_articles)})")
-            
+            logger.info(f"[CRAWL] Starting news crawl for symbol: {symbol} (limit: {limit}, Reuters only)")
+
+            # Reuters API에서 뉴스 가져오기 (유일한 소스)
+            reuters_articles = await NewsService.get_reuters_news(symbol, limit)
+
+            if not reuters_articles:
+                logger.warning(f"[CRAWL] No articles found for {symbol} from Reuters API")
+                return []
+
+            logger.info(f"[CRAWL] Collected {len(reuters_articles)} articles from Reuters API for {symbol}")
+
             # 중복 제거 (URL 기준)
             unique_articles = []
             seen_urls = set()
-            for article in all_articles:
-                if article["url"] not in seen_urls:
+            for article in reuters_articles:
+                if article.get("url") and article["url"] not in seen_urls:
                     unique_articles.append(article)
                     seen_urls.add(article["url"])
-            
+
             # 데이터베이스에 저장
             if unique_articles:
                 saved_ids = await NewsDBService.save_news_articles(unique_articles)
-                logger.info(f"{symbol}: {len(saved_ids)}개 새 뉴스 저장")
-            
+                logger.info(f"[CRAWL] Saved {len(saved_ids)} new articles for {symbol} to database")
+
             return unique_articles[:limit]
-            
+
         except Exception as e:
-            logger.error(f"뉴스 크롤링 중 오류 ({symbol}): {str(e)}")
+            logger.error(f"[ERROR] Error during news crawling for {symbol}: {str(e)}")
             return []
     
     @staticmethod
@@ -118,65 +111,120 @@ class NewsService:
         return []
     
     @staticmethod
-    async def get_stock_news_from_api(symbol: str, limit: int = 10) -> List[Dict]:
-        """News API에서 특정 종목 뉴스 가져오기"""
+    async def get_stock_news_from_api(symbol: str, limit: int = 20) -> List[Dict]:
+        """Reuters API에서 특정 종목 뉴스 가져오기 (유일한 소스)"""
+        try:
+            # Reuters API 사용 (유일한 뉴스 소스)
+            reuters_articles = await NewsService.get_reuters_news(symbol, limit)
+            if reuters_articles:
+                return reuters_articles
+
+            # Reuters API 실패 시 경고 후 빈 배열 반환
+            logger.warning(f"[API] Reuters API returned no articles for {symbol}")
+            return []
+
+        except Exception as e:
+            logger.error(f"[ERROR] Error fetching stock news for {symbol}: {str(e)}")
+            return []
+
+    @staticmethod
+    async def get_reuters_news(symbol: str, limit: int = 20) -> List[Dict]:
+        """newsapi.ai (Event Registry)를 통해 금융 뉴스 가져오기
+
+        Event Registry API를 사용하여 전체 기사 본문(body)을 포함한 고품질 뉴스 수집
+        """
         try:
             if not settings.news_api_key:
+                logger.warning("[NEWSAPI.AI] API 키가 설정되지 않았습니다")
                 return []
-            
+
             # 회사명 매핑
             company_queries = {
-                "AAPL": "Apple Inc",
+                "AAPL": "Apple",
                 "GOOGL": "Google Alphabet",
-                "MSFT": "Microsoft Corporation",
-                "TSLA": "Tesla Inc",
-                "NVDA": "NVIDIA Corporation",
-                "AMZN": "Amazon.com Inc",
-                "META": "Meta Platforms",
-                "005930.KS": "Samsung Electronics",
+                "MSFT": "Microsoft",
+                "TSLA": "Tesla",
+                "NVDA": "NVIDIA",
+                "AMZN": "Amazon",
+                "META": "Meta",
+                "005930.KS": "Samsung",
                 "000660.KS": "SK Hynix",
-                "035420.KS": "NAVER Corporation",
-                "035720.KS": "Kakao Corp"
+                "035420.KS": "NAVER",
+                "035720.KS": "Kakao"
             }
-            
+
             query = company_queries.get(symbol, symbol)
-            
-            url = "https://newsapi.org/v2/everything"
-            params = {
-                "q": query,
-                "apiKey": settings.news_api_key,
-                "language": "en",
-                "sortBy": "publishedAt",
-                "pageSize": limit,
-                "from": (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d"),
-                "domains": "bloomberg.com,reuters.com,cnbc.com,marketwatch.com,yahoo.com,investing.com"
+
+            # Event Registry API 엔드포인트
+            eventregistry_url = "http://eventregistry.org/api/v1/article/getArticles"
+
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "Content-Type": "application/json"
             }
-            
-            response = requests.get(url, params=params, timeout=10)
+
+            # POST 요청을 위한 JSON 파라미터
+            params = {
+                "keyword": query,
+                "articlesPage": 1,
+                "articlesCount": limit,
+                "articlesSortBy": "date",
+                "articlesSortByAsc": False,  # 최신순
+                "includeArticleTitle": True,
+                "includeArticleBasicInfo": True,
+                "includeArticleBody": True,  # ✅ 기사 본문 포함
+                "apiKey": settings.news_api_key
+            }
+
+            logger.info(f"[NEWSAPI.AI] Requesting articles for query: {query} (limit: {limit})")
+
+            # POST 요청으로 데이터 전송
+            response = requests.post(eventregistry_url, json=params, headers=headers, timeout=15)
             response.raise_for_status()
-            
+
             data = response.json()
+
+            # 에러 확인
+            if "error" in data:
+                logger.warning(f"[NEWSAPI.AI] API error for {symbol}: {data.get('error', 'Unknown error')}")
+                return []
+
+            # 기사 개수 로깅
+            articles_data = data.get("articles", {})
+            total_articles = articles_data.get("totalHits", 0)
+            result_articles = articles_data.get("results", [])
+
+            logger.info(f"[NEWSAPI.AI] Found {total_articles} articles for query: {query}, returning {len(result_articles)}")
+
             articles = []
-            
-            for article in data.get("articles", []):
-                articles.append({
-                    "symbol": symbol,
-                    "title": article.get("title", ""),
-                    "description": article.get("description", ""),
-                    "url": article.get("url", ""),
-                    "source": article.get("source", {}).get("name", ""),
-                    "author": article.get("author", ""),
-                    "published_at": article.get("publishedAt", ""),
-                    "image_url": article.get("urlToImage", ""),
-                    "language": "en",
-                    "category": "stock",
-                    "api_source": "newsapi"
-                })
-            
+            for item in result_articles[:limit]:
+                try:
+                    # 발행 날짜 파싱 (ISO format)
+                    published_at = item.get("dateTime", "") or item.get("date", "")
+
+                    articles.append({
+                        "symbol": symbol,
+                        "title": item.get("title", ""),
+                        "description": item.get("summary", "") or item.get("title", ""),
+                        "body": item.get("body", ""),  # ✅ 전체 기사 본문 저장
+                        "url": item.get("url", ""),
+                        "source": item.get("source", {}).get("title", "News Source") if isinstance(item.get("source"), dict) else str(item.get("source", "News Source")),
+                        "author": item.get("author", ""),
+                        "published_at": published_at,
+                        "image_url": item.get("image", "") or item.get("image_url", ""),
+                        "language": item.get("lang", "en"),
+                        "category": "stock",
+                        "api_source": "newsapi.ai"
+                    })
+                except Exception as article_error:
+                    logger.warning(f"[NEWSAPI.AI] Error parsing article: {str(article_error)}")
+                    continue
+
+            logger.info(f"[NEWSAPI.AI] Collected {len(articles)} articles for {symbol}")
             return articles
-            
+
         except Exception as e:
-            logger.error(f"News API 오류 ({symbol}): {str(e)}")
+            logger.error(f"[NEWSAPI.AI] Error retrieving news for {symbol}: {str(e)}")
             return []
     
     @staticmethod
@@ -247,42 +295,84 @@ class NewsService:
     
     @staticmethod
     def get_financial_news(query: str = "finance", limit: int = 10) -> List[Dict]:
-        """금융 뉴스 가져오기 (News API 사용)"""
+        """금융 뉴스 가져오기 (Apify Reuters API 사용, 동기 버전)"""
         try:
-            if not settings.news_api_key:
-                # News API 키가 없는 경우 더미 데이터 반환
+            if not settings.apify_api_token:
+                # Apify API 토큰이 없는 경우 더미 데이터 반환
+                logger.warning("Apify API 토큰이 설정되지 않았습니다")
                 return NewsService._get_dummy_news()
-            
-            url = "https://newsapi.org/v2/everything"
-            params = {
-                "q": query,
-                "apiKey": settings.news_api_key,
-                "language": "en",
-                "sortBy": "publishedAt",
-                "pageSize": limit,
-                "domains": "bloomberg.com,reuters.com,cnbc.com,marketwatch.com,yahoo.com"
+
+            import time
+
+            # Apify Reuters API 엔드포인트 (토큰을 URL 파라미터로 전달)
+            apify_url = f"https://api.apify.com/v2/acts/making-data-meaningful~reuters-api/runs?token={settings.apify_api_token}"
+            headers = {
+                "Content-Type": "application/json",
+                "User-Agent": "Mozilla/5.0"
             }
-            
-            response = requests.get(url, params=params, timeout=10)
+
+            # Apify 액터 실행 요청
+            body = {
+                "searchQuery": query,
+                "maxItems": limit
+            }
+
+            response = requests.post(apify_url, json=body, headers=headers, timeout=60)
             response.raise_for_status()
-            
+
             data = response.json()
-            articles = []
-            
-            for article in data.get("articles", []):
-                articles.append({
-                    "title": article.get("title", ""),
-                    "description": article.get("description", ""),
-                    "url": article.get("url", ""),
-                    "source": article.get("source", {}).get("name", ""),
-                    "published_at": article.get("publishedAt", ""),
-                    "image_url": article.get("urlToImage", "")
-                })
-            
-            return articles
-            
+            run_id = data.get("data", {}).get("id")
+
+            if not run_id:
+                logger.warning(f"Reuters API: 실행 ID를 얻지 못했습니다 (financial news)")
+                return NewsService._get_dummy_news()
+
+            # 결과 폴링 (최대 30초 대기)
+            for attempt in range(15):
+                time.sleep(2)
+
+                status_url = f"https://api.apify.com/v2/acts/making-data-meaningful~reuters-api/runs/{run_id}?token={settings.apify_api_token}"
+                status_response = requests.get(status_url, headers=headers, timeout=10)
+
+                if status_response.status_code == 200:
+                    status_data = status_response.json()
+                    status = status_data.get("data", {}).get("status")
+
+                    if status == "SUCCEEDED":
+                        # Dataset에서 뉴스 항목 가져오기
+                        dataset_id = status_data.get("data", {}).get("defaultDatasetId")
+
+                        if dataset_id:
+                            dataset_url = f"https://api.apify.com/v2/datasets/{dataset_id}/items?token={settings.apify_api_token}"
+                            dataset_response = requests.get(dataset_url, headers=headers, timeout=10)
+
+                            if dataset_response.status_code == 200:
+                                items = dataset_response.json()
+
+                                articles = []
+                                for item in items[:limit]:
+                                    articles.append({
+                                        "title": item.get("title", "") or item.get("heading", ""),
+                                        "description": item.get("description", "") or item.get("summary", "") or item.get("text", ""),
+                                        "url": item.get("url", "") or item.get("link", "") or item.get("href", ""),
+                                        "source": item.get("source", "Reuters") or item.get("sourceName", "Reuters"),
+                                        "published_at": item.get("publishedDate", "") or item.get("date", "") or item.get("publicationDate", ""),
+                                        "image_url": item.get("image", "") or item.get("thumbnail", "") or item.get("imageUrl", ""),
+                                        "api_source": "reuters"
+                                    })
+
+                                return articles
+
+                        break
+                    elif status in ["FAILED", "ABORTED"]:
+                        logger.error(f"Reuters API: 실행 실패: {status}")
+                        break
+
+            logger.warning(f"Reuters API: 실행 시간 초과 (financial news)")
+            return NewsService._get_dummy_news()
+
         except Exception as e:
-            print(f"뉴스 API 오류: {str(e)}")
+            logger.error(f"Apify Reuters API 오류: {str(e)}")
             return NewsService._get_dummy_news()
     
     @staticmethod
@@ -304,11 +394,14 @@ class NewsService:
     
     @staticmethod
     def get_stock_related_news(symbol: str, limit: int = 5) -> List[Dict]:
-        """특정 주식 관련 뉴스"""
+        """특정 주식 관련 뉴스 (Apify Reuters API 사용, 동기 버전)"""
         try:
-            if not settings.news_api_key:
+            if not settings.apify_api_token:
+                logger.warning("Apify API 토큰이 설정되지 않았습니다")
                 return NewsService._get_dummy_stock_news(symbol)
-            
+
+            import time
+
             # 회사명이나 심볼로 검색
             company_queries = {
                 "AAPL": "Apple",
@@ -318,39 +411,78 @@ class NewsService:
                 "005930.KS": "삼성전자",
                 "000660.KS": "SK하이닉스"
             }
-            
+
             query = company_queries.get(symbol, symbol)
-            
-            url = "https://newsapi.org/v2/everything"
-            params = {
-                "q": query,
-                "apiKey": settings.news_api_key,
-                "language": "en" if not symbol.endswith(('.KS', '.KQ')) else "ko",
-                "sortBy": "publishedAt",
-                "pageSize": limit,
-                "from": (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+
+            # Apify Reuters API 엔드포인트 (토큰을 URL 파라미터로 전달)
+            apify_url = f"https://api.apify.com/v2/acts/making-data-meaningful~reuters-api/runs?token={settings.apify_api_token}"
+            headers = {
+                "Content-Type": "application/json",
+                "User-Agent": "Mozilla/5.0"
             }
-            
-            response = requests.get(url, params=params, timeout=10)
+
+            # Apify 액터 실행 요청
+            body = {
+                "searchQuery": query,
+                "maxItems": limit
+            }
+
+            response = requests.post(apify_url, json=body, headers=headers, timeout=60)
             response.raise_for_status()
-            
+
             data = response.json()
-            articles = []
-            
-            for article in data.get("articles", []):
-                articles.append({
-                    "title": article.get("title", ""),
-                    "description": article.get("description", ""),
-                    "url": article.get("url", ""),
-                    "source": article.get("source", {}).get("name", ""),
-                    "published_at": article.get("publishedAt", ""),
-                    "image_url": article.get("urlToImage", "")
-                })
-            
-            return articles
-            
+            run_id = data.get("data", {}).get("id")
+
+            if not run_id:
+                logger.warning(f"Reuters API: 실행 ID를 얻지 못했습니다 ({symbol})")
+                return NewsService._get_dummy_stock_news(symbol)
+
+            # 결과 폴링 (최대 30초 대기)
+            for attempt in range(15):
+                time.sleep(2)
+
+                status_url = f"https://api.apify.com/v2/acts/making-data-meaningful~reuters-api/runs/{run_id}?token={settings.apify_api_token}"
+                status_response = requests.get(status_url, headers=headers, timeout=10)
+
+                if status_response.status_code == 200:
+                    status_data = status_response.json()
+                    status = status_data.get("data", {}).get("status")
+
+                    if status == "SUCCEEDED":
+                        # Dataset에서 뉴스 항목 가져오기
+                        dataset_id = status_data.get("data", {}).get("defaultDatasetId")
+
+                        if dataset_id:
+                            dataset_url = f"https://api.apify.com/v2/datasets/{dataset_id}/items?token={settings.apify_api_token}"
+                            dataset_response = requests.get(dataset_url, headers=headers, timeout=10)
+
+                            if dataset_response.status_code == 200:
+                                items = dataset_response.json()
+
+                                articles = []
+                                for item in items[:limit]:
+                                    articles.append({
+                                        "title": item.get("title", "") or item.get("heading", ""),
+                                        "description": item.get("description", "") or item.get("summary", "") or item.get("text", ""),
+                                        "url": item.get("url", "") or item.get("link", "") or item.get("href", ""),
+                                        "source": item.get("source", "Reuters") or item.get("sourceName", "Reuters"),
+                                        "published_at": item.get("publishedDate", "") or item.get("date", "") or item.get("publicationDate", ""),
+                                        "image_url": item.get("image", "") or item.get("thumbnail", "") or item.get("imageUrl", ""),
+                                        "api_source": "reuters"
+                                    })
+
+                                return articles
+
+                        break
+                    elif status in ["FAILED", "ABORTED"]:
+                        logger.error(f"Reuters API: 실행 실패 ({symbol}): {status}")
+                        break
+
+            logger.warning(f"Reuters API: 실행 시간 초과 ({symbol})")
+            return NewsService._get_dummy_stock_news(symbol)
+
         except Exception as e:
-            print(f"주식 뉴스 API 오류: {str(e)}")
+            logger.error(f"주식 뉴스 API 오류: {str(e)}")
             return NewsService._get_dummy_stock_news(symbol)
     
     @staticmethod
