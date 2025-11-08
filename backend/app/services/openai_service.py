@@ -354,5 +354,38 @@ class OpenAIService:
             close = data.get("close", 0)
             volume = data.get("volume", 0)
             formatted.append(f"- {date}: 종가 {close}, 거래량 {volume:,}")
-        
+
         return "\n".join(formatted)
+
+    async def generate_embedding(self, text: str) -> list:
+        """
+        OpenAI Embedding API를 사용하여 텍스트를 벡터로 변환
+
+        Args:
+            text: 임베딩할 텍스트
+
+        Returns:
+            1536차원 임베딩 벡터
+        """
+        try:
+            if not text or not text.strip():
+                logger.warning("[WARN] Empty text provided for embedding")
+                return None
+
+            logger.info(f"[EMBED] Generating embedding for text (length: {len(text)} chars)")
+
+            # OpenAI Embedding API 호출 (ada-002, 1536차원)
+            response = self.client.embeddings.create(
+                model="text-embedding-ada-002",
+                input=text
+            )
+
+            # 임베딩 벡터 추출
+            embedding = response.data[0].embedding
+
+            logger.info(f"[OK] Embedding generated (dimension: {len(embedding)})")
+            return embedding
+
+        except Exception as e:
+            logger.error(f"[ERROR] Error generating embedding: {str(e)}")
+            return None

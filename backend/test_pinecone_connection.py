@@ -36,7 +36,7 @@ def test_env_file():
     logger.info(f"✅ .env 파일 발견: {env_file}")
 
     # .env 파일 내용 확인
-    with open(env_file, "r") as f:
+    with open(env_file, "r", encoding="utf-8") as f:
         content = f.read()
 
     # PINECONE_API_KEY 확인
@@ -109,7 +109,7 @@ async def test_pinecone_connection():
         # 인덱스 연결 확인
         if service.index is None:
             logger.error("❌ Pinecone 인덱스 연결 실패")
-            logger.error("   → 인덱스명: financial-embeddings")
+            logger.error("   → 인덱스명: financial-embedding")
             logger.error("   → Pinecone 콘솔에서 인덱스가 'Ready' 상태인지 확인하세요")
             return False
 

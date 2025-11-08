@@ -35,7 +35,7 @@ class PineconeService:
             self.pc = Pinecone(api_key=self.pinecone_api_key)
 
             # 인덱스 이름 설정
-            self.index_name = "financial-embeddings"
+            self.index_name = "financial-embedding"
 
             # 인덱스 가져오기
             try:

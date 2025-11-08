@@ -140,12 +140,12 @@ class FinancialEmbeddingService:
             logger.info(f"[EMBED] Starting price history embedding for {symbol}")
 
             # 1. DB에서 주가 히스토리 조회
-            result = self.supabase.table("stock_price_history")\
-                .select("*")\
-                .eq("symbol", symbol.upper())\
-                .order("date", desc=True)\
-                .limit(365)  # 최근 1년만 가져오기
-                .execute()
+            result = self.supabase.table("stock_price_history") \
+                .select("*") \
+                .eq("symbol", symbol.upper()) \
+                .order("date", desc=True) \
+                .limit(365) \
+                .execute()  # 최근 1년만 가져오기
 
             if not result.data or len(result.data) == 0:
                 logger.warning(f"[WARN] No price history found for {symbol}")
