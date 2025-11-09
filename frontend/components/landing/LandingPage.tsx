@@ -86,7 +86,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
 
           <motion.button
             onClick={scrollToNext}
-            className="absolute bottom-12 left-1/2 -translate-x-1/2 text-white hover:text-primary transition-colors"
+            className="absolute bottom-12 left-1/2 -translate-x-1/2 text-white hover:text-primary transition-colors cursor-pointer"
             animate={{ y: [0, -10, 0] }}
             transition={{ duration: 2, repeat: Infinity }}
           >
@@ -147,7 +147,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
 
           <motion.button
             onClick={scrollToNext}
-            className="absolute bottom-12 left-1/2 -translate-x-1/2 text-white hover:text-primary transition-colors"
+            className="absolute bottom-12 left-1/2 -translate-x-1/2 text-white hover:text-primary transition-colors cursor-pointer"
             animate={{ y: [0, -10, 0] }}
             transition={{ duration: 2, repeat: Infinity }}
           >

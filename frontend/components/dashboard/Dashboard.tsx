@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useTransition } from 'react';
+import { useState, useEffect, useCallback, useTransition, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,6 +36,7 @@ interface DashboardProps {
 }
 
 export function Dashboard({ username, onLogout }: DashboardProps) {
+  const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStock, setSelectedStock] = useState<Stock>(MOCK_STOCKS[0]);
   const [watchlist, setWatchlist] = useState<Stock[]>([]);
@@ -49,21 +51,16 @@ export function Dashboard({ username, onLogout }: DashboardProps) {
   // React 19 useTransition for async operations
   const [isPending, startTransition] = useTransition();
 
-  // Load user interests from DB on mount
-  useEffect(() => {
-    loadUserInterests();
-    // Load initial stock data
-    if (selectedStock.symbol) {
-      loadStockData(selectedStock);
-    }
-  }, []);
+  // Ref to track if URL parameter was already processed
+  const urlParamProcessedRef = useRef(false);
 
-  // Load detailed stock data when selected stock changes
-  useEffect(() => {
-    if (selectedStock.symbol) {
-      loadStockData(selectedStock);
-    }
-  }, [selectedStock.symbol]);
+  // Handler functions (declared before useEffects that use them)
+  const handleSelectStock = useCallback((stock: Stock) => {
+    setSelectedStock(stock);
+    setSearchResults([]);
+    setSearchQuery('');
+    setWatchlistOpen(false);
+  }, []);
 
   const loadUserInterests = useCallback(async () => {
     try {
@@ -120,6 +117,9 @@ export function Dashboard({ username, onLogout }: DashboardProps) {
     }
   }, []);
 
+  // Removed loadStockData to prevent infinite loop
+  // Stock data is now loaded when searching/selecting stocks directly
+
   const handleSearch = useCallback(async () => {
     if (!searchQuery.trim()) {
       setSearchResults([]);
@@ -150,50 +150,64 @@ export function Dashboard({ username, onLogout }: DashboardProps) {
         setSearching(false);
       }
     });
-  }, [searchQuery]);
+  }, [searchQuery, startTransition]);
 
-  const loadStockData = useCallback(async (stock: Stock) => {
+  const handleSearchBySymbol = useCallback(async (symbol: string) => {
     try {
-      setLoadingStockData(true);
+      setSearching(true);
 
-      // Detect market from symbol
-      const isKoreanStock = stock.symbol.endsWith('.KS') || stock.symbol.endsWith('.KQ');
-      const market = stock.market || (isKoreanStock ? 'kr' : 'us');
+      // Try search API first
+      const response = await stockAPI.searchStocks(symbol);
 
-      // Fetch detailed stock data
-      const stockData = await stockAPI.getStockData(stock.symbol, '1d', market, '1d');
+      if (response.results && response.results.length > 0) {
+        // Convert search results to Stock format
+        const stocks: Stock[] = response.results.map((result: any) => ({
+          symbol: result.symbol,
+          name: result.name || result.longName || result.symbol,
+          price: result.regularMarketPrice || 0,
+          change: result.regularMarketChange || 0,
+          changePercent: result.regularMarketChangePercent || 0,
+          currency: result.currency || 'USD',
+          market: result.currency === 'KRW' ? 'kr' : 'us'
+        }));
 
-      // Calculate change and change percent
-      const change = stockData.current_price - stockData.previous_close;
-      const changePercent = stockData.previous_close !== 0
-        ? (change / stockData.previous_close) * 100
-        : 0;
+        // Find exact match or first result
+        const matchedStock = stocks.find(s => s.symbol.toUpperCase() === symbol.toUpperCase()) || stocks[0];
 
-      // Update selected stock with real data
-      setSelectedStock({
-        symbol: stockData.symbol,
-        name: stockData.company_name,
-        price: stockData.current_price,
-        change: change,
-        changePercent: changePercent,
-        currency: stockData.currency,
-        market: market
-      });
+        if (matchedStock) {
+          handleSelectStock(matchedStock);
+        }
+      } else {
+        // Search failed, try to load stock data directly
+        try {
+          const stockData = await stockAPI.getStockData(symbol, '1d', 'us', '1d');
+
+          const change = stockData.current_price - stockData.previous_close;
+          const changePercent = stockData.previous_close !== 0
+            ? (change / stockData.previous_close) * 100
+            : 0;
+
+          const stock: Stock = {
+            symbol: stockData.symbol,
+            name: stockData.company_name,
+            price: stockData.current_price,
+            change: change,
+            changePercent: changePercent,
+            currency: stockData.currency,
+            market: 'us'
+          };
+
+          handleSelectStock(stock);
+        } catch (directError) {
+          console.error('Failed to load stock data:', directError);
+        }
+      }
     } catch (error) {
-      console.error('Failed to load stock data:', error);
-      // Keep the existing stock data if fetch fails
+      console.error('Symbol search failed:', error);
     } finally {
-      setLoadingStockData(false);
+      setSearching(false);
     }
-  }, []);
-
-  const handleSelectStock = useCallback((stock: Stock) => {
-    setSelectedStock(stock);
-    setSearchResults([]);
-    setSearchQuery('');
-    setWatchlistOpen(false);
-    // Stock data will be loaded by useEffect
-  }, []);
+  }, [handleSelectStock]);
 
   const toggleWatchlist = useCallback(async (stock: Stock) => {
     const exists = watchlist.find(s => s.symbol === stock.symbol);
@@ -236,6 +250,47 @@ export function Dashboard({ username, onLogout }: DashboardProps) {
     }
     return `$${Math.abs(change).toFixed(2)}`;
   }, []);
+
+  // Load stock from URL parameter (only once on mount)
+  useEffect(() => {
+    // Only run once on mount
+    if (urlParamProcessedRef.current) {
+      return;
+    }
+
+    const processUrlParam = () => {
+      // TradingView widget uses 'tvwidgetsymbol' parameter
+      const tvSymbol = searchParams.get('tvwidgetsymbol');
+      const symbolParam = searchParams.get('symbol');
+
+      const paramToUse = tvSymbol || symbolParam;
+
+      if (paramToUse) {
+        urlParamProcessedRef.current = true;
+
+        // Decode URL-encoded parameter (e.g., "NASDAQ%3AGOOGL" -> "NASDAQ:GOOGL")
+        const decodedSymbol = decodeURIComponent(paramToUse);
+
+        // TradingView format: "NASDAQ:AAPL" -> extract "AAPL"
+        const symbol = decodedSymbol.includes(':') ? decodedSymbol.split(':')[1] : decodedSymbol;
+
+        // Use handleSearchBySymbol to avoid code duplication
+        handleSearchBySymbol(symbol);
+      }
+    };
+
+    processUrlParam();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency - run only once on mount
+
+  // Load user interests from DB on mount
+  useEffect(() => {
+    loadUserInterests();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Load detailed stock data when selected stock changes
+  // Removed to prevent infinite loop - stock data is loaded when stock is selected
 
   return (
     <div className="w-full bg-gradient-to-br from-slate-50 to-slate-100" style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
@@ -313,7 +368,7 @@ export function Dashboard({ username, onLogout }: DashboardProps) {
                       <button
                         key={stock.symbol}
                         onClick={() => handleSelectStock(stock)}
-                        className="w-full flex items-center justify-between p-4 hover:bg-slate-50 rounded-lg transition-colors active:bg-slate-100"
+                        className="w-full flex items-center justify-between p-4 hover:bg-slate-50 rounded-lg transition-colors active:bg-slate-100 cursor-pointer"
                       >
                         <div className="text-left">
                         <div className="flex items-center gap-2">
@@ -434,7 +489,7 @@ export function Dashboard({ username, onLogout }: DashboardProps) {
       {!showFloatingPanel && (
         <button
           onClick={() => setShowFloatingPanel(true)}
-          className="fixed bottom-6 right-6 z-50 bg-primary hover:bg-primary/90 text-secondary shadow-lg h-14 w-14 rounded-full flex items-center justify-center text-xl transition-all"
+          className="fixed bottom-6 right-6 z-50 bg-primary hover:bg-primary/90 text-secondary shadow-lg h-14 w-14 rounded-full flex items-center justify-center text-xl transition-all cursor-pointer"
           title="패널 표시"
         >
           ▲

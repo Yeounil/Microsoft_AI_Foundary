@@ -1,6 +1,9 @@
+'use client';
+
 import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Minus, ExternalLink, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Minus, Search } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -55,7 +58,13 @@ const watchlistNews: NewsItem[] = [
   { id: '35', title: 'SK이노베이션, 배터리 재활용 사업 본격화', summary: 'SK이노베이션이 폐배터리 재활용 사업에 본격 진출하며 순환경제 체계 구축에 나섰습니다.', source: '에너지경제', time: '8시간 전', sentiment: 'positive' },
 ];
 
-export function NewsSection() {
+interface NewsSectionProps {
+  selectedSymbol?: string;
+  selectedMarket?: string;
+}
+
+export function NewsSection({ selectedSymbol, selectedMarket }: NewsSectionProps = {}) {
+  const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState<'hot' | 'watchlist'>('hot');
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -110,32 +119,32 @@ export function NewsSection() {
   return (
     <div className="space-y-3">
       {/* 탭 헤더 */}
-      <div className="flex border-b border-gray-200 bg-white rounded-t-lg">
+      <div className="flex border-b border-gray-200 bg-white rounded-t-lg shadow-sm">
         <button
           onClick={() => handleTabChange('hot')}
-          className={`flex-1 px-4 py-2.5 text-sm transition-colors ${
+          className={`flex-1 px-4 py-3 text-sm font-medium transition-colors cursor-pointer ${
             activeTab === 'hot'
-              ? 'text-yellow-600 border-b-2 border-yellow-500 font-semibold'
-              : 'text-gray-600 hover:text-gray-900'
+              ? 'text-gray-900 border-b-2 border-gray-900 font-semibold'
+              : 'text-gray-500 hover:text-gray-900'
           }`}
         >
-          🔥 Hot 뉴스
+          Hot 뉴스
         </button>
         <button
           onClick={() => handleTabChange('watchlist')}
-          className={`flex-1 px-4 py-2.5 text-sm transition-colors ${
+          className={`flex-1 px-4 py-3 text-sm font-medium transition-colors cursor-pointer ${
             activeTab === 'watchlist'
-              ? 'text-yellow-600 border-b-2 border-yellow-500 font-semibold'
-              : 'text-gray-600 hover:text-gray-900'
+              ? 'text-gray-900 border-b-2 border-gray-900 font-semibold'
+              : 'text-gray-500 hover:text-gray-900'
           }`}
         >
-          ⭐ 관심 종목 뉴스
+          관심 종목 뉴스
         </button>
       </div>
 
       {/* 검색 필터 */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+      <div className="relative bg-white rounded-lg shadow-sm border border-gray-200 p-3">
+        <Search className="absolute left-6 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
         <Input
           type="text"
           placeholder="뉴스 키워드 검색..."
@@ -144,37 +153,37 @@ export function NewsSection() {
             setSearchKeyword(e.target.value);
             setCurrentPage(1);
           }}
-          className="pl-10 h-9 border border-gray-200 focus:border-yellow-500 focus:ring-1 focus:ring-yellow-200 bg-white text-sm"
+          className="pl-10 h-9 border-0 focus:ring-0 bg-transparent text-sm"
         />
       </div>
 
       {/* 뉴스 리스트 */}
       <div className="space-y-2">
         {displayedNews.map((news) => (
-          <Card key={news.id} className="p-4 hover:border-gray-300 transition-colors cursor-pointer">
-            <div className="space-y-2.5">
+          <Card
+            key={news.id}
+            className="p-4 hover:shadow-md hover:border-gray-300 transition-all cursor-pointer bg-white"
+            onClick={() => router.push(`/news-analysis/${news.id}`)}
+          >
+            <div className="space-y-3">
               <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    {getSentimentIcon(news.sentiment)}
-                    <h4 className="text-gray-900 font-medium text-sm line-clamp-1">{news.title}</h4>
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-start gap-2">
+                    <div className="mt-0.5">
+                      {getSentimentIcon(news.sentiment)}
+                    </div>
+                    <h4 className="text-gray-900 font-medium text-sm line-clamp-2 leading-relaxed">{news.title}</h4>
                   </div>
-                  <p className="text-sm text-gray-600 line-clamp-2">
+                  <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
                     {news.summary}
                   </p>
                 </div>
                 {getSentimentBadge(news.sentiment)}
               </div>
-              <div className="flex items-center justify-between pt-1">
-                <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                  <span className="font-medium">{news.source}</span>
-                  <span>·</span>
-                  <span>{news.time}</span>
-                </div>
-                <Button variant="ghost" size="sm" className="h-6 text-xs gap-1 text-gray-500 hover:text-gray-900 -mr-2">
-                  원문
-                  <ExternalLink className="h-3 w-3" />
-                </Button>
+              <div className="flex items-center gap-2 text-xs text-gray-500 pt-1 border-t border-gray-100">
+                <span className="font-medium">{news.source}</span>
+                <span className="text-gray-300">|</span>
+                <span>{news.time}</span>
               </div>
             </div>
           </Card>
@@ -183,26 +192,26 @@ export function NewsSection() {
 
       {/* 검색 결과 표시 */}
       {searchKeyword && (
-        <div className="text-sm text-muted-foreground text-center py-2">
-          {filteredNews.length > 0 
-            ? `${filteredNews.length}개의 뉴스를 찾았습니다.` 
+        <div className="text-sm text-gray-500 text-center py-3 bg-white rounded-lg border border-gray-200">
+          {filteredNews.length > 0
+            ? `${filteredNews.length}개의 뉴스를 찾았습니다.`
             : '검색 결과가 없습니다.'}
         </div>
       )}
 
       {/* 페이지네이션 */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-4 pt-2">
+        <div className="flex items-center justify-center gap-3 pt-2">
           <Button
             variant="outline"
             size="icon"
             onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
-            className="h-8 w-8"
+            className="h-8 w-8 border-gray-300 hover:bg-gray-100 disabled:opacity-30"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="text-sm text-muted-foreground min-w-[60px] text-center">
+          <span className="text-sm text-gray-600 min-w-[60px] text-center font-medium">
             {currentPage} / {totalPages}
           </span>
           <Button
@@ -210,7 +219,7 @@ export function NewsSection() {
             size="icon"
             onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
             disabled={currentPage === totalPages}
-            className="h-8 w-8"
+            className="h-8 w-8 border-gray-300 hover:bg-gray-100 disabled:opacity-30"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -219,3 +228,5 @@ export function NewsSection() {
     </div>
   );
 }
+
+export default NewsSection;

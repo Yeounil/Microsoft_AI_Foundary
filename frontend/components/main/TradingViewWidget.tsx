@@ -86,7 +86,7 @@ function TradingViewWidget({ onExpandedChange }: TradingViewWidgetProps) {
       colorTheme: "light",
       dateRange: "12M",
       locale: "en",
-      largeChartUrl: "",
+      largeChartUrl: `${window.location.origin}/dashboard`,
       isTransparent: false,
       showFloatingTooltip: false,
       plotLineColorGrowing: "rgba(41, 98, 255, 1)",
@@ -130,7 +130,7 @@ function TradingViewWidget({ onExpandedChange }: TradingViewWidgetProps) {
       <div className="flex border-b border-gray-200 bg-white">
         <button
           onClick={() => setActiveTab("all")}
-          className={`flex-1 px-4 py-2.5 text-sm transition-colors ${
+          className={`flex-1 px-4 py-2.5 text-sm transition-colors cursor-pointer ${
             activeTab === "all"
               ? "text-yellow-600 border-b-2 border-yellow-500 font-semibold"
               : "text-gray-600 hover:text-gray-900"
@@ -140,7 +140,7 @@ function TradingViewWidget({ onExpandedChange }: TradingViewWidgetProps) {
         </button>
         <button
           onClick={() => setActiveTab("favorites")}
-          className={`flex-1 px-4 py-2.5 text-sm transition-colors ${
+          className={`flex-1 px-4 py-2.5 text-sm transition-colors cursor-pointer ${
             activeTab === "favorites"
               ? "text-yellow-600 border-b-2 border-yellow-500 font-semibold"
               : "text-gray-600 hover:text-gray-900"
@@ -179,7 +179,7 @@ function TradingViewWidget({ onExpandedChange }: TradingViewWidgetProps) {
           className="gap-2 text-gray-600 hover:text-yellow-600 text-xs"
         >
           {expanded ? (
-            <>
+            <>\
               접기
               <ChevronUp className="h-4 w-4" />
             </>

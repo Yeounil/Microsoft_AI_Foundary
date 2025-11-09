@@ -188,7 +188,7 @@ export function RegisterPage({ onRegister, onSwitchToLogin }: RegisterPageProps)
                 <button
                   type="button"
                   onClick={onSwitchToLogin}
-                  className="text-secondary hover:underline font-medium"
+                  className="text-secondary hover:underline font-medium cursor-pointer"
                   disabled={loading}
                 >
                   로그인

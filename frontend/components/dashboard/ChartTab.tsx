@@ -22,8 +22,6 @@ export const ChartTab = memo(({ stock, market = 'us' }: ChartTabProps) => {
       return;
     }
 
-    console.log('[ChartTab] Loading chart for symbol:', stock.symbol, 'market:', market);
-
     // 기존 위젯 제거
     containerRef.current.innerHTML = '';
 
@@ -31,8 +29,6 @@ export const ChartTab = memo(({ stock, market = 'us' }: ChartTabProps) => {
       market === 'kr' && !stock.symbol.includes('.')
         ? `KRX:${stock.symbol}`
         : stock.symbol;
-
-    console.log('[ChartTab] Converted symbol:', symbol);
 
     // TradingView 설정
     const config = {
@@ -93,41 +89,11 @@ export const ChartTab = memo(({ stock, market = 'us' }: ChartTabProps) => {
       // Set configuration as textContent before appending to DOM
       script.textContent = JSON.stringify(config);
 
-      console.log('[ChartTab] Widget configuration set:', {
-        configKeys: Object.keys(config),
-        symbolsCount: config.symbols?.length || 0,
-        configSize: JSON.stringify(config).length
-      });
-
       widgetContainer.appendChild(script);
 
       // Step 3: Clear existing content and append new structure
       containerRef.current.innerHTML = '';
       containerRef.current.appendChild(widgetContainer);
-
-      console.log('[ChartTab] Container structure created', {
-        containerWidth: containerRef.current.offsetWidth,
-        containerHeight: containerRef.current.offsetHeight
-      });
-
-      // Step 4: Monitor iframe creation
-      setTimeout(() => {
-        const iframe = containerRef.current?.querySelector('iframe');
-        if (iframe) {
-          const styles = window.getComputedStyle(iframe);
-          console.log('[ChartTab] iframe loaded:', {
-            found: true,
-            src: iframe.src ? iframe.src.substring(0, 100) : 'no src',
-            width: iframe.offsetWidth,
-            height: iframe.offsetHeight,
-            display: styles.display,
-            visibility: styles.visibility,
-            opacity: styles.opacity
-          });
-        } else {
-          console.warn('[ChartTab] iframe still not found after 1s');
-        }
-      }, 1000);
     }
 
     // 클린업 함수
