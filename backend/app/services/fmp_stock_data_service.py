@@ -324,31 +324,40 @@ class FMPStockDataService:
     async def _collect_single_indicator(self, symbol: str) -> bool:
         """단일 종목의 지표 수집"""
         try:
-            # 주요 지표 가져오기
+            # 여러 엔드포인트에서 데이터 가져오기
+            company_profile = await self._get_company_profile(symbol)
+            stock_quote = await self._get_stock_quote(symbol)
             key_metrics = await self._get_key_metrics(symbol)
             financial_ratios = await self._get_financial_ratios(symbol)
             financial_scores = await self._get_financial_scores(symbol)
 
-            if not key_metrics:
-                logger.warning(f"종목 {symbol}의 주요 지표를 가져올 수 없습니다")
+            # 최소 하나 이상의 데이터는 있어야 함
+            if not any([company_profile, stock_quote, key_metrics]):
+                logger.warning(f"종목 {symbol}의 기본 데이터를 가져올 수 없습니다")
                 return False
 
-            # 데이터 통합 (실제 DB 컬럼에 맞게)
+            # 데이터 통합 (우선순위: stock_quote > company_profile > key_metrics)
             indicator_data = {
                 'symbol': symbol,
-                'company_name': key_metrics.get('companyName'),
-                'current_price': key_metrics.get('price'),
-                'previous_close': key_metrics.get('priceAvg50'),  # 근사값
-                'market_cap': key_metrics.get('marketCap'),
-                'pe_ratio': key_metrics.get('peRatio'),
-                'eps': key_metrics.get('eps'),
-                'dividend_yield': key_metrics.get('dividendYield'),
-                'fifty_two_week_high': key_metrics.get('52WeekHigh'),
-                'fifty_two_week_low': key_metrics.get('52WeekLow'),
-                'currency': key_metrics.get('currency'),
-                'exchange': key_metrics.get('exchange'),
-                'industry': key_metrics.get('industry'),
-                'sector': key_metrics.get('sector'),
+                # Company Profile에서 company 정보
+                'company_name': company_profile.get('companyName') if company_profile else None,
+                'currency': company_profile.get('currency') if company_profile else None,
+                'exchange': company_profile.get('exchange') if company_profile else None,
+                'industry': company_profile.get('industry') if company_profile else None,
+                'sector': company_profile.get('sector') if company_profile else None,
+
+                # Stock Quote에서 가격 정보
+                'current_price': stock_quote.get('price') if stock_quote else key_metrics.get('price') if key_metrics else None,
+                'previous_close': stock_quote.get('previousClose') if stock_quote else key_metrics.get('priceAvg50') if key_metrics else None,
+                'fifty_two_week_high': stock_quote.get('yearHigh') if stock_quote else key_metrics.get('52WeekHigh') if key_metrics else None,
+                'fifty_two_week_low': stock_quote.get('yearLow') if stock_quote else key_metrics.get('52WeekLow') if key_metrics else None,
+
+                # Key Metrics에서 기본 지표
+                'market_cap': key_metrics.get('marketCap') if key_metrics else None,
+                'pe_ratio': key_metrics.get('peRatio') if key_metrics else None,
+                'eps': key_metrics.get('eps') if key_metrics else None,
+                'dividend_yield': key_metrics.get('dividendYield') if key_metrics else None,
+
                 'rsi': None,  # RSI는 일단 NULL (프리미엄 기능)
             }
 
@@ -363,6 +372,10 @@ class FMPStockDataService:
                     'debt_ratio': financial_ratios.get('debtRatio'),
                     'profit_margin': financial_ratios.get('netProfitMargin'),
                 })
+
+                # PE Ratio가 없으면 Key Metrics에서 가져오기
+                if not indicator_data.get('pe_ratio') and key_metrics:
+                    indicator_data['pe_ratio'] = key_metrics.get('peRatio')
 
             # DB에 저장
             await self._save_indicators_to_db(indicator_data)
@@ -400,6 +413,42 @@ class FMPStockDataService:
             logger.error(f"종목 {symbol} 가격 이력 수집 오류: {str(e)}")
             return {"success": False, "records": 0}
 
+    async def _get_company_profile(self, symbol: str) -> Optional[Dict]:
+        """회사 프로필 API 호출"""
+        try:
+            url = f"{self.BASE_URL}/profile?symbol={symbol}&apikey={self.api_key}"
+            data = await self._make_api_request(url)
+
+            if data:
+                # API는 딕셔너리로 반환
+                if isinstance(data, dict):
+                    return data
+                # 또는 리스트로 반환하는 경우
+                elif isinstance(data, list) and len(data) > 0:
+                    return data[0]
+            return None
+        except Exception as e:
+            logger.warning(f"종목 {symbol} 회사 프로필 조회 오류: {str(e)}")
+            return None
+
+    async def _get_stock_quote(self, symbol: str) -> Optional[Dict]:
+        """주가 인용 API 호출"""
+        try:
+            url = f"{self.BASE_URL}/quote?symbol={symbol}&apikey={self.api_key}"
+            data = await self._make_api_request(url)
+
+            if data:
+                # API는 딕셔너리로 반환
+                if isinstance(data, dict):
+                    return data
+                # 또는 리스트로 반환하는 경우
+                elif isinstance(data, list) and len(data) > 0:
+                    return data[0]
+            return None
+        except Exception as e:
+            logger.warning(f"종목 {symbol} 주가 인용 조회 오류: {str(e)}")
+            return None
+
     async def _get_key_metrics(self, symbol: str) -> Optional[Dict]:
         """주요 지표 API 호출"""
         try:
@@ -412,7 +461,7 @@ class FMPStockDataService:
                     return data[0]
             return None
         except Exception as e:
-            logger.error(f"종목 {symbol} 주요 지표 조회 오류: {str(e)}")
+            logger.warning(f"종목 {symbol} 주요 지표 조회 오류: {str(e)}")
             return None
 
     async def _get_financial_ratios(self, symbol: str) -> Optional[Dict]:
@@ -485,8 +534,7 @@ class FMPStockDataService:
         try:
             supabase = get_supabase()
 
-            # UPSERT를 위해 필터링 (None 값 제거)
-            # 실제 DB 컬럼만 포함
+            # 실제 DB 컬럼 (symbol은 필수)
             actual_columns = {
                 'symbol', 'company_name', 'currency', 'exchange', 'industry', 'sector',
                 'current_price', 'previous_close', 'market_cap',
@@ -496,22 +544,36 @@ class FMPStockDataService:
                 'last_updated', 'created_at'
             }
 
-            data = {k: v for k, v in indicator_data.items() if v is not None and k in actual_columns}
+            # 데이터 준비: None 값도 포함해서 저장 (DB 레벨에서 NULL 처리)
+            # 단, symbol은 필수이므로 symbol이 없으면 skip
+            if 'symbol' not in indicator_data:
+                logger.warning("Symbol not found in indicator data, skipping")
+                return False
+
+            data = {}
+
+            # 모든 실제 컬럼에 대해 값 설정 (None도 포함)
+            for col in actual_columns:
+                if col in indicator_data:
+                    data[col] = indicator_data[col]
+
             data['last_updated'] = datetime.now().isoformat()
 
-            # market_cap 문제 처리: BIGINT 범위를 초과하면 제거 또는 변환
+            # market_cap 처리: BIGINT 범위 체크
             if 'market_cap' in data and data['market_cap'] is not None:
                 try:
                     market_cap_val = float(data['market_cap'])
                     # BIGINT 최대값: 9223372036854775807
                     if market_cap_val > 9223372036854775807:
-                        logger.warning(f"종목 {indicator_data.get('symbol')} market_cap이 BIGINT 범위 초과, 제거")
-                        data.pop('market_cap')
+                        logger.warning(f"종목 {indicator_data.get('symbol')} market_cap이 BIGINT 범위 초과, NULL로 설정")
+                        data['market_cap'] = None
                     else:
                         # 정수로 변환
                         data['market_cap'] = int(market_cap_val)
                 except (ValueError, TypeError):
-                    data.pop('market_cap', None)
+                    data['market_cap'] = None
+
+            logger.debug(f"저장할 데이터 ({data.get('symbol')}): {len(data)} 필드")
 
             response = supabase.table("stock_indicators")\
                 .upsert(data, on_conflict="symbol")\
