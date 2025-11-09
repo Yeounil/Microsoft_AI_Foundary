@@ -72,7 +72,7 @@ class OpenAIService:
                         {"role": "system", "content": "You are a financial news analyst specializing in personalized content recommendation. Always respond with valid JSON."},
                         {"role": "user", "content": prompt}
                     ],
-                    max_tokens=300,
+                    max_completion_tokens=300,
                     temperature=0.3
                 )
 
@@ -107,14 +107,14 @@ class OpenAIService:
             top_articles = news_articles[:5]
             
             prompt = self._build_summary_prompt(top_articles, user_interests)
-            
+
             response = self.client.chat.completions.create(
                 model=self.model_name,
                 messages=[
                     {"role": "system", "content": "You are a financial analyst creating personalized news summaries for investors."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=500,
+                max_completion_tokens=500,
                 temperature=0.5
             )
             
@@ -136,14 +136,14 @@ class OpenAIService:
                 return {"sentiment": "neutral", "score": 0.0, "reasoning": "분석할 뉴스가 없습니다."}
             
             prompt = self._build_sentiment_prompt(news_articles, symbol)
-            
+
             response = self.client.chat.completions.create(
                 model=self.model_name,
                 messages=[
                     {"role": "system", "content": "You are a financial sentiment analyst. Analyze news sentiment for stock investments."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=200,
+                max_completion_tokens=200,
                 temperature=0.2
             )
             
@@ -165,14 +165,14 @@ class OpenAIService:
                 return self._fallback_categories(current_interests)
             
             prompt = self._build_category_prompt(user_interaction_history, current_interests)
-            
+
             response = self.client.chat.completions.create(
                 model=self.model_name,
                 messages=[
                     {"role": "system", "content": "You are a recommendation system analyst specializing in financial news categorization."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=150,
+                max_completion_tokens=150,
                 temperature=0.4
             )
             
@@ -512,7 +512,7 @@ Respond with JSON array: ["category1", "category2", "category3"]
                     {"role": "system", "content": "당신은 금융 분석 전문가입니다. 뉴스를 바탕으로 종목별 전문적인 분석을 제공합니다."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=1500,
+                max_completion_tokens=1500,
                 temperature=0.3
             )
             
