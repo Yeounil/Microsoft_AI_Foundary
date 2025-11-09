@@ -1,430 +1,567 @@
-from openai import OpenAI
-from typing import Dict, Optional
-from app.core.config import settings
+import os
+import json
 import logging
+from typing import List, Dict, Optional
+from openai import OpenAI
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
 class OpenAIService:
+    """
+    OpenAI GPT-5 서비스
+
+    모델: gpt-5 (최신 OpenAI 모델)
+    API: https://platform.openai.com/docs/api-reference
+
+    GPT-5 특징:
+    - 최대 400,000 토큰 컨텍스트 윈도우 (272k input + 128k output)
+    - 수학: 94.6% AIME 2025 성능 (도구 없이)
+    - 코딩: 74.9% SWE-bench Verified 성능
+    - 비용: $1.25/M input tokens, $10/M output tokens
+    - 할루시네이션: GPT-4o 대비 45% 감소
+    - 확장 추론: GPT-5 Pro로 80% 추가 감소
+    """
 
     def __init__(self):
-        logger.info(f"OpenAI 서비스 초기화 중...")
-        logger.info(f"OpenAI Key: {'설정됨' if settings.openai_api_key else '미설정'}")
+        self.client = None
+        self.model_name = "gpt-5"
+        self._initialize_client()
 
-        # GPT-5를 사용하기 위해 OpenAI API 키 필수
-        if settings.openai_api_key:
-            logger.info("GPT-5 OpenAI 클라이언트 초기화")
-            self.client = OpenAI(api_key=settings.openai_api_key)
-        else:
-            raise ValueError("OpenAI API 키가 필요합니다. (GPT-5 사용)")
-
-        logger.info(f"GPT-5 OpenAI 서비스 초기화 완료")
-    
-    async def analyze_stock(self, symbol: str, stock_data: Dict, news_context: Optional[str] = None) -> str:
-        """주식 분석 생성"""
+    def _initialize_client(self):
+        """OpenAI GPT-5 클라이언트 초기화"""
         try:
-            # 주식 데이터에서 핵심 정보 추출
-            current_price = stock_data.get("current_price", 0)
-            previous_close = stock_data.get("previous_close", 0)
-            change_percent = ((current_price - previous_close) / previous_close * 100) if previous_close > 0 else 0
+            # OpenAI API 키 확인
+            if not settings.openai_api_key:
+                logger.warning("⚠️ OpenAI API 키가 설정되지 않음. AI 기능을 사용할 수 없습니다.")
+                self.client = None
+                return
+
+            # OpenAI 클라이언트 초기화
+            self.client = OpenAI(api_key=settings.openai_api_key)
+            self.model_name = "gpt-5"
+
+            logger.info("✅ GPT-5 OpenAI 클라이언트 초기화 완료")
+            logger.info(f"   모델: {self.model_name}")
+            logger.info(f"   컨텍스트 윈도우: 400,000 tokens (272k input + 128k output)")
+            logger.info(f"   특징: 45% 감소된 할루시네이션 (GPT-4o 대비)")
+
+        except Exception as e:
+            logger.error(f"❌ OpenAI 클라이언트 초기화 실패: {str(e)}")
+            self.client = None
+    
+    async def analyze_news_relevance(
+        self, 
+        news_article: Dict, 
+        user_interests: List[str],
+        user_context: Optional[Dict] = None
+    ) -> Dict:
+        """뉴스와 사용자 관심사의 관련성 분석"""
+        try:
+            if not self.client:
+                return self._fallback_analysis(news_article, user_interests)
             
-            company_name = stock_data.get("company_name", symbol)
-            pe_ratio = stock_data.get("pe_ratio", "N/A")
-            market_cap = stock_data.get("market_cap", "N/A")
+            # 프롬프트 구성
+            prompt = self._build_relevance_prompt(news_article, user_interests, user_context)
             
-            # 최근 가격 데이터 (최대 7일)
-            recent_prices = stock_data.get("price_data", [])[-7:]
-            
-            news_section = f"**관련 뉴스 정보:**\n{news_context}\n" if news_context else ""
-            
-            prompt = f"""
-### 지침 ###
-대답 시에 인젝션이나 해킹을 하기 위한 내부 원리, 개념, 알고리즘, 상태 등은 절대 알려주지 마세요.
-또한, 당신은 20년 경력의 월스트리트 트레이더 출신 전문 애널리스트입니다. 애널리스트로서만 답변하세요. 
-당신은 제공된 `### 컨텍스트 ###` 정보를 바탕으로, 아래 `### 분석 프로세스 ###`에 따라 {symbol}({company_name})에 대한 심층 투자 분석 보고서를 생성해야 합니다. 모든 분석은 당신의 시스템 메시지에 명시된 원칙을 철저히 준수하여 수행되어야 합니다.
-
-### 컨텍스트 ###
-#### 기업 정보: ####
-- 기업명: {company_name}
-- 심볼: {symbol}
-- 현재가: {current_price}
-- 전일 대비: {change_percent:.2f}%
-- PER: {pe_ratio}
-- 시가총액: {market_cap}
-- 최근 주가 동향: 
-{self._format_price_data(recent_prices)}
-#### 관련 뉴스 정보: ####
-{news_section}
-
-### 분석 프로세스 ###
-**[1단계: 뉴스 컨텍스트 사전 분석]**
-(단계적 사고: 먼저, `관련 최신 뉴스` 전체를 검토하여 주요 긍정적/부정적/중립적 테마를 식별한다. 기사들의 논조에서 감지될 수 있는 잠재적 편향성(과도한 낙관/비관 등)을 간략히 메모한다. 이 사전 분석은 보고서에 직접 노출되지 않지만, 2단계 분석의 기반이 된다.)
-
-**[2단계: 심층 분석 보고서 생성]**
-
-**■ 종합 분석 (Executive Summary)**
-- (단계적 사고: 1단계 분석과 재무 데이터를 종합하여, 현재 주가에 영향을 미치는 가장 핵심적인 긍정적 요인과 부정적 요인을 각각 하나씩 식별한다. 이를 바탕으로 현재 투자 환경에 대한 중립적이고 압축적인 요약을 3-4줄로 작성한다.)
-- 현재 주가 상황과 핵심 동인에 대한 요약.
-
-**■ 펀더멘털 및 시장 환경 분석**
-- **밸류에이션 및 재무 건전성:** 제공된 PER, 시가총액을 해석하고, 뉴스에서 언급된 재무 관련 팩트(예: 실적 발표, 부채 관련 뉴스)와 연결하여 분석.
-- **성장 동력 및 산업 내 위치:** 뉴스에서 식별된 신제품, 시장 확장, 규제 변화 등 성장 관련 이벤트 분석. 산업 트렌드와 기업의 경쟁력을 연관 지어 설명.
-- **거시 경제 및 시장 센티멘트:** 뉴스에서 드러나는 전반적인 시장 환경(금리, 경기 등)과 투자자 심리가 해당 주식에 미치는 영향 분석.
-
-**■ 기술적 분석 및 이벤트 연관 분석**
-- **주가 흐름 및 주요 레벨:** 최근 주가 데이터의 추세를 분석하고, 주요 지지/저항선을 과거 데이터 기반으로 제시.
-- **뉴스 이벤트와 주가 상관관계:** 특정 뉴스가 발표된 날짜와 주가 변동 간의 잠재적 상관관계를 분석. (예: "X월 X일 긍정적 실적 발표 뉴스 이후 주가가 Y% 상승한 것으로 보임.")
-
-**■ 투자 시나리오 분석 (Bull vs. Bear Case)**
-- (단계적 사고: 이전 분석 내용을 바탕으로, 주가 상승과 하락을 이끌 수 있는 가장 강력한 논리들을 각각 구성한다. 각 시나리오는 반드시 컨텍스트 내의 구체적인 근거를 포함해야 한다.)
-- **긍정적 시나리오 (Bull Case):** 주가 상승을 견인할 수 있는 핵심 요인들과 이를 뒷받침하는 데이터/뉴스.
-- **부정적 시나리오 (Bear Case):** 주가 하락을 유발할 수 있는 잠재적 리스크들과 이를 뒷받침하는 데이터/뉴스.
-
-**■ 최종 의견 및 투자자 유의사항**
-- **분석 요약:** 모든 분석을 종합하여, 현재 시점에서 해당 기업이 가진 투자 매력도와 위험 요소를 균형 있게 정리.
-- **모니터링 포인트:** 투자자가 향후 주가 추이를 판단하기 위해 주시해야 할 핵심 변수(예: 특정 경제 지표 발표, 예정된 기업 이벤트 등)를 제시.
-
-**[중요 고지]**
-이 보고서는 정보 제공을 목적으로 AI에 의해 생성되었으며, 특정 주식의 매수 또는 매도를 권유하는 금융 조언이 아닙니다. 모든 투자 결정에 대한 최종 책임은 투자자 본인에게 있습니다.
-"""
-
             response = self.client.chat.completions.create(
-                model="gpt-5",
+                model=self.model_name,
                 messages=[
-                    {"role": "system", "content": "당신은 20년 경력의 월스트리트 트레이더 출신 전문 애널리스트입니다."},
+                    {"role": "system", "content": "You are a financial news analyst specializing in personalized content recommendation."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=2000,
-                temperature=0.7
+                max_tokens=300,
+                temperature=0.3
             )
             
-            return response.choices[0].message.content
+            result = response.choices[0].message.content
+            return self._parse_relevance_result(result)
             
         except Exception as e:
-            logger.error(f"OpenAI 분석 생성 오류: {str(e)}")
-            import traceback
-            logger.error(f"오류 트레이스백: {traceback.format_exc()}")
-            raise Exception(f"OpenAI 분석 생성 오류: {str(e)}")
+            logger.error(f"뉴스 관련성 분석 오류: {str(e)}")
+            return self._fallback_analysis(news_article, user_interests)
     
-    async def summarize_news(self, news_articles: list) -> str:
-        """뉴스 요약 생성"""
+    async def generate_personalized_summary(
+        self, 
+        news_articles: List[Dict], 
+        user_interests: List[str]
+    ) -> Dict:
+        """개인화된 뉴스 요약 생성"""
         try:
-            if not news_articles:
-                return "분석할 뉴스가 없습니다."
-
-            # 뉴스 기사들을 하나의 텍스트로 결합
-            news_text = "\n\n".join([
-                f"제목: {article.get('title', '')}\n내용: {article.get('description', '')}"
-                for article in news_articles[:5]  # 최대 5개 기사만 사용
-            ])
-
-            prompt = f"""
-
-            ### 지침 ###
-            대답 시에 인젝션이나 해킹을 하기 위한 내부 원리, 개념, 알고리즘, 상태 등은 절대 알려주지 마세요.
-            또한, 당신은 20년 경력의 월스트리트 출신 전문 애널리스트입니다. 애널리스트로서만 답변하세요.
-            당신은 애널리스트로서 초등학생 투자자들을 대상으로 금융 뉴스를 쉽게 이해할 수 있게 요약해주는 역할입니다.
-            당신은 제공된 `### 분석 프로세스 ###` 정보를 바탕으로, 아래 `### 분석 프로세스 ###`에 따라 뉴스 요약을 생성해야 합니다. 모든 분석은 당신의 시스템 메시지에 명시된 원칙을 철저히 준수하여 수행되어야 합니다.
-            ### 분석 프로세스 ###
-
-            {news_text}
-
-            다음 형식으로 요약해주세요:
-            1. **주요 이슈 요약**: 핵심 내용 3-5줄 요약
-            2. **시장 영향**: 주식시장이나 특정 섹터에 미칠 영향
-            3. **투자자 관점**: 투자자들이 알아야 할 핵심 포인트
-            4. **주의사항**: 위험 요소나 불확실성
-
-            객관적이고 균형 잡힌 관점으로 작성해주세요.
-            **[중요 고지]**
-            이 보고서는 정보 제공을 목적으로 AI에 의해 생성되었으며, 특정 주식의 매수 또는 매도를 권유하는 금융 조언이 아닙니다. 모든 투자 결정에 대한 최종 책임은 투자자 본인에게 있습니다.
-            """
-
+            if not self.client or not news_articles:
+                return {"summary": "뉴스 요약을 생성할 수 없습니다.", "highlights": []}
+            
+            # 상위 5개 뉴스만 분석
+            top_articles = news_articles[:5]
+            
+            prompt = self._build_summary_prompt(top_articles, user_interests)
+            
             response = self.client.chat.completions.create(
-                model="gpt-5",
+                model=self.model_name,
                 messages=[
-                    {"role": "system", "content": "당신은 20년 경력의 월스트리트 트레이더 출신 전문 애널리스트입니다."},
+                    {"role": "system", "content": "You are a financial analyst creating personalized news summaries for investors."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=500,
+                temperature=0.5
+            )
+            
+            result = response.choices[0].message.content
+            return self._parse_summary_result(result)
+            
+        except Exception as e:
+            logger.error(f"개인화 요약 생성 오류: {str(e)}")
+            return {"summary": "요약 생성 중 오류가 발생했습니다.", "highlights": []}
+    
+    async def analyze_market_sentiment(
+        self, 
+        news_articles: List[Dict], 
+        symbol: str
+    ) -> Dict:
+        """특정 종목에 대한 시장 감정 분석"""
+        try:
+            if not self.client or not news_articles:
+                return {"sentiment": "neutral", "score": 0.0, "reasoning": "분석할 뉴스가 없습니다."}
+            
+            prompt = self._build_sentiment_prompt(news_articles, symbol)
+            
+            response = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[
+                    {"role": "system", "content": "You are a financial sentiment analyst. Analyze news sentiment for stock investments."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=200,
+                temperature=0.2
+            )
+            
+            result = response.choices[0].message.content
+            return self._parse_sentiment_result(result)
+            
+        except Exception as e:
+            logger.error(f"시장 감정 분석 오류: {str(e)}")
+            return {"sentiment": "neutral", "score": 0.0, "reasoning": "분석 중 오류 발생"}
+    
+    async def recommend_news_categories(
+        self, 
+        user_interaction_history: List[Dict],
+        current_interests: List[str]
+    ) -> List[str]:
+        """사용자 상호작용 기록을 바탕으로 뉴스 카테고리 추천"""
+        try:
+            if not self.client:
+                return self._fallback_categories(current_interests)
+            
+            prompt = self._build_category_prompt(user_interaction_history, current_interests)
+            
+            response = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[
+                    {"role": "system", "content": "You are a recommendation system analyst specializing in financial news categorization."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=150,
+                temperature=0.4
+            )
+            
+            result = response.choices[0].message.content
+            return self._parse_category_result(result)
+            
+        except Exception as e:
+            logger.error(f"카테고리 추천 오류: {str(e)}")
+            return self._fallback_categories(current_interests)
+    
+    def _build_relevance_prompt(
+        self, 
+        news_article: Dict, 
+        user_interests: List[str], 
+        user_context: Optional[Dict] = None
+    ) -> str:
+        """관련성 분석 프롬프트 구성"""
+        title = news_article.get('title', '')
+        description = news_article.get('description', '')
+        symbol = news_article.get('symbol', '')
+        
+        context_info = ""
+        if user_context:
+            context_info = f"User trading experience: {user_context.get('experience_level', 'intermediate')}, "
+            context_info += f"Risk tolerance: {user_context.get('risk_tolerance', 'moderate')}"
+        
+        return f"""
+Analyze the relevance of this financial news to the user's interests:
+
+News Title: {title}
+News Description: {description}
+Related Symbol: {symbol}
+
+User Interests: {', '.join(user_interests)}
+{context_info}
+
+Please provide analysis in JSON format:
+{{
+    "relevance_score": <0.0 to 1.0>,
+    "reasoning": "<brief explanation>",
+    "key_topics": ["<topic1>", "<topic2>"],
+    "impact_level": "<low/medium/high>",
+    "recommendation": "<why this is relevant to user>"
+}}
+"""
+    
+    def _build_summary_prompt(self, news_articles: List[Dict], user_interests: List[str]) -> str:
+        """요약 생성 프롬프트 구성"""
+        articles_text = ""
+        for i, article in enumerate(news_articles, 1):
+            articles_text += f"{i}. {article.get('title', '')} - {article.get('description', '')[:100]}\n"
+        
+        return f"""
+Create a personalized financial news summary for a user interested in: {', '.join(user_interests)}
+
+Recent News Articles:
+{articles_text}
+
+Please provide a summary in JSON format:
+{{
+    "summary": "<2-3 sentence overview focusing on user's interests>",
+    "highlights": ["<key point 1>", "<key point 2>", "<key point 3>"],
+    "market_outlook": "<brief market outlook based on the news>",
+    "actionable_insights": ["<insight 1>", "<insight 2>"]
+}}
+"""
+    
+    def _build_sentiment_prompt(self, news_articles: List[Dict], symbol: str) -> str:
+        """감정 분석 프롬프트 구성"""
+        articles_text = ""
+        for article in news_articles:
+            articles_text += f"- {article.get('title', '')} | {article.get('description', '')[:150]}\n"
+        
+        return f"""
+Analyze the overall market sentiment for {symbol} based on these news articles:
+
+{articles_text}
+
+Provide sentiment analysis in JSON format:
+{{
+    "sentiment": "<positive/negative/neutral>",
+    "score": <-1.0 to 1.0>,
+    "confidence": <0.0 to 1.0>,
+    "reasoning": "<brief explanation of the sentiment>",
+    "key_factors": ["<factor1>", "<factor2>"]
+}}
+"""
+    
+    def _build_category_prompt(
+        self, 
+        user_interaction_history: List[Dict], 
+        current_interests: List[str]
+    ) -> str:
+        """카테고리 추천 프롬프트 구성"""
+        interactions_text = ""
+        for interaction in user_interaction_history[-10:]:  # 최근 10개만
+            interactions_text += f"- {interaction.get('action', '')} on {interaction.get('category', '')} news\n"
+        
+        return f"""
+Based on user's interaction history and current interests, recommend 3-5 news categories:
+
+Current Interests: {', '.join(current_interests)}
+
+Recent Interactions:
+{interactions_text}
+
+Available Categories: earnings, mergers, analyst_ratings, market_trends, technology, regulation, economic_indicators, company_news
+
+Respond with JSON array: ["category1", "category2", "category3"]
+"""
+    
+    def _parse_relevance_result(self, result: str) -> Dict:
+        """관련성 분석 결과 파싱"""
+        try:
+            # JSON 파싱 시도
+            if '{' in result and '}' in result:
+                json_start = result.find('{')
+                json_end = result.rfind('}') + 1
+                json_str = result[json_start:json_end]
+                return json.loads(json_str)
+        except:
+            pass
+        
+        # 기본값 반환
+        return {
+            "relevance_score": 0.5,
+            "reasoning": "AI 분석 결과를 파싱할 수 없음",
+            "key_topics": ["general"],
+            "impact_level": "medium",
+            "recommendation": "일반적인 관련성"
+        }
+    
+    def _parse_summary_result(self, result: str) -> Dict:
+        """요약 결과 파싱"""
+        try:
+            if '{' in result and '}' in result:
+                json_start = result.find('{')
+                json_end = result.rfind('}') + 1
+                json_str = result[json_start:json_end]
+                return json.loads(json_str)
+        except:
+            pass
+        
+        return {
+            "summary": "요약을 생성할 수 없습니다.",
+            "highlights": ["분석 중 오류 발생"],
+            "market_outlook": "중립적",
+            "actionable_insights": ["추가 정보 필요"]
+        }
+    
+    def _parse_sentiment_result(self, result: str) -> Dict:
+        """감정 분석 결과 파싱"""
+        try:
+            if '{' in result and '}' in result:
+                json_start = result.find('{')
+                json_end = result.rfind('}') + 1
+                json_str = result[json_start:json_end]
+                return json.loads(json_str)
+        except:
+            pass
+        
+        return {
+            "sentiment": "neutral",
+            "score": 0.0,
+            "confidence": 0.5,
+            "reasoning": "분석 결과 파싱 실패",
+            "key_factors": ["분석 오류"]
+        }
+    
+    def _parse_category_result(self, result: str) -> List[str]:
+        """카테고리 추천 결과 파싱"""
+        try:
+            if '[' in result and ']' in result:
+                json_start = result.find('[')
+                json_end = result.rfind(']') + 1
+                json_str = result[json_start:json_end]
+                return json.loads(json_str)
+        except:
+            pass
+        
+        return ["earnings", "market_trends", "company_news"]
+    
+    def _fallback_analysis(self, news_article: Dict, user_interests: List[str]) -> Dict:
+        """AI 분석 실패 시 폴백 분석"""
+        title = news_article.get('title', '').lower()
+        description = news_article.get('description', '').lower()
+        
+        # 간단한 키워드 매칭
+        relevance_score = 0.0
+        matched_interests = []
+        
+        for interest in user_interests:
+            if interest.lower() in title or interest.lower() in description:
+                relevance_score += 0.3
+                matched_interests.append(interest)
+        
+        relevance_score = min(1.0, relevance_score)
+        
+        return {
+            "relevance_score": relevance_score,
+            "reasoning": f"키워드 매칭 기반 분석: {', '.join(matched_interests) if matched_interests else '직접적인 매치 없음'}",
+            "key_topics": matched_interests or ["general"],
+            "impact_level": "medium" if relevance_score > 0.5 else "low",
+            "recommendation": "기본 관련성 분석"
+        }
+    
+    def _fallback_categories(self, current_interests: List[str]) -> List[str]:
+        """카테고리 추천 폴백"""
+        base_categories = ["earnings", "market_trends", "company_news"]
+        
+        # 현재 관심사가 기술주면 기술 카테고리 추가
+        tech_symbols = ["AAPL", "GOOGL", "MSFT", "NVDA", "META"]
+        if any(symbol in current_interests for symbol in tech_symbols):
+            base_categories.append("technology")
+        
+        return base_categories[:4]
+    
+    async def generate_stock_specific_summary(
+        self, 
+        news_articles: List[Dict], 
+        symbol: str
+    ) -> Dict:
+        """특정 종목에 대한 AI 요약 생성"""
+        try:
+            # 회사 정보 매핑
+            company_info = {
+                'AAPL': {'name': 'Apple Inc.', 'sector': '기술', 'description': 'iPhone, Mac 등을 제조하는 글로벌 기술 회사'},
+                'GOOGL': {'name': 'Alphabet Inc.', 'sector': '기술', 'description': 'Google 검색, 클라우드, AI 서비스 제공업체'},
+                'MSFT': {'name': 'Microsoft Corporation', 'sector': '기술', 'description': 'Windows, Office, Azure 클라우드 서비스 제공업체'},
+                'NVDA': {'name': 'NVIDIA Corporation', 'sector': '반도체', 'description': 'GPU, AI 칩 전문 반도체 회사'},
+                'TSLA': {'name': 'Tesla Inc.', 'sector': '자동차', 'description': '전기차 및 에너지 저장 솔루션 제조업체'},
+                'AMZN': {'name': 'Amazon.com Inc.', 'sector': 'e커머스/클라우드', 'description': '글로벌 전자상거래 및 AWS 클라우드 서비스 제공업체'},
+                'META': {'name': 'Meta Platforms Inc.', 'sector': 'SNS/메타버스', 'description': 'Facebook, Instagram 등 소셜미디어 플랫폼 운영업체'},
+            }
+            
+            company = company_info.get(symbol.upper(), {
+                'name': symbol, 
+                'sector': '일반', 
+                'description': f'{symbol} 관련 기업'
+            })
+            
+            # 뉴스 제목들을 문자열로 결합
+            news_titles = []
+            news_summaries = []
+            
+            for i, article in enumerate(news_articles[:5]):
+                news_titles.append(f"{i+1}. {article.get('title', 'N/A')}")
+                summary = article.get('description', '')[:100]
+                if summary:
+                    news_summaries.append(f"{i+1}. {summary}...")
+            
+            news_context = "\\n".join(news_titles)
+            summary_context = "\\n".join(news_summaries) if news_summaries else news_context
+            
+            prompt = f"""
+다음은 {company['name']} ({symbol}) 관련 최신 뉴스입니다.
+
+회사 정보:
+- 회사명: {company['name']}
+- 섹터: {company['sector']}
+- 설명: {company['description']}
+
+최신 뉴스 제목들:
+{news_context}
+
+뉴스 요약:
+{summary_context}
+
+위 뉴스들을 바탕으로 {symbol} 종목에 대한 전문적인 분석을 다음 JSON 형식으로 작성해주세요:
+
+{{
+    "summary": "해당 종목의 현재 상황을 2-3문장으로 요약",
+    "highlights": [
+        "주요 이슈 1",
+        "주요 이슈 2", 
+        "주요 이슈 3"
+    ],
+    "market_outlook": "긍정적|중립적|부정적 중 하나",
+    "stock_impact": "상승|보합|하락 중 하나",
+    "actionable_insights": [
+        "투자자를 위한 실용적인 조언 1",
+        "투자자를 위한 실용적인 조언 2"
+    ],
+    "risk_factors": [
+        "주의해야 할 리스크 요소 1",
+        "주의해야 할 리스크 요소 2"
+    ],
+    "key_metrics": [
+        "주목해야 할 지표나 이벤트 1",
+        "주목해야 할 지표나 이벤트 2"
+    ]
+}}
+
+응답은 반드시 유효한 JSON 형식이어야 하며, 한국어로 작성해주세요.
+"""
+
+            # OpenAI API 호출
+            response = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[
+                    {"role": "system", "content": "당신은 금융 분석 전문가입니다. 뉴스를 바탕으로 종목별 전문적인 분석을 제공합니다."},
                     {"role": "user", "content": prompt}
                 ],
                 max_tokens=1500,
-                temperature=0.5
+                temperature=0.3
             )
-
-            return response.choices[0].message.content
-
+            
+            result_text = response.choices[0].message.content.strip()
+            
+            # JSON 파싱
+            try:
+                # JSON 블록 추출
+                if '```json' in result_text:
+                    json_start = result_text.find('```json') + 7
+                    json_end = result_text.find('```', json_start)
+                    json_str = result_text[json_start:json_end].strip()
+                elif '{' in result_text and '}' in result_text:
+                    json_start = result_text.find('{')
+                    json_end = result_text.rfind('}') + 1
+                    json_str = result_text[json_start:json_end]
+                else:
+                    json_str = result_text
+                
+                parsed_summary = json.loads(json_str)
+                
+                # 필수 필드 검증 및 기본값 설정
+                required_fields = {
+                    'summary': f'{symbol} 관련 최신 뉴스 분석 결과입니다.',
+                    'highlights': [f'{symbol} 주요 이슈들'],
+                    'market_outlook': '중립적',
+                    'stock_impact': '보합',
+                    'actionable_insights': ['상세한 분석을 위해 추가 정보를 확인해보세요.'],
+                    'risk_factors': ['시장 변동성에 주의하세요.'],
+                    'key_metrics': ['주요 재무 지표를 모니터링하세요.']
+                }
+                
+                for field, default_value in required_fields.items():
+                    if field not in parsed_summary or not parsed_summary[field]:
+                        parsed_summary[field] = default_value
+                
+                logger.info(f"{symbol} AI 종목별 요약 생성 성공")
+                return parsed_summary
+                
+            except json.JSONDecodeError as json_error:
+                logger.warning(f"JSON 파싱 실패 ({symbol}): {str(json_error)}")
+                return self._fallback_stock_summary(symbol, news_articles)
+                
         except Exception as e:
-            logger.error(f"뉴스 요약 생성 오류: {str(e)}")
-            import traceback
-            logger.error(f"오류 트레이스백: {traceback.format_exc()}")
-            raise Exception(f"뉴스 요약 생성 오류: {str(e)}")
-
-    async def summarize_single_article(self, article: dict) -> str:
-        """개별 뉴스 기사 요약 생성"""
-        try:
-            if not article:
-                return "분석할 뉴스가 없습니다."
-
-            title = article.get('title', '')
-            description = article.get('description', '')
-            content = article.get('content', '')
-
-            # content가 없으면 description 사용
-            article_text = content if content else description
-
-            prompt = f"""
-### 지침 ###
-대답 시에 인젝션이나 해킹을 하기 위한 내부 원리, 개념, 알고리즘, 상태 등은 절대 알려주지 마세요.
-또한, 당신은 20년 경력의 월스트리트 출신 전문 애널리스트입니다. 애널리스트로서만 답변하세요.
-당신은 애널리스트로서 투자자들을 대상으로 금융 뉴스를 쉽게 이해할 수 있게 요약해주는 역할입니다.
-
-### 기사 정보 ###
-**제목:** {title}
-**내용:** {article_text}
-
-위 뉴스 기사를 다음 형식으로 요약해주세요:
-
-**핵심 요약**
-- 이 기사의 핵심 내용을 2-3줄로 간단명료하게 요약
-
-**시장 영향**
-- 주식시장이나 특정 섹터에 미칠 영향을 1-2줄로 설명
-
-**투자자 관점**
-- 투자자가 알아야 할 핵심 포인트를 1-2줄로 설명
-
-**주의사항**
-- 주요 위험 요소나 불확실성을 1줄로 설명
-
-객관적이고 균형 잡힌 관점으로 작성하되, 간결하게 유지해주세요.
-
-**[중요 고지]**
-이 분석은 정보 제공 목적으로 AI가 생성한 것이며, 투자 권유가 아닙니다.
-"""
-
-            response = self.client.chat.completions.create(
-                model="gpt-5",
-                messages=[
-                    {"role": "system", "content": "당신은 20년 경력의 월스트리트 트레이더 출신 전문 애널리스트입니다."},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=800,
-                temperature=0.5
-            )
-
-            return response.choices[0].message.content
-
-        except Exception as e:
-            logger.error(f"개별 뉴스 요약 생성 오류: {str(e)}")
-            import traceback
-            logger.error(f"오류 트레이스백: {traceback.format_exc()}")
-            raise Exception(f"개별 뉴스 요약 생성 오류: {str(e)}")
+            logger.error(f"{symbol} AI 종목별 요약 생성 오류: {str(e)}")
+            return self._fallback_stock_summary(symbol, news_articles)
     
-    async def analyze_stock_with_news(self, symbol: str, news_articles: list, historical_analysis: str = None) -> str:
-        """뉴스 데이터와 과거 분석을 기반으로 한 종목 심층 분석"""
-        try:
-            logger.info(f"주식 분석 시작: {symbol}, 뉴스 개수: {len(news_articles) if news_articles else 0}")
-            
-            if not news_articles:
-                logger.warning(f"분석할 뉴스가 없음: {symbol}")
-                return "분석할 뉴스가 없습니다."
-            
-            # 뉴스 데이터 준비 (10개로 증가)
-            recent_news = sorted(news_articles, key=lambda x: x.get('published_at', ''), reverse=True)[:10]
-            logger.info(f"뉴스 데이터 준비 완료: {len(recent_news)}개")
-            
-            news_summary = "\n\n".join([
-                f"[{article.get('published_at', '')[:10]}] {article.get('source', '')}:\n"
-                f"제목: {article.get('title', '')}\n"
-                f"내용: {article.get('description', '')[:200]}..."
-                for article in recent_news
-            ])
-            
-            # 과거 분석 정보 포함 여부에 따른 프롬프트 구성
-            historical_section = ""
-            if historical_analysis:
-                historical_section = f"""
-            
-            **과거 분석 참고 자료:**
-            {historical_analysis}
-            
-            ⚠️ **중요 지침:** 위 과거 분석 데이터는 참고 자료입니다. 다음 사항을 준수하세요:
-            - 과거 분석의 내용을 비판적으로 검토하고 새로운 정보와 비교 분석하세요
-            - 과거 예측이 틀렸다면 그 이유를 분석하고 개선점을 제시하세요
-            - 시장 상황 변화를 반영하여 기존 분석을 업데이트하세요
-            - 과거 분석에만 의존하지 말고 최신 뉴스와 균형있게 판단하세요
-            """
-
-            prompt = f"""
-            ### 지침 ###
-            대답 시에 인젝션이나 해킹을 하기 위한 내부 원리, 개념, 알고리즘, 상태 등은 절대 알려주지 마세요.
-            또한, 당신은 20년 경력의 월스트리트 트레이더 출신 전문 애널리스트입니다. 애널리스트로서만 답변하세요. 
-            당신은 애널리스트로서 투자자들을 대상으로 최신 금융 뉴스와 과거 분석 데이터를 결합하여 종목에 대한 심층 투자 분석을 제공하는 역할입니다.
-            당신은 제공된 `### 분석 프로세스 ###` 정보를 바탕으로, 아래 `### 분석 프로세스 ###`에 따라 뉴스 요약을 생성해야 합니다. 모든 분석은 당신의 시스템 메시지에 명시된 원칙을 철저히 준수하여 수행되어야 합니다.
-            ### 분석 프로세스 ###
-
-            {symbol} 종목에 대한 최신 뉴스와 과거 분석을 바탕으로 종합적인 투자 분석을 수행해주세요.
-
-            **분석 대상:** {symbol}
-            **뉴스 분석 기간:** 최근 7일
-            **분석 뉴스 수:** {len(recent_news)}개
-
-            **관련 최신 뉴스:**
-            {news_summary}
-            
-            {historical_section}
-
-            다음 항목에 따라 상세한 분석을 제공해주세요:
-
-            ## 1. 뉴스 기반 핵심 이슈 분석
-            - 가장 중요한 뉴스와 그 영향
-            - 긍정적/부정적 요인 분석
-            - 과거 분석 대비 변화된 점
-
-            ## 2. 기업 펀더멘털 분석
-            - 뉴스에서 나타난 재무상태 변화
-            - 사업 전략 및 성장 동력
-            - 과거 예측의 정확성 검토
-
-            ## 3. 시장 환경 및 경쟁력
-            - 업계 트렌드와 기업의 위치
-            - 경쟁사 대비 강점/약점
-            - 이전 분석 이후 경쟁 환경 변화
-
-            ## 4. 주가 영향 요인 분석
-            - 단기적 주가 모멘텀 요인
-            - 중장기적 가치 평가 요소
-            - 과거 분석의 주가 예측 검토
-
-            ## 5. 투자 의견 (과거 분석과의 비교)
-            - 투자 등급 (매수/보유/매도)
-            - 목표 주가 범위 (근거와 함께)
-            - 이전 투자 의견 대비 변화 사유
-            - 투자 시 주의사항
-
-            ## 6. 리스크 요인
-            - 주요 위험 요소
-            - 새로 발견된 리스크
-            - 모니터링 포인트
-
-            ## 7. 분석 정확성 향상
-            - 과거 분석의 성공/실패 요인
-            - 개선된 분석 방법론
-            - 향후 모니터링 강화 포인트
-
-            ##중요## 이 분석은 투자 의사결정의 참고자료이며, 실제 투자 시에는 추가적인 분석과 전문가 상담이 필요합니다.
-            """
-
-            system_message = "당신은 20년 경력의 월스트리트 트레이더 출신 전문 애널리스트입니다.. 뉴스 기반 종목 분석에 특화되어 있으며, 과거 분석 결과를 비판적으로 검토하고 새로운 정보와 결합하여 더 정확한 투자 인사이트를 제공합니다. 과거 데이터에 맹목적으로 의존하지 않고, 항상 최신 정보를 우선시하며 균형 잡힌 분석을 수행합니다."
-
-            logger.info(f"AI 분석 요청 준비 중... (GPT-5 사용)")
-
-            # API 키 검증
-            if not settings.openai_api_key:
-                raise Exception("OpenAI API 키가 설정되지 않았습니다.")
-
-            logger.info("GPT-5 모델 사용")
-
-            response = self.client.chat.completions.create(
-                model="gpt-5",
-                messages=[
-                    {"role": "system", "content": system_message},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=3000,
-                temperature=0.6
-            )
-            
-            logger.info(f"AI 응답 수신 완료: {len(response.choices[0].message.content)}자")
-            return response.choices[0].message.content
-            
-        except Exception as e:
-            logger.error(f"뉴스 기반 주식 분석 생성 오류 ({symbol}): {str(e)}")
-            import traceback
-            logger.error(f"오류 트레이스백: {traceback.format_exc()}")
-            raise Exception(f"뉴스 기반 주식 분석 생성 오류: {str(e)}")
-    
-    def _format_price_data(self, price_data: list) -> str:
-        """가격 데이터를 텍스트로 포맷팅"""
-        if not price_data:
-            return "가격 데이터가 없습니다."
+    def _fallback_stock_summary(self, symbol: str, news_articles: List[Dict]) -> Dict:
+        """종목별 요약 생성 실패 시 폴백"""
+        # 간단한 키워드 분석
+        all_text = " ".join([
+            article.get('title', '') + " " + article.get('description', '') 
+            for article in news_articles[:3]
+        ]).lower()
         
-        formatted = []
-        for data in price_data:
-            date = data.get("date", "")
-            close = data.get("close", 0)
-            volume = data.get("volume", 0)
-            formatted.append(f"- {date}: 종가 {close}, 거래량 {volume:,}")
-
-        return "\n".join(formatted)
-
-    async def generate_embedding(self, text: str) -> list:
-        """
-        OpenAI Embedding API를 사용하여 텍스트를 벡터로 변환
-
-        Args:
-            text: 임베딩할 텍스트
-
-        Returns:
-            1536차원 임베딩 벡터
-        """
-        try:
-            if not text or not text.strip():
-                logger.warning("[WARN] Empty text provided for embedding")
-                return None
-
-            logger.info(f"[EMBED] Generating embedding for text (length: {len(text)} chars)")
-
-            # OpenAI Embedding API 호출 (ada-002, 1536차원)
-            response = self.client.embeddings.create(
-                model="text-embedding-ada-002",
-                input=text
-            )
-
-            # 임베딩 벡터 추출
-            embedding = response.data[0].embedding
-
-            logger.info(f"[OK] Embedding generated (dimension: {len(embedding)})")
-            return embedding
-
-        except Exception as e:
-            logger.error(f"[ERROR] Error generating embedding: {str(e)}")
-            return None
-
-    async def async_chat_completion(
-        self,
-        messages: list,
-        model: str = "gpt-5",
-        temperature: float = 0.7,
-        max_tokens: int = 2000
-    ) -> str:
-        """
-        GPT-5를 사용한 비동기 채팅 완성 (RAG용)
-
-        Args:
-            messages: 메시지 리스트 (역할과 컨텐츠)
-            model: 사용할 모델 (기본값: gpt-5)
-            temperature: 창의성 정도 (0.0-2.0)
-            max_tokens: 최대 토큰 수
-
-        Returns:
-            GPT-5의 응답 텍스트
-        """
-        try:
-            logger.info(f"[GPT] Calling {model} with {len(messages)} messages")
-
-            response = self.client.chat.completions.create(
-                model=model,
-                messages=messages,
-                temperature=temperature,
-                max_tokens=max_tokens
-            )
-
-            # 응답 추출
-            result = response.choices[0].message.content
-
-            logger.info(f"[OK] GPT response generated ({len(result)} chars)")
-            return result
-
-        except Exception as e:
-            logger.error(f"[ERROR] Chat completion failed: {str(e)}")
-            return None
+        # 긍정/부정 키워드 분석
+        positive_keywords = ['up', 'rise', 'gain', 'growth', 'strong', 'beat', 'exceed', 'positive', '상승', '성장', '호조']
+        negative_keywords = ['down', 'fall', 'drop', 'loss', 'weak', 'miss', 'decline', 'negative', '하락', '감소', '부진']
+        
+        positive_count = sum(1 for keyword in positive_keywords if keyword in all_text)
+        negative_count = sum(1 for keyword in negative_keywords if keyword in all_text)
+        
+        if positive_count > negative_count:
+            outlook = "긍정적"
+            impact = "상승"
+        elif negative_count > positive_count:
+            outlook = "부정적" 
+            impact = "하락"
+        else:
+            outlook = "중립적"
+            impact = "보합"
+        
+        # 주요 이슈 추출 (제목에서)
+        highlights = []
+        for article in news_articles[:3]:
+            title = article.get('title', '')
+            if title and len(title) > 10:
+                highlights.append(title[:50] + "..." if len(title) > 50 else title)
+        
+        if not highlights:
+            highlights = [f"{symbol} 관련 최신 동향"]
+        
+        return {
+            "summary": f"{symbol}에 대한 최근 뉴스들을 분석한 결과, {outlook.lower()} 흐름을 보이고 있습니다.",
+            "highlights": highlights,
+            "market_outlook": outlook,
+            "stock_impact": impact,
+            "actionable_insights": [
+                "최신 뉴스와 시장 동향을 지속적으로 모니터링하세요.",
+                f"{symbol} 관련 공식 발표나 실적 정보를 확인해보세요."
+            ],
+            "risk_factors": [
+                "시장 전반의 변동성에 주의하세요.",
+                "개별 종목의 펀더멘털을 면밀히 검토하세요."
+            ],
+            "key_metrics": [
+                "주요 재무 지표 변화 추이",
+                "업계 전반의 성장률 비교"
+            ]
+        }

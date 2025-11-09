@@ -6,7 +6,8 @@
       "Bash(pip install:*)",
       "Bash(=3.0.0)",
       "Bash(dir /s /b E:Microsoft_AI_Foundarybackend)",
-      "WebFetch(domain:site.financialmodelingprep.com)"
+      "WebFetch(domain:site.financialmodelingprep.com)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

@@ -27,22 +27,19 @@ async def test_ai_analysis():
     try:
         from app.core.config import settings
         
-        # 모든 AI 관련 설정 확인
+        # OpenAI GPT-5 설정 확인
         config_status = {
             "openai_api_key": bool(settings.openai_api_key and settings.openai_api_key.strip()),
-            "azure_openai_endpoint": bool(settings.azure_openai_endpoint),
-            "azure_openai_key": bool(settings.azure_openai_key),
-            "azure_openai_deployment": bool(settings.azure_openai_deployment)
+            "openai_model_name": settings.openai_model_name
         }
-        
-        # Azure OpenAI 또는 일반 OpenAI가 설정되어 있는지 확인
+
+        # OpenAI가 설정되어 있는지 확인
         has_openai = config_status["openai_api_key"]
-        has_azure = config_status["azure_openai_endpoint"] and config_status["azure_openai_key"]
-        
-        if not has_openai and not has_azure:
+
+        if not has_openai:
             return {
                 "status": "error",
-                "message": "Neither OpenAI nor Azure OpenAI is configured",
+                "message": "OpenAI GPT-5 is not configured",
                 "config_status": config_status
             }
         
@@ -56,7 +53,7 @@ async def test_ai_analysis():
         return {
             "status": "success",
             "config_status": config_status,
-            "ai_provider": "azure" if has_azure else "openai",
+            "ai_provider": "openai_gpt5",
             "news_count": len(news),
             "ai_summary": summary[:200] + "..." if len(summary) > 200 else summary
         }

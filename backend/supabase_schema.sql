@@ -187,3 +187,89 @@ BEGIN
     OR (is_revoked = TRUE AND revoked_at < NOW() - INTERVAL '30 days');
 END;
 $$ LANGUAGE plpgsql;
+
+-- 11. stock_indicators 테이블 (종목별 기술지표 및 재무지표)
+CREATE TABLE stock_indicators (
+    id SERIAL PRIMARY KEY,
+    symbol VARCHAR NOT NULL UNIQUE, -- 종목 심볼 (UNIQUE KEY)
+    company_name VARCHAR,
+    current_price FLOAT,
+    previous_close FLOAT,
+    market_cap BIGINT,
+    pe_ratio FLOAT,
+    eps FLOAT,
+    dividend_yield FLOAT,
+    fifty_two_week_high FLOAT,
+    fifty_two_week_low FLOAT,
+    currency VARCHAR,
+    exchange VARCHAR,
+    industry VARCHAR,
+    sector VARCHAR,
+    -- 기술 지표
+    sma_20 FLOAT, -- 20일 이동평균
+    sma_50 FLOAT, -- 50일 이동평균
+    sma_200 FLOAT, -- 200일 이동평균
+    ema_12 FLOAT, -- 12일 지수이동평균
+    ema_26 FLOAT, -- 26일 지수이동평균
+    rsi_14 FLOAT, -- 14일 RSI
+    macd FLOAT, -- MACD
+    macd_signal FLOAT,
+    macd_histogram FLOAT,
+    -- 재무 지표
+    roe FLOAT, -- Return on Equity
+    roa FLOAT, -- Return on Assets
+    current_ratio FLOAT,
+    quick_ratio FLOAT,
+    debt_to_equity FLOAT,
+    debt_ratio FLOAT,
+    profit_margin FLOAT,
+    -- 스코어 지표
+    altman_score FLOAT, -- Altman Z-Score
+    piotroski_score FLOAT, -- Piotroski F-Score
+    last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_stock_indicators_symbol ON stock_indicators (symbol);
+CREATE INDEX idx_stock_indicators_updated_at ON stock_indicators (updated_at DESC);
+CREATE INDEX idx_stock_indicators_sector ON stock_indicators (sector);
+
+-- 12. stock_price_history 테이블 (일별 가격 이력)
+CREATE TABLE stock_price_history (
+    id SERIAL PRIMARY KEY,
+    symbol VARCHAR NOT NULL,
+    date DATE NOT NULL,
+    open FLOAT NOT NULL,
+    high FLOAT NOT NULL,
+    low FLOAT NOT NULL,
+    close FLOAT NOT NULL,
+    volume BIGINT,
+    change FLOAT,
+    change_percent FLOAT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(symbol, date)
+);
+
+CREATE INDEX idx_stock_price_history_symbol ON stock_price_history (symbol);
+CREATE INDEX idx_stock_price_history_date ON stock_price_history (date DESC);
+CREATE INDEX idx_stock_price_history_symbol_date ON stock_price_history (symbol, date DESC);
+
+-- 13. stock_data_sync_history 테이블 (데이터 동기화 이력 추적)
+CREATE TABLE stock_data_sync_history (
+    id SERIAL PRIMARY KEY,
+    symbol VARCHAR NOT NULL,
+    sync_type VARCHAR NOT NULL, -- 'indicators', 'price_history', 'full'
+    sync_started_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    sync_completed_at TIMESTAMP WITH TIME ZONE,
+    status VARCHAR DEFAULT 'in_progress', -- 'in_progress', 'completed', 'failed'
+    records_processed INTEGER DEFAULT 0,
+    error_message TEXT,
+    data_period VARCHAR, -- e.g., '5y', '1y'
+    last_sync_date DATE -- 마지막 데이터 동기화 날짜
+);
+
+CREATE INDEX idx_stock_data_sync_history_symbol ON stock_data_sync_history (symbol);
+CREATE INDEX idx_stock_data_sync_history_completed_at ON stock_data_sync_history (sync_completed_at DESC);
+CREATE INDEX idx_stock_data_sync_history_status ON stock_data_sync_history (status);

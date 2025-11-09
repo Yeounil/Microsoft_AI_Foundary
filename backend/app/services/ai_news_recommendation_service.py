@@ -4,7 +4,7 @@ from typing import List, Dict, Optional, Tuple
 from datetime import datetime, timedelta
 from collections import defaultdict
 
-from app.services.azure_openai_service import AzureOpenAIService
+from app.services.openai_service import OpenAIService
 from app.services.supabase_user_interest_service import SupabaseUserInterestService
 from app.services.news_service import NewsService
 from app.services.news_db_service import NewsDBService
@@ -12,10 +12,10 @@ from app.services.news_db_service import NewsDBService
 logger = logging.getLogger(__name__)
 
 class AINewsRecommendationService:
-    """AI 기반 자동 뉴스 추천 서비스"""
-    
+    """AI 기반 자동 뉴스 추천 서비스 (GPT-5)"""
+
     def __init__(self):
-        self.azure_openai = AzureOpenAIService()
+        self.openai = OpenAIService()  # GPT-5 사용
         self.interest_service = SupabaseUserInterestService()
         
     async def get_ai_personalized_recommendations(
@@ -54,7 +54,7 @@ class AINewsRecommendationService:
             )[:limit]
             
             # 5. AI 기반 개인화 요약 생성
-            ai_summary = await self.azure_openai.generate_personalized_summary(
+            ai_summary = await self.openai.generate_personalized_summary(
                 top_recommendations, user_interests
             )
             
@@ -175,7 +175,7 @@ class AINewsRecommendationService:
             for article in news_articles:
                 try:
                     # AI 관련성 분석
-                    ai_analysis = await self.azure_openai.analyze_news_relevance(
+                    ai_analysis = await self.openai.analyze_news_relevance(
                         article, user_interests, user_context
                     )
                     
@@ -335,7 +335,7 @@ class AINewsRecommendationService:
                 
                 if news:
                     # AI 감정 분석
-                    sentiment_analysis = await self.azure_openai.analyze_market_sentiment(
+                    sentiment_analysis = await self.openai.analyze_market_sentiment(
                         news, symbol
                     )
                     sentiment_results[symbol] = sentiment_analysis
@@ -376,11 +376,11 @@ class AINewsRecommendationService:
                 }
             
             # 2. 감정 분석
-            sentiment = await self.azure_openai.analyze_market_sentiment(recent_news, symbol)
+            sentiment = await self.openai.analyze_market_sentiment(recent_news, symbol)
             
             # 3. 개인화 요약
             user_interests = await self.interest_service.get_user_interests_for_recommendation(user_id)
-            summary = await self.azure_openai.generate_personalized_summary(recent_news, user_interests)
+            summary = await self.openai.generate_personalized_summary(recent_news, user_interests)
             
             return {
                 "symbol": symbol,

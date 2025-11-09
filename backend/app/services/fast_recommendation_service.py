@@ -2,17 +2,17 @@ import logging
 from typing import List, Dict, Optional
 from datetime import datetime, timedelta
 
-from app.services.azure_openai_service import AzureOpenAIService
+from app.services.openai_service import OpenAIService
 from app.services.supabase_user_interest_service import SupabaseUserInterestService
 from app.db.supabase_client import get_supabase
 
 logger = logging.getLogger(__name__)
 
 class FastRecommendationService:
-    """빠른 뉴스 추천 서비스 (DB의 사전 분석된 뉴스 사용)"""
-    
+    """빠른 뉴스 추천 서비스 (DB의 사전 분석된 뉴스 사용, GPT-5)"""
+
     def __init__(self):
-        self.azure_openai = AzureOpenAIService()
+        self.openai = OpenAIService()  # GPT-5 사용
         self.interest_service = SupabaseUserInterestService()
     
     async def get_personalized_recommendations(
@@ -60,7 +60,7 @@ class FastRecommendationService:
             ai_summary = None
             try:
                 if len(top_recommendations) >= 3:  # 충분한 뉴스가 있을 때만
-                    ai_summary = await self.azure_openai.generate_personalized_summary(
+                    ai_summary = await self.openai.generate_personalized_summary(
                         top_recommendations[:5], user_interests
                     )
             except Exception as summary_error:
@@ -492,7 +492,7 @@ class FastRecommendationService:
             ai_summary = None
             try:
                 if len(top_recommendations) >= 3:
-                    ai_summary = await self.azure_openai.generate_stock_specific_summary(
+                    ai_summary = await self.openai.generate_stock_specific_summary(
                         top_recommendations[:5], symbol
                     )
             except Exception as summary_error:

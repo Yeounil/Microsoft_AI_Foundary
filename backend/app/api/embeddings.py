@@ -188,6 +188,107 @@ async def delete_embeddings(symbol: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/stocks/embed-all-indicators")
+async def embed_all_stock_indicators():
+    """
+    DB의 모든 stock_indicators를 Pinecone에 임베딩
+
+    Returns:
+        임베딩 결과
+    """
+    try:
+        logger.info("[API] Embedding all stock indicators")
+
+        # DB에서 모든 종목 조회
+        from app.db.supabase_client import get_supabase
+        supabase = get_supabase()
+
+        result = supabase.table("stock_indicators").select("symbol").execute()
+        symbols = [row.get("symbol") for row in result.data if row.get("symbol")]
+
+        if not symbols:
+            raise HTTPException(status_code=404, detail="No stock indicators found in database")
+
+        # 배치 임베딩
+        batch_result = await embedding_service.embed_batch_symbols(symbols)
+
+        return batch_result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[ERROR] Failed to embed all stock indicators: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/stocks/embed-all-prices")
+async def embed_all_price_histories(
+    chunk_size: int = Query(30, description="청크 크기 (일)"),
+):
+    """
+    DB의 모든 stock_price_history를 Pinecone에 임베딩
+
+    Args:
+        chunk_size: 청크 크기 (기본값: 30일)
+
+    Returns:
+        임베딩 결과
+    """
+    try:
+        logger.info("[API] Embedding all price histories")
+
+        # DB에서 모든 종목 조회
+        from app.db.supabase_client import get_supabase
+        supabase = get_supabase()
+
+        result = supabase.table("stock_price_history").select("symbol").execute()
+        symbols_set = set(row.get("symbol") for row in result.data if row.get("symbol"))
+        symbols = sorted(list(symbols_set))
+
+        if not symbols:
+            raise HTTPException(status_code=404, detail="No price history found in database")
+
+        results = {
+            "type": "price_history",
+            "total": len(symbols),
+            "successful": 0,
+            "failed": 0,
+            "total_chunks": 0,
+            "details": []
+        }
+
+        for symbol in symbols:
+            try:
+                embed_result = await embedding_service.embed_price_history(symbol, chunk_size=chunk_size)
+                if embed_result.get("status") == "success":
+                    results["successful"] += 1
+                    chunks = embed_result.get("chunks_created", 0)
+                    results["total_chunks"] += chunks
+                else:
+                    results["failed"] += 1
+
+                results["details"].append({
+                    "symbol": symbol,
+                    "status": embed_result.get("status"),
+                    "chunks_created": embed_result.get("chunks_created")
+                })
+            except Exception as e:
+                results["failed"] += 1
+                results["details"].append({
+                    "symbol": symbol,
+                    "status": "error",
+                    "error": str(e)
+                })
+
+        return results
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[ERROR] Failed to embed all price histories: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/embeddings/index/stats")
 async def get_index_stats():
     """

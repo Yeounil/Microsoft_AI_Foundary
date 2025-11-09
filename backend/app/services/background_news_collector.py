@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
 import threading
 
-from app.services.azure_openai_service import AzureOpenAIService
+from app.services.openai_service import OpenAIService
 from app.services.news_service import NewsService
 from app.services.news_db_service import NewsDBService
 from app.services.supabase_user_interest_service import SupabaseUserInterestService
@@ -14,10 +14,10 @@ from app.db.supabase_client import get_supabase
 logger = logging.getLogger(__name__)
 
 class BackgroundNewsCollector:
-    """백그라운드 뉴스 수집 및 AI 분석 서비스 (멀티스레드)"""
+    """백그라운드 뉴스 수집 및 AI 분석 서비스 (멀티스레드, GPT-5)"""
 
     def __init__(self):
-        self.azure_openai = AzureOpenAIService()
+        self.openai = OpenAIService()  # GPT-5 사용
         self.interest_service = SupabaseUserInterestService()
         # 뉴스 수집용 스레드 풀 (종목별 병렬 처리)
         self.collection_executor = ThreadPoolExecutor(max_workers=5, thread_name_prefix="news-collector")
@@ -248,7 +248,7 @@ class BackgroundNewsCollector:
                         asyncio.set_event_loop(loop)
                         try:
                             ai_analysis = loop.run_until_complete(
-                                self.azure_openai.analyze_news_relevance(
+                                self.openai.analyze_news_relevance(
                                     article, [symbol], {"experience_level": "general"}
                                 )
                             )
@@ -308,7 +308,7 @@ class BackgroundNewsCollector:
                     ai_score = 0.5  # 기본값
                     try:
                         # 간단한 AI 관련성 분석 (사용자별이 아닌 일반적)
-                        ai_analysis = await self.azure_openai.analyze_news_relevance(
+                        ai_analysis = await self.openai.analyze_news_relevance(
                             article, [symbol], {"experience_level": "general"}
                         )
                         ai_score = ai_analysis.get('relevance_score', 0.5)

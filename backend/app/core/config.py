@@ -20,14 +20,9 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60  # Access token: 1시간
     refresh_token_expire_days: int = 7  # Refresh token: 7일
     
-    # OpenAI
+    # OpenAI (GPT-5)
     openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
-    
-    # Azure OpenAI (Optional)
-    azure_openai_endpoint: Optional[str] = os.getenv("AZURE_OPENAI_ENDPOINT")
-    azure_openai_key: Optional[str] = os.getenv("AZURE_OPENAI_KEY")
-    azure_openai_version: str = os.getenv("AZURE_OPENAI_VERSION", "2023-12-01-preview")
-    azure_openai_deployment: Optional[str] = os.getenv("AZURE_OPENAI_DEPLOYMENT")
+    openai_model_name: str = os.getenv("OPENAI_MODEL_NAME", "gpt-5")
     
     # External APIs
     alpha_vantage_api_key: str = os.getenv("ALPHA_VANTAGE_API_KEY", "")
