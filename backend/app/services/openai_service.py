@@ -51,34 +51,46 @@ class OpenAIService:
             self.client = None
     
     async def analyze_news_relevance(
-        self, 
-        news_article: Dict, 
+        self,
+        news_article: Dict,
         user_interests: List[str],
         user_context: Optional[Dict] = None
     ) -> Dict:
         """뉴스와 사용자 관심사의 관련성 분석"""
         try:
             if not self.client:
+                logger.warning("[RELEVANCE] OpenAI 클라이언트가 없음. 폴백 분석 사용")
                 return self._fallback_analysis(news_article, user_interests)
-            
+
             # 프롬프트 구성
             prompt = self._build_relevance_prompt(news_article, user_interests, user_context)
-            
-            response = self.client.chat.completions.create(
-                model=self.model_name,
-                messages=[
-                    {"role": "system", "content": "You are a financial news analyst specializing in personalized content recommendation."},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=300,
-                temperature=0.3
-            )
-            
-            result = response.choices[0].message.content
-            return self._parse_relevance_result(result)
-            
+
+            try:
+                response = self.client.chat.completions.create(
+                    model=self.model_name,
+                    messages=[
+                        {"role": "system", "content": "You are a financial news analyst specializing in personalized content recommendation. Always respond with valid JSON."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    max_tokens=300,
+                    temperature=0.3
+                )
+
+                result = response.choices[0].message.content
+                parsed = self._parse_relevance_result(result)
+
+                # 파싱된 결과가 폴백인지 확인
+                if parsed.get("reasoning") == "AI 분석 결과를 파싱할 수 없음":
+                    logger.warning(f"[RELEVANCE] 관련성 분석 결과 파싱 실패. API 응답: {result[:150]}")
+
+                return parsed
+
+            except Exception as api_error:
+                logger.error(f"[RELEVANCE] OpenAI API 호출 실패: {str(api_error)}, 모델: {self.model_name}")
+                return self._fallback_analysis(news_article, user_interests)
+
         except Exception as e:
-            logger.error(f"뉴스 관련성 분석 오류: {str(e)}")
+            logger.error(f"[RELEVANCE] 뉴스 관련성 분석 중 예상치 못한 오류: {str(e)}")
             return self._fallback_analysis(news_article, user_interests)
     
     async def generate_personalized_summary(
@@ -280,10 +292,19 @@ Respond with JSON array: ["category1", "category2", "category3"]
                 json_start = result.find('{')
                 json_end = result.rfind('}') + 1
                 json_str = result[json_start:json_end]
-                return json.loads(json_str)
-        except:
-            pass
-        
+                parsed = json.loads(json_str)
+
+                # 필수 필드 검증
+                if all(key in parsed for key in ["relevance_score", "reasoning", "key_topics", "impact_level", "recommendation"]):
+                    return parsed
+                else:
+                    logger.warning(f"[PARSE] 관련성 분석 결과에 필수 필드 누락: {json_str[:100]}")
+
+        except json.JSONDecodeError as e:
+            logger.warning(f"[PARSE] 관련성 분석 JSON 파싱 실패: {str(e)}, 입력: {result[:100]}")
+        except Exception as e:
+            logger.error(f"[PARSE] 예상치 못한 파싱 오류: {str(e)}")
+
         # 기본값 반환
         return {
             "relevance_score": 0.5,
@@ -300,17 +321,26 @@ Respond with JSON array: ["category1", "category2", "category3"]
                 json_start = result.find('{')
                 json_end = result.rfind('}') + 1
                 json_str = result[json_start:json_end]
-                return json.loads(json_str)
-        except:
-            pass
-        
+                parsed = json.loads(json_str)
+
+                # 필수 필드 검증
+                if all(key in parsed for key in ["summary", "highlights", "market_outlook", "actionable_insights"]):
+                    return parsed
+                else:
+                    logger.warning(f"[PARSE] 요약 결과에 필수 필드 누락: {json_str[:100]}")
+
+        except json.JSONDecodeError as e:
+            logger.warning(f"[PARSE] 요약 JSON 파싱 실패: {str(e)}, 입력: {result[:100]}")
+        except Exception as e:
+            logger.error(f"[PARSE] 요약 파싱 중 예상치 못한 오류: {str(e)}")
+
         return {
             "summary": "요약을 생성할 수 없습니다.",
             "highlights": ["분석 중 오류 발생"],
             "market_outlook": "중립적",
             "actionable_insights": ["추가 정보 필요"]
         }
-    
+
     def _parse_sentiment_result(self, result: str) -> Dict:
         """감정 분석 결과 파싱"""
         try:
@@ -318,10 +348,19 @@ Respond with JSON array: ["category1", "category2", "category3"]
                 json_start = result.find('{')
                 json_end = result.rfind('}') + 1
                 json_str = result[json_start:json_end]
-                return json.loads(json_str)
-        except:
-            pass
-        
+                parsed = json.loads(json_str)
+
+                # 필수 필드 검증
+                if all(key in parsed for key in ["sentiment", "score", "confidence", "reasoning", "key_factors"]):
+                    return parsed
+                else:
+                    logger.warning(f"[PARSE] 감정 분석 결과에 필수 필드 누락: {json_str[:100]}")
+
+        except json.JSONDecodeError as e:
+            logger.warning(f"[PARSE] 감정 분석 JSON 파싱 실패: {str(e)}, 입력: {result[:100]}")
+        except Exception as e:
+            logger.error(f"[PARSE] 감정 분석 파싱 중 예상치 못한 오류: {str(e)}")
+
         return {
             "sentiment": "neutral",
             "score": 0.0,
@@ -329,7 +368,7 @@ Respond with JSON array: ["category1", "category2", "category3"]
             "reasoning": "분석 결과 파싱 실패",
             "key_factors": ["분석 오류"]
         }
-    
+
     def _parse_category_result(self, result: str) -> List[str]:
         """카테고리 추천 결과 파싱"""
         try:
@@ -337,10 +376,19 @@ Respond with JSON array: ["category1", "category2", "category3"]
                 json_start = result.find('[')
                 json_end = result.rfind(']') + 1
                 json_str = result[json_start:json_end]
-                return json.loads(json_str)
-        except:
-            pass
-        
+                parsed = json.loads(json_str)
+
+                # 결과가 리스트인지 확인
+                if isinstance(parsed, list) and len(parsed) > 0:
+                    return parsed
+                else:
+                    logger.warning(f"[PARSE] 카테고리 추천 결과가 유효한 리스트가 아님: {json_str[:100]}")
+
+        except json.JSONDecodeError as e:
+            logger.warning(f"[PARSE] 카테고리 JSON 파싱 실패: {str(e)}, 입력: {result[:100]}")
+        except Exception as e:
+            logger.error(f"[PARSE] 카테고리 파싱 중 예상치 못한 오류: {str(e)}")
+
         return ["earnings", "market_trends", "company_news"]
     
     def _fallback_analysis(self, news_article: Dict, user_interests: List[str]) -> Dict:
