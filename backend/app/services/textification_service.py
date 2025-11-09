@@ -30,26 +30,27 @@ class TextificationService:
             자연어로 변환된 회사 정보 문장
         """
         try:
-            company_name = indicators.get("company_name", symbol)
-            current_price = indicators.get("current_price", 0)
-            market_cap = indicators.get("market_cap", 0)
-            pe_ratio = indicators.get("pe_ratio", 0)
-            eps = indicators.get("eps", 0)
-            dividend_yield = indicators.get("dividend_yield", 0)
-            roe = indicators.get("roe", 0)
-            roa = indicators.get("roa", 0)
-            debt_to_equity = indicators.get("debt_to_equity", 0)
-            profit_margin = indicators.get("profit_margin", 0)
-            sector = indicators.get("sector", "")
-            industry = indicators.get("industry", "")
-            fifty_two_week_high = indicators.get("fifty_two_week_high", 0)
-            fifty_two_week_low = indicators.get("fifty_two_week_low", 0)
-            previous_close = indicators.get("previous_close", 0)
-            last_updated = indicators.get("last_updated", datetime.now().isoformat())
+            # NULL 안전성: None 값을 기본값으로 변환
+            company_name = indicators.get("company_name") or symbol
+            current_price = indicators.get("current_price") or 0
+            market_cap = indicators.get("market_cap") or 0
+            pe_ratio = indicators.get("pe_ratio") or 0
+            eps = indicators.get("eps") or 0
+            dividend_yield = indicators.get("dividend_yield") or 0
+            roe = indicators.get("roe") or 0
+            roa = indicators.get("roa") or 0
+            debt_to_equity = indicators.get("debt_to_equity") or 0
+            profit_margin = indicators.get("profit_margin") or 0
+            sector = indicators.get("sector") or "Unknown"
+            industry = indicators.get("industry") or "Unknown"
+            fifty_two_week_high = indicators.get("fifty_two_week_high") or 0
+            fifty_two_week_low = indicators.get("fifty_two_week_low") or 0
+            previous_close = indicators.get("previous_close") or 0
+            last_updated = indicators.get("last_updated") or datetime.now().isoformat()
 
             # 가격 변동 계산
-            price_change = current_price - previous_close if previous_close else 0
-            price_change_percent = (price_change / previous_close * 100) if previous_close else 0
+            price_change = current_price - previous_close if previous_close and current_price else 0
+            price_change_percent = (price_change / previous_close * 100) if previous_close and current_price else 0
 
             # 시가총액 포맷팅
             market_cap_str = TextificationService._format_market_cap(market_cap)
@@ -70,28 +71,33 @@ class TextificationService:
             # 배당 평가
             dividend_assessment = (
                 f"The company offers a dividend yield of {dividend_yield:.2%}, "
-                if dividend_yield > 0
+                if dividend_yield and dividend_yield > 0
                 else "The company does not currently offer dividends, "
             )
 
             # 종합 텍스트 생성
+            price_str = f"${current_price:.2f}" if current_price else "price data unavailable"
+            prev_close_str = f"${previous_close:.2f}" if previous_close else "previous close data unavailable"
+            high_str = f"${fifty_two_week_high:.2f}" if fifty_two_week_high else "52-week high unavailable"
+            low_str = f"${fifty_two_week_low:.2f}" if fifty_two_week_low else "52-week low unavailable"
+
             text = (
                 f"As of {TextificationService._format_date(last_updated)}, "
                 f"{company_name} ({symbol}) operates in the {sector} sector ({industry} industry). "
-                f"The stock is currently trading at ${current_price:.2f}, "
-                f"representing a {'+' if price_change > 0 else ''}{price_change_percent:.2f}% change from the previous close of ${previous_close:.2f}. "
+                f"The stock is currently trading at {price_str}, "
+                f"representing a {'+' if price_change > 0 else ''}{price_change_percent:.2f}% change from the previous close of {prev_close_str}. "
                 f"The company has a market capitalization of {market_cap_str}. "
                 f"The P/E ratio stands at {pe_ratio:.1f}x, which indicates {valuation_assessment}. "
                 f"The Earnings Per Share (EPS) is ${eps:.2f}. "
                 f"{dividend_assessment}"
-                f"Over the past 52 weeks, the stock has traded between ${fifty_two_week_low:.2f} (low) "
-                f"and ${fifty_two_week_high:.2f} (high), with the current price {price_position}. "
+                f"Over the past 52 weeks, the stock has traded between {low_str} (low) "
+                f"and {high_str} (high), with the current price {price_position}. "
                 f"Profitability metrics show a Return on Equity (ROE) of {roe:.2%} and Return on Assets (ROA) of {roa:.2%}, "
                 f"indicating {financial_health}. "
                 f"The company maintains a debt-to-equity ratio of {debt_to_equity:.2f} and "
-                f"a net profit margin of {profit_margin:.2%}, reflecting {'strong' if profit_margin > 0.15 else 'moderate' if profit_margin > 0.05 else 'low'} profitability. "
+                f"a net profit margin of {profit_margin:.2%}, reflecting {'strong' if profit_margin and profit_margin > 0.15 else 'moderate' if profit_margin and profit_margin > 0.05 else 'low'} profitability. "
                 f"This comprehensive financial profile suggests the company is positioned as "
-                f"{'a strong market leader' if pe_ratio < 20 and roe > 0.15 else 'a growth-oriented company' if pe_ratio > 25 else 'a stable, established business'}."
+                f"{'a strong market leader' if pe_ratio and pe_ratio < 20 and roe and roe > 0.15 else 'a growth-oriented company' if pe_ratio and pe_ratio > 25 else 'a stable, established business'}."
             )
 
             return text
@@ -248,6 +254,11 @@ class TextificationService:
     @staticmethod
     def _assess_price_position(current: float, low_52w: float, high_52w: float) -> str:
         """52주 범위 내 현재 가격의 위치를 평가"""
+        # NULL 안전성: None을 0으로 변환
+        current = current or 0
+        low_52w = low_52w or 0
+        high_52w = high_52w or 0
+
         if (high_52w - low_52w) == 0:
             return "unable to determine"
 
@@ -268,6 +279,12 @@ class TextificationService:
     def _assess_financial_health(roe: float, roa: float, debt_to_equity: float,
                                   profit_margin: float) -> str:
         """재무 건강도를 종합적으로 평가"""
+        # NULL 안전성: None을 0으로 변환
+        roe = roe or 0
+        roa = roa or 0
+        debt_to_equity = debt_to_equity or 0
+        profit_margin = profit_margin or 0
+
         score = 0
 
         # ROE 평가 (0.15 이상 excellent)

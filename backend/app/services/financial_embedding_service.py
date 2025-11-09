@@ -69,20 +69,29 @@ class FinancialEmbeddingService:
                     "reason": "Failed to generate embedding"
                 }
 
-            # 4. 메타데이터 준비
+            # 4. 메타데이터 준비 - NULL 안전성: None을 0.0으로 변환
+            def safe_float(value):
+                """None 값을 안전하게 float로 변환"""
+                if value is None:
+                    return 0.0
+                try:
+                    return float(value)
+                except (TypeError, ValueError):
+                    return 0.0
+
             metadata = {
                 "symbol": symbol.upper(),
-                "company_name": indicators.get("company_name"),
+                "company_name": indicators.get("company_name") or symbol,
                 "data_type": "stock_indicators",
-                "sector": indicators.get("sector"),
-                "industry": indicators.get("industry"),
-                "current_price": float(indicators.get("current_price", 0)),
-                "market_cap": float(indicators.get("market_cap", 0)),
-                "pe_ratio": float(indicators.get("pe_ratio", 0)),
-                "roe": float(indicators.get("roe", 0)),
-                "roa": float(indicators.get("roa", 0)),
-                "debt_to_equity": float(indicators.get("debt_to_equity", 0)),
-                "profit_margin": float(indicators.get("profit_margin", 0)),
+                "sector": indicators.get("sector") or "Unknown",
+                "industry": indicators.get("industry") or "Unknown",
+                "current_price": safe_float(indicators.get("current_price")),
+                "market_cap": safe_float(indicators.get("market_cap")),
+                "pe_ratio": safe_float(indicators.get("pe_ratio")),
+                "roe": safe_float(indicators.get("roe")),
+                "roa": safe_float(indicators.get("roa")),
+                "debt_to_equity": safe_float(indicators.get("debt_to_equity")),
+                "profit_margin": safe_float(indicators.get("profit_margin")),
                 "timestamp": indicators.get("last_updated", datetime.now().isoformat()),
                 "text_preview": text[:200]  # 첫 200자만 메타데이터에 저장
             }
