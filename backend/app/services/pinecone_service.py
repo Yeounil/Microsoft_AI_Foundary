@@ -82,7 +82,7 @@ class PineconeService:
         Args:
             vector_id: 벡터 고유 ID
             embedding: 임베딩 벡터 (1536 또는 384 차원)
-            metadata: 메타데이터 (symbol, company_name, pe_ratio, market_cap 등)
+            metadata: 메타데이터 (symbol, company_name, market_cap 등)
 
         Returns:
             저장 성공 여부
@@ -204,7 +204,6 @@ class PineconeService:
                     "company_name": match.get("metadata", {}).get("company_name"),
                     "sector": match.get("metadata", {}).get("sector"),
                     "industry": match.get("metadata", {}).get("industry"),
-                    "pe_ratio": match.get("metadata", {}).get("pe_ratio"),
                     "market_cap": match.get("metadata", {}).get("market_cap"),
                     "metadata": match.get("metadata")
                 })

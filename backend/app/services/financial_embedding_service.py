@@ -87,10 +87,6 @@ class FinancialEmbeddingService:
                 "industry": indicators.get("industry") or "Unknown",
                 "current_price": safe_float(indicators.get("current_price")),
                 "market_cap": safe_float(indicators.get("market_cap")),
-                "pe_ratio": safe_float(indicators.get("pe_ratio")),
-                "roe": safe_float(indicators.get("roe")),
-                "roa": safe_float(indicators.get("roa")),
-                "debt_to_equity": safe_float(indicators.get("debt_to_equity")),
                 "profit_margin": safe_float(indicators.get("profit_margin")),
                 "timestamp": indicators.get("last_updated", datetime.now().isoformat()),
                 "text_preview": text[:200]  # 첫 200자만 메타데이터에 저장

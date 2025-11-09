@@ -613,3 +613,40 @@ Respond with JSON array: ["category1", "category2", "category3"]
                 "업계 전반의 성장률 비교"
             ]
         }
+
+    async def generate_embedding(self, text: str) -> Optional[List[float]]:
+        """
+        텍스트를 벡터로 변환하는 임베딩 생성
+
+        Args:
+            text: 임베딩할 텍스트
+
+        Returns:
+            1536차원 벡터 또는 None
+        """
+        try:
+            if not self.client:
+                logger.warning("[EMBEDDING] OpenAI 클라이언트가 없음")
+                return None
+
+            if not text or len(text.strip()) == 0:
+                logger.warning("[EMBEDDING] 임베딩할 텍스트가 비어있음")
+                return None
+
+            # OpenAI 임베딩 API 호출
+            # text-embedding-3-small: 512차원
+            # text-embedding-3-large: 3072차원 (Pinecone과 맞지 않음)
+            # text-embedding-ada-002: 1536차원 (Pinecone과 일치)
+            response = self.client.embeddings.create(
+                model="text-embedding-ada-002",  # 1536차원 (Pinecone 인덱스와 일치)
+                input=text.strip(),
+                encoding_format="float"
+            )
+
+            embedding = response.data[0].embedding
+            logger.debug(f"[EMBEDDING] 임베딩 생성 완료: {len(embedding)}차원")
+            return embedding
+
+        except Exception as e:
+            logger.error(f"[EMBEDDING] 임베딩 생성 실패: {str(e)}")
+            return None

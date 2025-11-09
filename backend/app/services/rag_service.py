@@ -129,12 +129,6 @@ class RAGService:
                         "industry": result.get("industry", indicators.get("industry")),
                         "current_price": indicators.get("current_price"),
                         "market_cap": indicators.get("market_cap"),
-                        "pe_ratio": indicators.get("pe_ratio"),
-                        "eps": indicators.get("eps"),
-                        "dividend_yield": indicators.get("dividend_yield"),
-                        "roe": indicators.get("roe"),
-                        "roa": indicators.get("roa"),
-                        "debt_to_equity": indicators.get("debt_to_equity"),
                         "profit_margin": indicators.get("profit_margin"),
                         "current_ratio": indicators.get("current_ratio"),
                         "metadata": result.get("metadata")
@@ -232,11 +226,7 @@ class RAGService:
             # 재무 정보
             current_price = result.get("current_price", 0)
             market_cap = result.get("market_cap", 0)
-            pe_ratio = result.get("pe_ratio", 0)
-            eps = result.get("eps", 0)
-            roe = result.get("roe", 0)
             profit_margin = result.get("profit_margin", 0)
-            debt_to_equity = result.get("debt_to_equity", 0)
 
             context_lines.append(f"#{idx} {symbol} - {company_name}")
             context_lines.append(f"   유사도: {score*100:.1f}%")
@@ -246,16 +236,8 @@ class RAGService:
             context_lines.append(f"   - 현재 가격: ${current_price:,.2f}")
             context_lines.append(f"   - 시가총액: ${market_cap:,.0f}")
             context_lines.append(f"")
-            context_lines.append(f"   [밸류에이션]")
-            context_lines.append(f"   - P/E 비율: {pe_ratio:.2f}x")
-            context_lines.append(f"   - EPS: ${eps:.2f}")
-            context_lines.append(f"")
             context_lines.append(f"   [수익성]")
-            context_lines.append(f"   - ROE: {roe:.2f}%")
             context_lines.append(f"   - 순이익률: {profit_margin:.2f}%")
-            context_lines.append(f"")
-            context_lines.append(f"   [재무 안정성]")
-            context_lines.append(f"   - 부채비율(D/E): {debt_to_equity:.2f}")
             context_lines.append(f"")
 
         context_lines.append("=" * 80)
@@ -454,20 +436,14 @@ class RAGService:
 - 회사명: {stock_1.get('company_name')}
 - 현재 가격: ${stock_1.get('current_price', 0):,.2f}
 - 시가총액: ${stock_1.get('market_cap', 0):,.0f}
-- P/E 비율: {stock_1.get('pe_ratio', 0):.2f}x
-- ROE: {stock_1.get('roe', 0):.2f}%
 - 순이익률: {stock_1.get('profit_margin', 0):.2f}%
-- 부채비율(D/E): {stock_1.get('debt_to_equity', 0):.2f}
 - 유동비율: {stock_1.get('current_ratio', 0):.2f}
 
 기업 2: {symbol_2}
 - 회사명: {stock_2.get('company_name')}
 - 현재 가격: ${stock_2.get('current_price', 0):,.2f}
 - 시가총액: ${stock_2.get('market_cap', 0):,.0f}
-- P/E 비율: {stock_2.get('pe_ratio', 0):.2f}x
-- ROE: {stock_2.get('roe', 0):.2f}%
 - 순이익률: {stock_2.get('profit_margin', 0):.2f}%
-- 부채비율(D/E): {stock_2.get('debt_to_equity', 0):.2f}
 - 유동비율: {stock_2.get('current_ratio', 0):.2f}
 
 비교 분석:

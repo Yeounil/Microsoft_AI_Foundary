@@ -337,6 +337,7 @@ class FMPStockDataService:
                 return False
 
             # 데이터 통합 (우선순위: stock_quote > company_profile > key_metrics)
+            # 주의: 다음 컬럼들은 테이블에서 삭제됨: pe_ratio, eps, dividend_yield, rsi, roe, roa, debt_to_equity, debt_ratio
             indicator_data = {
                 'symbol': symbol,
                 # Company Profile에서 company 정보
@@ -354,28 +355,15 @@ class FMPStockDataService:
 
                 # Key Metrics에서 기본 지표
                 'market_cap': key_metrics.get('marketCap') if key_metrics else None,
-                'pe_ratio': key_metrics.get('peRatio') if key_metrics else None,
-                'eps': key_metrics.get('eps') if key_metrics else None,
-                'dividend_yield': key_metrics.get('dividendYield') if key_metrics else None,
-
-                'rsi': None,  # RSI는 일단 NULL (프리미엄 기능)
             }
 
-            # 재무 지표 추가
+            # 재무 지표 추가 (현재 테이블 스키마에서는 지원하지 않음)
             if financial_ratios:
                 indicator_data.update({
-                    'roe': financial_ratios.get('ROE'),
-                    'roa': financial_ratios.get('ROA'),
                     'current_ratio': financial_ratios.get('currentRatio'),
                     'quick_ratio': financial_ratios.get('quickRatio'),
-                    'debt_to_equity': financial_ratios.get('debtEquityRatio'),
-                    'debt_ratio': financial_ratios.get('debtRatio'),
                     'profit_margin': financial_ratios.get('netProfitMargin'),
                 })
-
-                # PE Ratio가 없으면 Key Metrics에서 가져오기
-                if not indicator_data.get('pe_ratio') and key_metrics:
-                    indicator_data['pe_ratio'] = key_metrics.get('peRatio')
 
             # DB에 저장
             await self._save_indicators_to_db(indicator_data)
@@ -535,12 +523,12 @@ class FMPStockDataService:
             supabase = get_supabase()
 
             # 실제 DB 컬럼 (symbol은 필수)
+            # 주의: 삭제된 컬럼 제거: pe_ratio, eps, dividend_yield, rsi, roe, roa, debt_to_equity, debt_ratio
             actual_columns = {
                 'symbol', 'company_name', 'currency', 'exchange', 'industry', 'sector',
                 'current_price', 'previous_close', 'market_cap',
-                'pe_ratio', 'eps', 'dividend_yield', 'fifty_two_week_high', 'fifty_two_week_low',
-                'rsi',
-                'roe', 'roa', 'current_ratio', 'debt_to_equity', 'profit_margin', 'quick_ratio', 'debt_ratio',
+                'fifty_two_week_high', 'fifty_two_week_low',
+                'current_ratio', 'profit_margin', 'quick_ratio',
                 'last_updated', 'created_at'
             }
 

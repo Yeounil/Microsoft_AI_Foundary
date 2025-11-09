@@ -7,7 +7,8 @@
       "Bash(=3.0.0)",
       "Bash(dir /s /b E:Microsoft_AI_Foundarybackend)",
       "WebFetch(domain:site.financialmodelingprep.com)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(timeout 300 python:*)"
     ],
     "deny": [],
     "ask": []

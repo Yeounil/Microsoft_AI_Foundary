@@ -34,12 +34,6 @@ class TextificationService:
             company_name = indicators.get("company_name") or symbol
             current_price = indicators.get("current_price") or 0
             market_cap = indicators.get("market_cap") or 0
-            pe_ratio = indicators.get("pe_ratio") or 0
-            eps = indicators.get("eps") or 0
-            dividend_yield = indicators.get("dividend_yield") or 0
-            roe = indicators.get("roe") or 0
-            roa = indicators.get("roa") or 0
-            debt_to_equity = indicators.get("debt_to_equity") or 0
             profit_margin = indicators.get("profit_margin") or 0
             sector = indicators.get("sector") or "Unknown"
             industry = indicators.get("industry") or "Unknown"
@@ -55,24 +49,9 @@ class TextificationService:
             # 시가총액 포맷팅
             market_cap_str = TextificationService._format_market_cap(market_cap)
 
-            # 밸류에이션 평가
-            valuation_assessment = TextificationService._assess_valuation(pe_ratio)
-
             # 52주 가격 범위 평가
             price_position = TextificationService._assess_price_position(
                 current_price, fifty_two_week_low, fifty_two_week_high
-            )
-
-            # 재무 건강도 평가
-            financial_health = TextificationService._assess_financial_health(
-                roe, roa, debt_to_equity, profit_margin
-            )
-
-            # 배당 평가
-            dividend_assessment = (
-                f"The company offers a dividend yield of {dividend_yield:.2%}, "
-                if dividend_yield and dividend_yield > 0
-                else "The company does not currently offer dividends, "
             )
 
             # 종합 텍스트 생성
@@ -87,17 +66,9 @@ class TextificationService:
                 f"The stock is currently trading at {price_str}, "
                 f"representing a {'+' if price_change > 0 else ''}{price_change_percent:.2f}% change from the previous close of {prev_close_str}. "
                 f"The company has a market capitalization of {market_cap_str}. "
-                f"The P/E ratio stands at {pe_ratio:.1f}x, which indicates {valuation_assessment}. "
-                f"The Earnings Per Share (EPS) is ${eps:.2f}. "
-                f"{dividend_assessment}"
                 f"Over the past 52 weeks, the stock has traded between {low_str} (low) "
                 f"and {high_str} (high), with the current price {price_position}. "
-                f"Profitability metrics show a Return on Equity (ROE) of {roe:.2%} and Return on Assets (ROA) of {roa:.2%}, "
-                f"indicating {financial_health}. "
-                f"The company maintains a debt-to-equity ratio of {debt_to_equity:.2f} and "
-                f"a net profit margin of {profit_margin:.2%}, reflecting {'strong' if profit_margin and profit_margin > 0.15 else 'moderate' if profit_margin and profit_margin > 0.05 else 'low'} profitability. "
-                f"This comprehensive financial profile suggests the company is positioned as "
-                f"{'a strong market leader' if pe_ratio and pe_ratio < 20 and roe and roe > 0.15 else 'a growth-oriented company' if pe_ratio and pe_ratio > 25 else 'a stable, established business'}."
+                f"The company maintains a net profit margin of {profit_margin:.2%}, reflecting {'strong' if profit_margin and profit_margin > 0.15 else 'moderate' if profit_margin and profit_margin > 0.05 else 'low'} profitability."
             )
 
             return text
@@ -174,24 +145,14 @@ class TextificationService:
             재무 건강도를 설명하는 자연어 문장
         """
         try:
-            roe = ratios.get("roe", 0)
-            roa = ratios.get("roa", 0)
             current_ratio = ratios.get("current_ratio", 0)
-            debt_to_equity = ratios.get("debt_to_equity", 0)
             quick_ratio = ratios.get("quick_ratio", 0)
-            debt_ratio = ratios.get("debt_ratio", 0)
             profit_margin = ratios.get("profit_margin", 0)
 
             # 유동성 평가
             liquidity = (
                 "excellent" if current_ratio > 2 else "good" if current_ratio > 1.5
                 else "adequate" if current_ratio > 1 else "concerning"
-            )
-
-            # 부채 레벨 평가
-            debt_level = (
-                "conservative" if debt_to_equity < 0.5 else "moderate" if debt_to_equity < 1.5
-                else "aggressive" if debt_to_equity < 2.5 else "high"
             )
 
             # 이익성 평가
@@ -205,12 +166,7 @@ class TextificationService:
                 f"The company demonstrates {liquidity} liquidity with a current ratio of {current_ratio:.2f}, "
                 f"meaning it has ${current_ratio:.2f} in current assets for every dollar of current liabilities. "
                 f"The quick ratio of {quick_ratio:.2f} further confirms {'strong' if quick_ratio > 1 else 'weak'} short-term solvency. "
-                f"Capital structure shows a {debt_level} debt level with a debt-to-equity ratio of {debt_to_equity:.2f}, "
-                f"indicating the company uses {'minimal' if debt_to_equity < 0.5 else 'moderate' if debt_to_equity < 1.5 else 'significant'} leverage. "
-                f"Return on Equity (ROE) of {roe:.2%} and Return on Assets (ROA) of {roa:.2%} demonstrate "
-                f"{'exceptional' if roe > 0.2 else 'solid' if roe > 0.15 else 'moderate'} efficiency in generating profits. "
-                f"With a net profit margin of {profit_margin:.2%}, the company shows {profitability} profitability. "
-                f"Overall, {symbol} exhibits {'strong' if roe > 0.15 and debt_to_equity < 1.5 and current_ratio > 1 else 'moderate' if roe > 0.1 else 'weak'} financial health."
+                f"With a net profit margin of {profit_margin:.2%}, the company shows {profitability} profitability."
             )
 
             return text
