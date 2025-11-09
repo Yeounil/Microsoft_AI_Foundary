@@ -113,8 +113,17 @@ class FMPWebSocketService:
 
                 logger.info(f"[AUTH] Login response: {response_data}")
 
-                # 성공 응답 확인
-                if response_data.get("status") == "success" or "success" in str(response_data).lower():
+                # 성공 응답 확인 (status: 200, success, Authenticated 등)
+                status_code = response_data.get("status")
+                event_type = response_data.get("event")
+                message = response_data.get("message", "").lower()
+
+                # status가 200 또는 "success", 또는 "Authenticated" 메시지 포함시 성공
+                if (status_code == 200 or
+                    status_code == "success" or
+                    "authenticated" in message or
+                    "success" in message or
+                    event_type == "login"):
                     logger.info("[OK] Login successful")
                     return True
                 else:

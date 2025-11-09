@@ -313,7 +313,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     "type": "error",
                     "message": "Failed to connect to FMP WebSocket"
                 })
-                await websocket.close(code=status.WS_1011_SERVER_ERROR)
+                await websocket.close(code=1011)  # 1011 = Server Error
                 return
 
         # 콜백 등록 (한 번만)
