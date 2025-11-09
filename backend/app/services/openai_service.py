@@ -1,4 +1,4 @@
-from openai import OpenAI, AzureOpenAI
+from openai import OpenAI
 from typing import Dict, Optional
 from app.core.config import settings
 import logging
@@ -6,32 +6,19 @@ import logging
 logger = logging.getLogger(__name__)
 
 class OpenAIService:
-    
+
     def __init__(self):
         logger.info(f"OpenAI 서비스 초기화 중...")
         logger.info(f"OpenAI Key: {'설정됨' if settings.openai_api_key else '미설정'}")
-        logger.info(f"Azure OpenAI Endpoint: {'설정됨' if settings.azure_openai_endpoint else '미설정'}")
-        logger.info(f"Azure OpenAI Key: {'설정됨' if settings.azure_openai_key else '미설정'}")
 
-        # 일반 OpenAI를 우선으로 사용
+        # GPT-5를 사용하기 위해 OpenAI API 키 필수
         if settings.openai_api_key:
-            # 일반 OpenAI 사용
-            logger.info("일반 OpenAI 클라이언트 초기화")
+            logger.info("GPT-5 OpenAI 클라이언트 초기화")
             self.client = OpenAI(api_key=settings.openai_api_key)
-            self.is_azure = False
-        elif settings.azure_openai_endpoint and settings.azure_openai_key:
-            # Azure OpenAI 폴백
-            logger.info("Azure OpenAI 클라이언트 초기화 (폴백)")
-            self.client = AzureOpenAI(
-                azure_endpoint=settings.azure_openai_endpoint,
-                api_key=settings.azure_openai_key,
-                api_version=settings.azure_openai_version
-            )
-            self.is_azure = True
         else:
-            raise ValueError("OpenAI API 키 또는 Azure OpenAI 설정이 필요합니다.")
+            raise ValueError("OpenAI API 키가 필요합니다. (GPT-5 사용)")
 
-        logger.info(f"OpenAI 서비스 초기화 완료 (Azure: {self.is_azure})")
+        logger.info(f"GPT-5 OpenAI 서비스 초기화 완료")
     
     async def analyze_stock(self, symbol: str, stock_data: Dict, news_context: Optional[str] = None) -> str:
         """주식 분석 생성"""
@@ -101,27 +88,15 @@ class OpenAIService:
 이 보고서는 정보 제공을 목적으로 AI에 의해 생성되었으며, 특정 주식의 매수 또는 매도를 권유하는 금융 조언이 아닙니다. 모든 투자 결정에 대한 최종 책임은 투자자 본인에게 있습니다.
 """
 
-            if self.is_azure:
-                model_name = settings.azure_openai_deployment or "gpt-4o-mini"
-                response = self.client.chat.completions.create(
-                    model=model_name,  # Azure에서는 deployment name
-                    messages=[
-                        {"role": "system", "content": "당신은 20년 경력의 월스트리트 트레이더 출신 전문 애널리스트입니다."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    max_tokens=2000,
-                    temperature=0.7
-                )
-            else:
-                response = self.client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=[
-                        {"role": "system", "content": "당신은 20년 경력의 월스트리트 트레이더 출신 전문 애널리스트입니다."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    max_tokens=2000,
-                    temperature=0.7
-                )
+            response = self.client.chat.completions.create(
+                model="gpt-5",
+                messages=[
+                    {"role": "system", "content": "당신은 20년 경력의 월스트리트 트레이더 출신 전문 애널리스트입니다."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=2000,
+                temperature=0.7
+            )
             
             return response.choices[0].message.content
             
@@ -165,27 +140,15 @@ class OpenAIService:
             이 보고서는 정보 제공을 목적으로 AI에 의해 생성되었으며, 특정 주식의 매수 또는 매도를 권유하는 금융 조언이 아닙니다. 모든 투자 결정에 대한 최종 책임은 투자자 본인에게 있습니다.
             """
 
-            if self.is_azure:
-                model_name = settings.azure_openai_deployment or "gpt-4o-mini"
-                response = self.client.chat.completions.create(
-                    model=model_name,
-                    messages=[
-                        {"role": "system", "content": "당신은 20년 경력의 월스트리트 트레이더 출신 전문 애널리스트입니다."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    max_tokens=1500,
-                    temperature=0.5
-                )
-            else:
-                response = self.client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=[
-                        {"role": "system", "content": "당신은 20년 경력의 월스트리트 트레이더 출신 전문 애널리스트입니다."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    max_tokens=1500,
-                    temperature=0.5
-                )
+            response = self.client.chat.completions.create(
+                model="gpt-5",
+                messages=[
+                    {"role": "system", "content": "당신은 20년 경력의 월스트리트 트레이더 출신 전문 애널리스트입니다."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=1500,
+                temperature=0.5
+            )
 
             return response.choices[0].message.content
 
@@ -238,27 +201,15 @@ class OpenAIService:
 이 분석은 정보 제공 목적으로 AI가 생성한 것이며, 투자 권유가 아닙니다.
 """
 
-            if self.is_azure:
-                model_name = settings.azure_openai_deployment or "gpt-4o-mini"
-                response = self.client.chat.completions.create(
-                    model=model_name,
-                    messages=[
-                        {"role": "system", "content": "당신은 20년 경력의 월스트리트 트레이더 출신 전문 애널리스트입니다."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    max_tokens=800,
-                    temperature=0.5
-                )
-            else:
-                response = self.client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=[
-                        {"role": "system", "content": "당신은 20년 경력의 월스트리트 트레이더 출신 전문 애널리스트입니다."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    max_tokens=800,
-                    temperature=0.5
-                )
+            response = self.client.chat.completions.create(
+                model="gpt-5",
+                messages=[
+                    {"role": "system", "content": "당신은 20년 경력의 월스트리트 트레이더 출신 전문 애널리스트입니다."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=800,
+                temperature=0.5
+            )
 
             return response.choices[0].message.content
 
@@ -365,43 +316,23 @@ class OpenAIService:
 
             system_message = "당신은 20년 경력의 월스트리트 트레이더 출신 전문 애널리스트입니다.. 뉴스 기반 종목 분석에 특화되어 있으며, 과거 분석 결과를 비판적으로 검토하고 새로운 정보와 결합하여 더 정확한 투자 인사이트를 제공합니다. 과거 데이터에 맹목적으로 의존하지 않고, 항상 최신 정보를 우선시하며 균형 잡힌 분석을 수행합니다."
 
-            logger.info(f"AI 분석 요청 준비 중... (Azure: {self.is_azure})")
-            
-            if self.is_azure:
-                model_name = settings.azure_openai_deployment or "gpt-4o-mini"
-                logger.info(f"Azure OpenAI 모델 사용: {model_name}")
+            logger.info(f"AI 분석 요청 준비 중... (GPT-5 사용)")
 
-                # API 키 검증
-                if not settings.azure_openai_key:
-                    raise Exception("Azure OpenAI API 키가 설정되지 않았습니다.")
-                if not settings.azure_openai_endpoint:
-                    raise Exception("Azure OpenAI 엔드포인트가 설정되지 않았습니다.")
+            # API 키 검증
+            if not settings.openai_api_key:
+                raise Exception("OpenAI API 키가 설정되지 않았습니다.")
 
-                response = self.client.chat.completions.create(
-                    model=model_name,
-                    messages=[
-                        {"role": "system", "content": system_message},
-                        {"role": "user", "content": prompt}
-                    ],
-                    max_tokens=3000,
-                    temperature=0.6
-                )
-            else:
-                logger.info("일반 OpenAI 모델 사용: gpt-4o-mini")
+            logger.info("GPT-5 모델 사용")
 
-                # API 키 검증
-                if not settings.openai_api_key:
-                    raise Exception("OpenAI API 키가 설정되지 않았습니다.")
-
-                response = self.client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=[
-                        {"role": "system", "content": system_message},
-                        {"role": "user", "content": prompt}
-                    ],
-                    max_tokens=3000,
-                    temperature=0.6
-                )
+            response = self.client.chat.completions.create(
+                model="gpt-5",
+                messages=[
+                    {"role": "system", "content": system_message},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=3000,
+                temperature=0.6
+            )
             
             logger.info(f"AI 응답 수신 완료: {len(response.choices[0].message.content)}자")
             return response.choices[0].message.content
@@ -423,5 +354,77 @@ class OpenAIService:
             close = data.get("close", 0)
             volume = data.get("volume", 0)
             formatted.append(f"- {date}: 종가 {close}, 거래량 {volume:,}")
-        
+
         return "\n".join(formatted)
+
+    async def generate_embedding(self, text: str) -> list:
+        """
+        OpenAI Embedding API를 사용하여 텍스트를 벡터로 변환
+
+        Args:
+            text: 임베딩할 텍스트
+
+        Returns:
+            1536차원 임베딩 벡터
+        """
+        try:
+            if not text or not text.strip():
+                logger.warning("[WARN] Empty text provided for embedding")
+                return None
+
+            logger.info(f"[EMBED] Generating embedding for text (length: {len(text)} chars)")
+
+            # OpenAI Embedding API 호출 (ada-002, 1536차원)
+            response = self.client.embeddings.create(
+                model="text-embedding-ada-002",
+                input=text
+            )
+
+            # 임베딩 벡터 추출
+            embedding = response.data[0].embedding
+
+            logger.info(f"[OK] Embedding generated (dimension: {len(embedding)})")
+            return embedding
+
+        except Exception as e:
+            logger.error(f"[ERROR] Error generating embedding: {str(e)}")
+            return None
+
+    async def async_chat_completion(
+        self,
+        messages: list,
+        model: str = "gpt-5",
+        temperature: float = 0.7,
+        max_tokens: int = 2000
+    ) -> str:
+        """
+        GPT-5를 사용한 비동기 채팅 완성 (RAG용)
+
+        Args:
+            messages: 메시지 리스트 (역할과 컨텐츠)
+            model: 사용할 모델 (기본값: gpt-5)
+            temperature: 창의성 정도 (0.0-2.0)
+            max_tokens: 최대 토큰 수
+
+        Returns:
+            GPT-5의 응답 텍스트
+        """
+        try:
+            logger.info(f"[GPT] Calling {model} with {len(messages)} messages")
+
+            response = self.client.chat.completions.create(
+                model=model,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens
+            )
+
+            # 응답 추출
+            result = response.choices[0].message.content
+
+            logger.info(f"[OK] GPT response generated ({len(result)} chars)")
+            return result
+
+        except Exception as e:
+            logger.error(f"[ERROR] Chat completion failed: {str(e)}")
+            return None

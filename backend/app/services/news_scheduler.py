@@ -27,10 +27,10 @@ class NewsScheduler:
     async def start(self):
         """스케줄러 시작"""
         if self.is_running:
-            logger.warning("스케줄러가 이미 실행 중입니다.")
+            logger.warning("[WARN] Scheduler is already running")
             return
 
-        logger.info("뉴스 크롤링 스케줄러 시작")
+        logger.info("[INFO] Starting news crawling scheduler")
 
         # 1. 서버 시작 시 누락된 뉴스 확인 및 크롤링 (비동기로 즉시 실행)
         asyncio.create_task(self._recover_missing_news())
@@ -40,7 +40,7 @@ class NewsScheduler:
             self._scheduled_crawl,
             trigger=IntervalTrigger(hours=2),
             id='news_crawl_2hours',
-            name='2시간마다 뉴스 크롤링',
+            name='News crawling every 2 hours',
             replace_existing=True
         )
 
@@ -51,7 +51,7 @@ class NewsScheduler:
             hour=0,
             minute=0,
             id='cleanup_old_news',
-            name='오래된 뉴스 정리',
+            name='Cleanup old news daily',
             replace_existing=True
         )
 
@@ -59,50 +59,50 @@ class NewsScheduler:
         self.scheduler.start()
         self.is_running = True
 
-        logger.info("뉴스 크롤링 스케줄러가 시작되었습니다.")
-        logger.info("- 2시간마다 자동 크롤링")
-        logger.info("- 매일 자정에 오래된 뉴스 정리")
+        logger.info("[OK] News crawling scheduler started successfully")
+        logger.info("[CONFIG] - Automatic crawling every 2 hours")
+        logger.info("[CONFIG] - Daily news cleanup at midnight")
 
     async def stop(self):
         """스케줄러 중지"""
         if not self.is_running:
             return
 
-        logger.info("뉴스 크롤링 스케줄러 중지")
+        logger.info("[INFO] Stopping news crawling scheduler")
         self.scheduler.shutdown()
 
         # 백그라운드 수집기의 스레드 풀 정리
         self.collector.shutdown()
 
         self.is_running = False
-        logger.info("스케줄러 및 스레드 풀 정리 완료")
+        logger.info("[OK] Scheduler and thread pool cleanup completed")
 
     async def _scheduled_crawl(self):
         """정기 크롤링 작업 (2시간마다 실행)"""
         try:
-            logger.info("========== 정기 뉴스 크롤링 시작 ==========")
+            logger.info("========== [SCHEDULED_CRAWL] News crawling started ==========")
 
             # 인기 종목 뉴스 수집
-            result = await self.collector.collect_popular_symbols_news(limit_per_symbol=20)
+            result = await self.collector.collect_popular_symbols_news(limit_per_symbol=100)
 
-            logger.info(f"정기 크롤링 완료: {result.get('total_collected', 0)}개 뉴스 수집")
-            logger.info(f"성공한 종목: {len(result.get('successful_symbols', []))}개")
-            logger.info(f"실패한 종목: {len(result.get('failed_symbols', []))}개")
-            logger.info("==========================================")
+            logger.info(f"[CRAWL_RESULT] Total collected: {result.get('total_collected', 0)} articles")
+            logger.info(f"[CRAWL_RESULT] Successful symbols: {len(result.get('successful_symbols', []))}")
+            logger.info(f"[CRAWL_RESULT] Failed symbols: {len(result.get('failed_symbols', []))}")
+            logger.info("========== [SCHEDULED_CRAWL] Crawling completed ==========")
 
         except Exception as e:
-            logger.error(f"정기 크롤링 중 오류: {str(e)}")
+            logger.error(f"[ERROR] Error during scheduled crawling: {str(e)}")
 
     async def _recover_missing_news(self):
         """서버 재시작 시 누락된 뉴스 복구"""
         try:
-            logger.info("========== 서버 재시작: 누락 뉴스 확인 중 ==========")
+            logger.info("========== [RECOVERY] Server restart: Checking for missing news ==========")
 
             # 1. 마지막 성공적인 크롤링 시각 확인
             last_crawl_time = await self._get_last_successful_crawl_time()
 
             if not last_crawl_time:
-                logger.info("이전 크롤링 기록이 없습니다. 즉시 크롤링을 시작합니다.")
+                logger.info("[RECOVERY] No previous crawl records found. Starting immediate crawl.")
                 await self._scheduled_crawl()
                 return
 
@@ -111,23 +111,23 @@ class NewsScheduler:
             time_diff = now - last_crawl_time
             hours_passed = time_diff.total_seconds() / 3600
 
-            logger.info(f"마지막 크롤링: {last_crawl_time.strftime('%Y-%m-%d %H:%M:%S')}")
-            logger.info(f"경과 시간: {hours_passed:.1f}시간")
+            logger.info(f"[RECOVERY] Last crawl: {last_crawl_time.strftime('%Y-%m-%d %H:%M:%S')}")
+            logger.info(f"[RECOVERY] Time elapsed: {hours_passed:.1f} hours")
 
             # 3. 2시간 이상 경과했으면 즉시 크롤링
             if hours_passed >= 2:
-                logger.info(f"2시간 이상 경과하여 즉시 크롤링을 시작합니다.")
+                logger.info(f"[RECOVERY] More than 2 hours elapsed. Starting immediate crawl.")
                 await self._scheduled_crawl()
             else:
                 remaining_time = 2 - hours_passed
-                logger.info(f"다음 크롤링까지 {remaining_time:.1f}시간 남았습니다.")
+                logger.info(f"[RECOVERY] {remaining_time:.1f} hours remaining until next scheduled crawl.")
 
-            logger.info("==================================================")
+            logger.info("========== [RECOVERY] Recovery check completed ==========")
 
         except Exception as e:
-            logger.error(f"누락 뉴스 복구 중 오류: {str(e)}")
+            logger.error(f"[ERROR] Error during missing news recovery: {str(e)}")
             # 오류 발생 시에도 크롤링 진행
-            logger.info("오류로 인해 즉시 크롤링을 시작합니다.")
+            logger.info("[RECOVERY] Starting immediate crawl due to error.")
             await self._scheduled_crawl()
 
     async def _get_last_successful_crawl_time(self) -> datetime | None:
@@ -152,22 +152,28 @@ class NewsScheduler:
             return None
 
         except Exception as e:
-            logger.error(f"마지막 크롤링 시각 조회 오류: {str(e)}")
+            logger.error(f"[ERROR] Error retrieving last crawl time: {str(e)}")
             return None
 
     async def _cleanup_old_news(self):
-        """오래된 뉴스 정리 (7일 이상 지난 뉴스 삭제)"""
+        """오래된 뉴스 정리 (1년 이상 지난 뉴스 자동 삭제)"""
         try:
-            logger.info("오래된 뉴스 정리 시작")
-            result = await self.collector.cleanup_old_news(days_old=7)
-            logger.info(f"오래된 뉴스 정리 완료: {result.get('deleted_count', 0)}개 삭제")
+            from app.services.news_db_service import NewsDBService
+
+            logger.info("[CLEANUP] Starting old news cleanup (1 year or older)")
+
+            # 1년 이상 된 뉴스 삭제
+            deleted_count = await NewsDBService.delete_old_news(days=365)
+
+            logger.info(f"[CLEANUP] Old news cleanup completed: {deleted_count}개 뉴스 삭제")
+
         except Exception as e:
-            logger.error(f"뉴스 정리 중 오류: {str(e)}")
+            logger.error(f"[ERROR] Error during news cleanup: {str(e)}")
 
     async def trigger_manual_crawl(self, symbols: List[str] = None) -> Dict:
         """수동 크롤링 트리거 (API로 호출 가능, 멀티스레드 지원)"""
         try:
-            logger.info(f"수동 크롤링 시작 (멀티스레드): {symbols if symbols else '전체'}")
+            logger.info(f"[MANUAL_CRAWL] Starting manual crawl (multithreaded): {symbols if symbols else 'all symbols'}")
 
             if symbols:
                 # 특정 종목만 크롤링 (멀티스레드로 병렬 처리)
@@ -193,9 +199,9 @@ class NewsScheduler:
                         result = await future
                         total_collected += result.get('collected_count', 0)
                         results.append(result)
-                        logger.info(f"[수동 크롤링] 종목 {symbol}: {result.get('collected_count', 0)}개 수집")
+                        logger.info(f"[MANUAL_CRAWL] Symbol {symbol}: {result.get('collected_count', 0)} collected")
                     except Exception as e:
-                        logger.error(f"종목 {symbol} 크롤링 실패: {str(e)}")
+                        logger.error(f"[ERROR] Symbol {symbol} crawl failed: {str(e)}")
                         results.append({
                             "symbol": symbol,
                             "collected_count": 0,
@@ -209,10 +215,10 @@ class NewsScheduler:
                 }
             else:
                 # 전체 인기 종목 크롤링 (멀티스레드 버전)
-                return await self.collector.collect_popular_symbols_news(limit_per_symbol=20)
+                return await self.collector.collect_popular_symbols_news(limit_per_symbol=100)
 
         except Exception as e:
-            logger.error(f"수동 크롤링 중 오류: {str(e)}")
+            logger.error(f"[ERROR] Error during manual crawl: {str(e)}")
             return {
                 "status": "error",
                 "error": str(e)

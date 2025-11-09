@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit:*)",
+      "Bash(pip uninstall:*)",
+      "Bash(pip install:*)",
+      "Bash(=3.0.0)",
+      "Bash(dir /s /b E:Microsoft_AI_Foundarybackend)",
+      "WebFetch(domain:site.financialmodelingprep.com)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

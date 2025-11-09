@@ -2,42 +2,27 @@ import os
 import json
 import logging
 from typing import List, Dict, Optional
-from openai import OpenAI, AzureOpenAI
+from openai import OpenAI
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
 class AzureOpenAIService:
-    """OpenAI 서비스 (일반 OpenAI 우선 사용)"""
+    """OpenAI 서비스 (GPT-5 사용)"""
 
     def __init__(self):
         self.client = None
-        self.is_azure = False
-        self.model_name = "gpt-4o-mini"
+        self.model_name = "gpt-5"
         self._initialize_client()
 
     def _initialize_client(self):
-        """OpenAI 클라이언트 초기화 (일반 OpenAI 우선)"""
+        """OpenAI 클라이언트 초기화 (GPT-5 사용)"""
         try:
-            # 일반 OpenAI를 우선으로 사용
+            # GPT-5를 사용하기 위해 OpenAI API 키 필수
             if settings.openai_api_key:
                 self.client = OpenAI(api_key=settings.openai_api_key)
-                self.is_azure = False
-                self.model_name = "gpt-4o-mini"
-                logger.info("일반 OpenAI 클라이언트 초기화 완료")
-            elif all([
-                settings.azure_openai_endpoint,
-                settings.azure_openai_key,
-                settings.azure_openai_deployment
-            ]):
-                self.client = AzureOpenAI(
-                    api_key=settings.azure_openai_key,
-                    api_version=settings.azure_openai_version,
-                    azure_endpoint=settings.azure_openai_endpoint
-                )
-                self.is_azure = True
-                self.model_name = settings.azure_openai_deployment
-                logger.info("Azure OpenAI 클라이언트 초기화 완료 (폴백)")
+                self.model_name = "gpt-5"
+                logger.info("GPT-5 OpenAI 클라이언트 초기화 완료")
             else:
                 logger.warning("OpenAI API 설정이 없음. AI 기능을 사용할 수 없습니다.")
                 return

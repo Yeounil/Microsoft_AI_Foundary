@@ -25,6 +25,9 @@ aiohttp>=3.9.0
 beautifulsoup4>=4.12.0
 lxml>=4.9.0
 
+# WebSocket
+websockets>=12.0
+
 # AI/ML and analysis
 openai>=1.3.0
 
@@ -39,3 +42,6 @@ python-dateutil>=2.8.0
 
 # Task scheduling
 apscheduler>=3.10.4
+
+# Vector Database
+pinecone>=3.0.0

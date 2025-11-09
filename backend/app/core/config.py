@@ -32,11 +32,18 @@ class Settings(BaseSettings):
     # External APIs
     alpha_vantage_api_key: str = os.getenv("ALPHA_VANTAGE_API_KEY", "")
     news_api_key: str = os.getenv("NEWS_API_KEY", "")
+    apify_api_token: str = os.getenv("APIFY_API_TOKEN", "")
     
     # Naver API
     naver_client_id: str = os.getenv("NAVER_CLIENT_ID", "")
     naver_client_secret: str = os.getenv("NAVER_CLIENT_SECRET", "")
-    
+
+    # Financial Modeling Prep API
+    fmp_api_key: str = os.getenv("FMP_API_KEY", "")
+
+    # Pinecone Vector DB
+    pinecone_api_key: Optional[str] = os.getenv("PINECONE_API_KEY")
+
     class Config:
         env_file = ".env"
         extra = "ignore"
