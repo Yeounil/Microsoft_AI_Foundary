@@ -25,6 +25,9 @@ aiohttp>=3.9.0
 beautifulsoup4>=4.12.0
 lxml>=4.9.0
 
+# WebSocket
+websockets>=12.0
+
 # AI/ML and analysis
 openai>=1.3.0
 
