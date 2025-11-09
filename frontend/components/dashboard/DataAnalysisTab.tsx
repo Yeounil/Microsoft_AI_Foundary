@@ -9,7 +9,19 @@ interface DataAnalysisTabProps {
 }
 
 export function DataAnalysisTab({ stock }: DataAnalysisTabProps) {
-  const aiScore = Math.floor(Math.random() * 30 + 60);
+  // Generate deterministic values based on stock symbol to avoid hydration errors
+  const hashCode = (str: string) => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    return Math.abs(hash);
+  };
+
+  const seed = hashCode(stock.symbol);
+  const aiScore = (seed % 30) + 60;
   const sentiment = stock.changePercent > 1 ? 'positive' : stock.changePercent < -1 ? 'negative' : 'neutral';
 
   const formatPrice = (price: number, currency?: string) => {
@@ -22,8 +34,8 @@ export function DataAnalysisTab({ stock }: DataAnalysisTabProps) {
   const metrics = [
     { label: 'AI 투자 점수', value: aiScore, max: 100 },
     { label: '시장 센티먼트', value: sentiment === 'positive' ? 75 : sentiment === 'negative' ? 35 : 55, max: 100 },
-    { label: '변동성 지수', value: Math.floor(Math.random() * 40 + 30), max: 100 },
-    { label: '유동성 점수', value: Math.floor(Math.random() * 25 + 65), max: 100 },
+    { label: '변동성 지수', value: ((seed * 7) % 40) + 30, max: 100 },
+    { label: '유동성 점수', value: ((seed * 13) % 25) + 65, max: 100 },
   ];
 
   const fundamentals = [

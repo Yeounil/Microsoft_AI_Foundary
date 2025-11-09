@@ -622,6 +622,7 @@ function SidebarMenuSkeleton({
         <Skeleton
           className="size-4 rounded-md"
           data-sidebar="menu-skeleton-icon"
+          suppressHydrationWarning
         />
       )}
       <Skeleton
@@ -632,6 +633,7 @@ function SidebarMenuSkeleton({
             "--skeleton-width": width,
           } as React.CSSProperties
         }
+        suppressHydrationWarning
       />
     </div>
   );

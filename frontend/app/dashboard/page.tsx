@@ -7,6 +7,7 @@ import { authService } from '@/services/authService';
 import {
   AlertDialog,
   AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -54,7 +55,8 @@ export default function DashboardPage() {
     };
 
     checkAuth();
-  }, [router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on mount
 
   const handleLoginRedirect = () => {
     router.push('/login');
@@ -83,8 +85,8 @@ export default function DashboardPage() {
             로그인이 필요한 페이지입니다.
           </div>
         </div>
-        <AlertDialog open={showAuthModal} onOpenChange={setShowAuthModal}>
-          <AlertDialogContent>
+        <AlertDialog open={showAuthModal}>
+          <AlertDialogContent onEscapeKeyDown={(e) => e.preventDefault()} onPointerDownOutside={(e) => e.preventDefault()}>
             <AlertDialogHeader>
               <AlertDialogTitle>로그인이 필요합니다</AlertDialogTitle>
               <AlertDialogDescription>
@@ -93,6 +95,9 @@ export default function DashboardPage() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => router.push('/')}>
+                취소
+              </AlertDialogCancel>
               <AlertDialogAction onClick={handleLoginRedirect}>
                 로그인 페이지로 이동
               </AlertDialogAction>

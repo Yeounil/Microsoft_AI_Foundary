@@ -26,7 +26,11 @@
       "Bash(cp:*)",
       "WebFetch(domain:www.tradingview.com)",
       "Bash(cat:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "WebSearch",
+      "Bash(npm run dev:*)",
+      "Bash(taskkill:*)",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []

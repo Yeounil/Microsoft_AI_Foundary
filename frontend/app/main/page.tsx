@@ -7,6 +7,7 @@ import { authService } from '@/services/authService';
 import {
   AlertDialog,
   AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -92,8 +93,8 @@ export default function Main() {
             로그인이 필요한 페이지입니다.
           </div>
         </div>
-        <AlertDialog open={showAuthModal} onOpenChange={setShowAuthModal}>
-          <AlertDialogContent>
+        <AlertDialog open={showAuthModal}>
+          <AlertDialogContent onEscapeKeyDown={(e) => e.preventDefault()} onPointerDownOutside={(e) => e.preventDefault()}>
             <AlertDialogHeader>
               <AlertDialogTitle>로그인이 필요합니다</AlertDialogTitle>
               <AlertDialogDescription>
@@ -102,6 +103,9 @@ export default function Main() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => router.push('/')}>
+                취소
+              </AlertDialogCancel>
               <AlertDialogAction onClick={handleLoginRedirect}>
                 로그인 페이지로 이동
               </AlertDialogAction>

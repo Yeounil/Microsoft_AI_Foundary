@@ -8,6 +8,7 @@ import { authService } from '@/services/authService';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import Image from 'next/image';
 import myLogo from '@/assets/myLogo.png';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface LoginPageProps {
   onLogin: (token: string) => void;
@@ -19,6 +20,7 @@ export function LoginPage({ onLogin, onSwitchToRegister }: LoginPageProps) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +37,7 @@ export function LoginPage({ onLogin, onSwitchToRegister }: LoginPageProps) {
       const response = await authService.login(username, password);
 
       if (response.access_token) {
-        authService.saveToken(response.access_token, response.refresh_token);
+        login(response.access_token, response.refresh_token);
         onLogin(response.access_token);
       } else {
         setError('로그인에 실패했습니다.');
@@ -143,7 +145,7 @@ export function LoginPage({ onLogin, onSwitchToRegister }: LoginPageProps) {
                 <button
                   type="button"
                   onClick={onSwitchToRegister}
-                  className="text-secondary hover:underline font-medium"
+                  className="text-secondary hover:underline font-medium cursor-pointer"
                   disabled={loading}
                 >
                   가입하기

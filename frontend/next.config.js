@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Turbopack 비활성화 (한글 경로 이슈로 인해 webpack 사용)
+  turbo: {
+    enabled: false,
+  },
   images: {
     remotePatterns: [
       {
