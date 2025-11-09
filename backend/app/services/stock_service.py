@@ -1,135 +1,423 @@
-import yfinance as yf
-import pandas as pd
+import requests
+import logging
 from typing import Dict, List, Optional
 from datetime import datetime, timedelta
+from app.core.config import settings
+from app.db.supabase_client import get_supabase
+
+logger = logging.getLogger(__name__)
 
 class StockService:
-    
+    """Financial Modeling Prep API를 사용한 주식 데이터 서비스"""
+
+    BASE_URL = "https://financialmodelingprep.com/stable"
+    BASE_URL_V3 = "https://financialmodelingprep.com/api/v3"
+
+    def __init__(self):
+        self.api_key = settings.fmp_api_key if hasattr(settings, 'fmp_api_key') else None
+        if not self.api_key:
+            logger.warning("FMP API Key not configured. Please set FMP_API_KEY in environment.")
+
     @staticmethod
-    def get_stock_data(symbol: str, period: str = "1y", interval: str = "1d") -> Dict:
-        """주식 데이터 가져오기"""
+    def get_instance():
+        """싱글톤 인스턴스"""
+        if not hasattr(StockService, '_instance'):
+            StockService._instance = StockService()
+        return StockService._instance
+
+    async def _get_last_update_time(self, symbol: str) -> Optional[datetime]:
+        """DB에서 해당 종목의 마지막 업데이트 시간 조회"""
         try:
-            # yfinance를 사용해 주식 데이터 가져오기
-            stock = yf.Ticker(symbol)
-            
-            # 기본 정보
-            info = stock.info
-            
-            # 주가 데이터 - interval 파라미터 추가
-            hist = stock.history(period=period, interval=interval)
-            
-            # 데이터프레임을 딕셔너리로 변환
-            price_data = []
-            for date, row in hist.iterrows():
-                # interval에 따라 날짜 형식을 다르게 처리
-                if interval in ['1m', '2m', '5m', '15m', '30m', '60m', '90m']:
-                    # 분 단위일 때는 시간까지 표시
-                    date_str = date.strftime("%Y-%m-%d %H:%M")
-                else:
-                    # 일 단위일 때는 날짜만 표시
-                    date_str = date.strftime("%Y-%m-%d")
-                
-                price_data.append({
-                    "date": date_str,
-                    "open": round(row["Open"], 2),
-                    "high": round(row["High"], 2),
-                    "low": round(row["Low"], 2),
-                    "close": round(row["Close"], 2),
-                    "volume": int(row["Volume"])
-                })
-            
-            return {
-                "symbol": symbol,
-                "company_name": info.get("longName", symbol),
-                "current_price": round(info.get("currentPrice", 0), 2),
-                "previous_close": round(info.get("previousClose", 0), 2),
-                "market_cap": info.get("marketCap", 0),
-                "pe_ratio": info.get("trailingPE", 0),
-                "price_data": price_data,
-                "currency": info.get("currency", "USD")
-            }
-            
+            supabase = get_supabase()
+            result = supabase.table("stock_indicators")\
+                .select("last_updated")\
+                .eq("symbol", symbol.upper())\
+                .execute()
+
+            if result.data and len(result.data) > 0:
+                last_updated = result.data[0].get("last_updated")
+                if last_updated:
+                    # ISO 형식 파싱
+                    return datetime.fromisoformat(last_updated.replace('Z', '+00:00')).replace(tzinfo=None)
+
+            return None
+
         except Exception as e:
+            logger.error(f"Error checking last update time for {symbol}: {str(e)}")
+            return None
+
+    async def _determine_data_period(self, symbol: str) -> str:
+        """
+        API 호출 시 조회할 데이터 기간 결정
+        - 처음 호출: 1년 데이터
+        - 당일 재호출: 요청 거부 (skip)
+        - 다음날 이후: 마지막 업데이트 이후부터 오늘까지 데이터만 조회
+
+        규칙: 하루에 한 번만 API 호출 허용
+        """
+        try:
+            last_update = await self._get_last_update_time(symbol)
+
+            if last_update is None:
+                # 처음 호출: 1년 데이터
+                logger.info(f"{symbol}: First time fetch - requesting 1 year of data")
+                return "1y"
+
+            # 마지막 업데이트 이후 경과 시간 계산
+            now = datetime.now()
+            last_update_date = last_update.date()
+            today = now.date()
+
+            logger.info(f"{symbol}: Last updated on {last_update_date}, today is {today}")
+
+            # 같은 날짜 재요청: 거부
+            if last_update_date == today:
+                logger.info(f"{symbol}: Already updated today, rejecting request (one update per day limit)")
+                return "skip"
+
+            # 다음날 이후: 데이터 조회
+            days_since_update = (today - last_update_date).days
+            logger.info(f"{symbol}: {days_since_update} days since last update")
+
+            if days_since_update == 1:
+                return "1d"  # 1일 데이터 (어제 이후 데이터)
+            elif days_since_update <= 7:
+                return "1mo"  # 1개월 데이터
+            else:
+                return "1y"  # 1년 데이터
+
+        except Exception as e:
+            logger.error(f"Error determining data period for {symbol}: {str(e)}")
+            return "1y"  # 오류 발생 시 기본값 반환
+
+    async def get_stock_data(self, symbol: str, period: str = None, interval: str = "1d") -> Dict:
+        """
+        Financial Modeling Prep API를 사용해 주식 데이터 가져오기
+        - 종목 정보 (회사명, 현재 주가, 시가총액, PE 비율)
+        - 기술 지표 (RSI, MACD, Moving Average 등)
+        - 재무 지표 (ROE, ROA, Debt Ratio 등)
+        - 주가 히스토리 데이터
+
+        캐싱 로직 (하루 한 번 API 호출 제한):
+        - 처음 호출: 1년 데이터 API 조회 → DB 저장
+        - 당일 재호출: 요청 거부 (error 응답)
+        - 다음날 이후: 마지막 업데이트 이후 데이터만 API 조회
+        """
+        try:
+            if not self.api_key:
+                raise Exception("FMP API Key is not configured")
+
+            logger.info(f"Fetching stock data for {symbol} from FMP API")
+
+            # 1. 조회 기간 자동 결정 (캐싱 로직)
+            if period is None:
+                period = await self._determine_data_period(symbol)
+
+            # 2. 당일 재요청 거부
+            if period == "skip":
+                logger.warning(f"{symbol}: Already updated today, rejecting request")
+                raise Exception(f"Stock data for {symbol} has already been updated today. Please try again tomorrow.")
+
+            # 3. 종목 기본 정보 및 재무 지표 조회
+            quote_data = self._get_quote(symbol)
+            if not quote_data:
+                raise Exception(f"Stock {symbol} not found")
+
+            # 4. 기술 지표 조회
+            technical_indicators = self._get_technical_indicators(symbol, interval)
+
+            # 5. 재무 지표 조회
+            financial_ratios = self._get_financial_ratios(symbol)
+
+            # 6. 주가 히스토리 조회
+            price_history = self._get_historical_prices(symbol, period, interval)
+
+            # 7. 기본 정보와 지표 통합
+            stock_data = {
+                "symbol": symbol.upper(),
+                "company_name": quote_data.get("companyName", symbol),
+                "current_price": round(float(quote_data.get("price", 0)), 2),
+                "previous_close": round(float(quote_data.get("previousClose", 0)), 2),
+                "market_cap": quote_data.get("marketCap", 0),
+                "pe_ratio": round(float(quote_data.get("pe", 0)), 2) if quote_data.get("pe") else 0,
+                "eps": round(float(quote_data.get("eps", 0)), 2) if quote_data.get("eps") else 0,
+                "dividend_yield": round(float(quote_data.get("dividendYield", 0)), 4) if quote_data.get("dividendYield") else 0,
+                "fifty_two_week_high": round(float(quote_data.get("52WeekHigh", 0)), 2) if quote_data.get("52WeekHigh") else 0,
+                "fifty_two_week_low": round(float(quote_data.get("52WeekLow", 0)), 2) if quote_data.get("52WeekLow") else 0,
+                "currency": quote_data.get("currency", "USD"),
+                "price_data": price_history,
+                "technical_indicators": technical_indicators,
+                "financial_ratios": financial_ratios,
+                "exchange": quote_data.get("exchange", ""),
+                "industry": quote_data.get("industry", ""),
+                "sector": quote_data.get("sector", ""),
+                "data_period": period,
+                "cache_info": f"Fetched {len(price_history)} price records"
+            }
+
+            logger.info(f"Stock data fetched successfully for {symbol} (period: {period})")
+            return stock_data
+
+        except Exception as e:
+            logger.error(f"Error fetching stock data for {symbol}: {str(e)}")
             raise Exception(f"Error fetching stock data: {str(e)}")
-    
+
+
+    def _get_quote(self, symbol: str) -> Dict:
+        """현재 주가 및 기본 정보 조회 (공식 문서: /stable/quote)"""
+        try:
+            # 공식 문서: https://site.financialmodelingprep.com/developer/docs
+            # /stable/quote?symbol=AAPL&apikey=YOUR_API_KEY
+            url = f"{self.BASE_URL}/quote"
+            params = {
+                "symbol": symbol.upper(),
+                "apikey": self.api_key
+            }
+            response = requests.get(url, params=params, timeout=10)
+            response.raise_for_status()
+
+            data = response.json()
+            if isinstance(data, list) and len(data) > 0:
+                return data[0]
+            return data
+
+        except Exception as e:
+            logger.error(f"Error fetching quote for {symbol}: {str(e)}")
+            return {}
+
+    def _get_historical_prices(self, symbol: str, period: str = "1y", interval: str = "1d") -> List[Dict]:
+        """주가 히스토리 조회 (공식 문서: /stable/historical-price-eod/full)"""
+        try:
+            # 기간에 따른 일수 계산
+            days_map = {
+                "1d": 1, "5d": 5, "1mo": 30, "3mo": 90, "6mo": 180,
+                "1y": 365, "2y": 730, "5y": 1825, "10y": 3650
+            }
+            days = days_map.get(period, 365)
+
+            # FMP API에서 historical 데이터 조회 (일봉 기준)
+            # 공식 문서: https://financialmodelingprep.com/stable/historical-price-eod/full?symbol=AAPL&apikey=YOUR_API_KEY
+            url = f"{self.BASE_URL}/historical-price-eod/full"
+            params = {
+                "symbol": symbol.upper(),
+                "apikey": self.api_key
+            }
+
+            response = requests.get(url, params=params, timeout=10)
+            response.raise_for_status()
+
+            data = response.json()
+            # 응답이 리스트로 반환됨
+            historical = data if isinstance(data, list) else data.get("historical", [])
+
+            price_data = []
+            for record in historical[:days]:  # 날짜 제한
+                price_data.append({
+                    "date": record.get("date"),
+                    "open": round(float(record.get("open", 0)), 2),
+                    "high": round(float(record.get("high", 0)), 2),
+                    "low": round(float(record.get("low", 0)), 2),
+                    "close": round(float(record.get("close", 0)), 2),
+                    "volume": int(record.get("volume", 0)),
+                    "change": round(float(record.get("change", 0) or 0), 2),
+                    "change_percent": round(float(record.get("changePercent", 0) or 0), 2)
+                })
+
+            return price_data
+
+        except Exception as e:
+            logger.error(f"Error fetching historical prices for {symbol}: {str(e)}")
+            return []
+
+    def _get_technical_indicators(self, symbol: str, interval: str = "1d") -> Dict:
+        """기술 지표 조회 (RSI) - Free 플랜에서는 사용 불가능"""
+        try:
+            # Technical Indicators (RSI)는 유료 플랜에서만 제공
+            # Free 플랜에서는 402 Payment Required 에러 발생
+            # 따라서 기본값 반환 (또는 프리미엄 플랜으로 업그레이드 필요)
+            logger.warning(f"Technical Indicators (RSI) requires premium plan. Using default values.")
+
+            return {
+                "rsi": 0,
+                "timestamp": None,
+                "note": "Technical indicators available with premium plan only"
+            }
+
+        except Exception as e:
+            logger.error(f"Error fetching technical indicators for {symbol}: {str(e)}")
+            return {"rsi": 0, "timestamp": None}
+
+    def _get_financial_ratios(self, symbol: str) -> Dict:
+        """재무 지표 조회 (ROE, ROA, Debt Ratio 등)"""
+        try:
+            # 공식 문서: https://financialmodelingprep.com/stable/ratios?symbol=AAPL&apikey=YOUR_API_KEY
+            url = f"{self.BASE_URL}/ratios"
+            params = {
+                "symbol": symbol.upper(),
+                "apikey": self.api_key
+            }
+
+            response = requests.get(url, params=params, timeout=10)
+            response.raise_for_status()
+
+            data = response.json()
+            # 응답이 리스트로 반환, 최신 데이터가 첫 번째
+            if isinstance(data, list) and len(data) > 0:
+                ratios = data[0]
+                return {
+                    "roe": round(float(ratios.get("roe", 0)), 4) if ratios.get("roe") else 0,
+                    "roa": round(float(ratios.get("roa", 0)), 4) if ratios.get("roa") else 0,
+                    "current_ratio": round(float(ratios.get("currentRatio", 0)), 2) if ratios.get("currentRatio") else 0,
+                    "debt_to_equity": round(float(ratios.get("debtToEquity", 0)), 2) if ratios.get("debtToEquity") else 0,
+                    "profit_margin": round(float(ratios.get("netProfitMargin", 0)), 4) if ratios.get("netProfitMargin") else 0,
+                    "quick_ratio": round(float(ratios.get("quickRatio", 0)), 2) if ratios.get("quickRatio") else 0,
+                    "debt_ratio": round(float(ratios.get("debtRatio", 0)), 2) if ratios.get("debtRatio") else 0
+                }
+
+            return {
+                "roe": 0, "roa": 0, "current_ratio": 0,
+                "debt_to_equity": 0, "profit_margin": 0, "quick_ratio": 0, "debt_ratio": 0
+            }
+
+        except Exception as e:
+            logger.error(f"Error fetching financial ratios for {symbol}: {str(e)}")
+            return {
+                "roe": 0, "roa": 0, "current_ratio": 0,
+                "debt_to_equity": 0, "profit_margin": 0, "quick_ratio": 0, "debt_ratio": 0
+            }
+
+    def save_stock_indicators_to_db(self, symbol: str, stock_data: Dict) -> Dict:
+        """종목 지표 데이터를 Supabase에 저장"""
+        try:
+            supabase = get_supabase()
+
+            # 저장할 데이터 준비
+            indicator_data = {
+                "symbol": symbol.upper(),
+                "company_name": stock_data.get("company_name"),
+                "current_price": stock_data.get("current_price"),
+                "previous_close": stock_data.get("previous_close"),
+                "market_cap": stock_data.get("market_cap"),
+                "pe_ratio": stock_data.get("pe_ratio"),
+                "eps": stock_data.get("eps"),
+                "dividend_yield": stock_data.get("dividend_yield"),
+                "fifty_two_week_high": stock_data.get("fifty_two_week_high"),
+                "fifty_two_week_low": stock_data.get("fifty_two_week_low"),
+                "currency": stock_data.get("currency"),
+                "exchange": stock_data.get("exchange"),
+                "industry": stock_data.get("industry"),
+                "sector": stock_data.get("sector"),
+                "rsi": stock_data.get("technical_indicators", {}).get("rsi", 0),
+                "roe": stock_data.get("financial_ratios", {}).get("roe", 0),
+                "roa": stock_data.get("financial_ratios", {}).get("roa", 0),
+                "current_ratio": stock_data.get("financial_ratios", {}).get("current_ratio", 0),
+                "debt_to_equity": stock_data.get("financial_ratios", {}).get("debt_to_equity", 0),
+                "profit_margin": stock_data.get("financial_ratios", {}).get("profit_margin", 0),
+                "quick_ratio": stock_data.get("financial_ratios", {}).get("quick_ratio", 0),
+                "debt_ratio": stock_data.get("financial_ratios", {}).get("debt_ratio", 0),
+                "last_updated": datetime.now().isoformat()
+            }
+
+            # Supabase에 upsert (기존 데이터 업데이트 또는 새로 삽입)
+            result = supabase.table("stock_indicators")\
+                .upsert(indicator_data, on_conflict="symbol")\
+                .execute()
+
+            logger.info(f"Stock indicators saved for {symbol}")
+            return {
+                "status": "success",
+                "symbol": symbol,
+                "message": "주식 지표가 저장되었습니다."
+            }
+
+        except Exception as e:
+            logger.error(f"Error saving stock indicators to DB: {str(e)}")
+            return {
+                "status": "error",
+                "symbol": symbol,
+                "message": f"DB 저장 실패: {str(e)}"
+            }
+
+    def save_price_history_to_db(self, symbol: str, price_data: List[Dict]) -> Dict:
+        """주가 히스토리 데이터를 Supabase에 저장"""
+        try:
+            supabase = get_supabase()
+
+            # 각 가격 데이터에 심볼 추가
+            records = []
+            for price in price_data:
+                record = {
+                    "symbol": symbol.upper(),
+                    "date": price.get("date"),
+                    "open": price.get("open"),
+                    "high": price.get("high"),
+                    "low": price.get("low"),
+                    "close": price.get("close"),
+                    "volume": price.get("volume"),
+                    "change": price.get("change"),
+                    "change_percent": price.get("change_percent"),
+                    "created_at": datetime.now().isoformat()
+                }
+                records.append(record)
+
+            # 배치로 저장 (중복 무시)
+            if records:
+                result = supabase.table("stock_price_history")\
+                    .upsert(records, on_conflict="symbol,date")\
+                    .execute()
+
+                logger.info(f"Saved {len(records)} price records for {symbol}")
+
+            return {
+                "status": "success",
+                "symbol": symbol,
+                "count": len(records),
+                "message": f"{len(records)}개의 가격 데이터가 저장되었습니다."
+            }
+
+        except Exception as e:
+            logger.error(f"Error saving price history to DB: {str(e)}")
+            return {
+                "status": "error",
+                "symbol": symbol,
+                "message": f"가격 데이터 저장 실패: {str(e)}"
+            }
+
     @staticmethod
     def get_korean_stock_data(symbol: str, period: str = "1y", interval: str = "1d") -> Dict:
-        """한국 주식 데이터 가져오기"""
-        try:
-            # 한국 주식의 경우 .KS 또는 .KQ 접미사 추가
-            if not symbol.endswith(('.KS', '.KQ')):
-                # 기본적으로 KOSPI(.KS)로 설정
-                kr_symbol = f"{symbol}.KS"
-            else:
-                kr_symbol = symbol
-            
-            stock = yf.Ticker(kr_symbol)
-            info = stock.info
-            hist = stock.history(period=period, interval=interval)
-            
-            price_data = []
-            for date, row in hist.iterrows():
-                # interval에 따라 날짜 형식을 다르게 처리
-                if interval in ['1m', '2m', '5m', '15m', '30m', '60m', '90m']:
-                    # 분 단위일 때는 시간까지 표시
-                    date_str = date.strftime("%Y-%m-%d %H:%M")
-                else:
-                    # 일 단위일 때는 날짜만 표시
-                    date_str = date.strftime("%Y-%m-%d")
-                
-                price_data.append({
-                    "date": date_str,
-                    "open": round(row["Open"], 0),
-                    "high": round(row["High"], 0),
-                    "low": round(row["Low"], 0),
-                    "close": round(row["Close"], 0),
-                    "volume": int(row["Volume"])
-                })
-            
-            return {
-                "symbol": kr_symbol,
-                "company_name": info.get("longName", kr_symbol),
-                "current_price": round(info.get("currentPrice", 0), 0),
-                "previous_close": round(info.get("previousClose", 0), 0),
-                "market_cap": info.get("marketCap", 0),
-                "pe_ratio": info.get("trailingPE", 0),
-                "price_data": price_data,
-                "currency": "KRW"
-            }
-            
-        except Exception as e:
-            raise Exception(f"Error fetching Korean stock data: {str(e)}")
-    
+        """한국 주식 데이터 가져오기 (FMP API 지원 확인 필요)"""
+        logger.warning("Korean stock data from FMP API not fully supported. Use US stocks instead.")
+        raise Exception("Korean stock data is not supported via FMP API. Please use US stock symbols.")
+
     @staticmethod
     def search_stocks(query: str) -> List[Dict]:
-        """주식 검색"""
+        """주식 검색 (기본 값 유지)"""
         try:
-            # yfinance의 Ticker 정보를 사용해 검색
-            # 실제로는 더 고도화된 검색 API를 사용하는 것이 좋음
+            # 일반적인 주식 심볼 데이터
             common_stocks = {
                 "AAPL": "Apple Inc.",
                 "GOOGL": "Alphabet Inc.",
                 "MSFT": "Microsoft Corporation",
                 "TSLA": "Tesla, Inc.",
                 "AMZN": "Amazon.com Inc.",
-                "005930.KS": "삼성전자",
-                "000660.KS": "SK하이닉스",
-                "051910.KS": "LG화학",
-                "035420.KS": "NAVER",
-                "035720.KS": "카카오"
+                "NVDA": "NVIDIA Corporation",
+                "META": "Meta Platforms Inc.",
+                "NFLX": "Netflix Inc.",
+                "PYPL": "PayPal Inc.",
+                "INTC": "Intel Corporation"
             }
-            
+
             results = []
             query_lower = query.lower()
-            
+
             for symbol, name in common_stocks.items():
                 if query_lower in symbol.lower() or query_lower in name.lower():
                     results.append({
                         "symbol": symbol,
                         "name": name
                     })
-            
+
             return results[:10]  # 최대 10개 결과 반환
-            
+
         except Exception as e:
             raise Exception(f"Error searching stocks: {str(e)}")
