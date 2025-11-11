@@ -29,6 +29,20 @@ AI 기반 금융 데이터 수집 및 분석 시스템입니다. FMP API로부�
 - 관련성 분석
 - 개인화된 추천
 
+### 5. 뉴스 AI Score 평가 (GPT-5)
+- **주가 영향도 평가** (ai_score: 0.0~1.0)
+  - 0.0~0.2: 영향 거의 없음
+  - 0.2~0.4: 약간의 영향
+  - 0.4~0.6: 중간 영향
+  - 0.6~0.8: 큰 영향
+  - 0.8~1.0: 매우 큰 영향
+- **영향 방향 평가** (postive_score: 0.0~1.0)
+  - 0.0~0.4: 부정적 (주가 하락 예상)
+  - 0.4~0.6: 중립
+  - 0.6~1.0: 긍정적 (주가 상승 예상)
+- **분석 근거 생성**: 사용자 친화적 텍스트 자동 생성
+- **배치 처리**: 대량 뉴스 자동 평가
+
 ---
 
 ## 📁 프로젝트 구조
@@ -57,7 +71,8 @@ E:\Microsoft_AI_Foundary\backend\
 ├── scripts/
 │   ├── embed_stock_data.py       # 임베딩 실행 스크립트
 │   ├── refresh_stock_indicators.py # 지표 새로고침 스크립트
-│   └── collect_stock_data.py     # 데이터 수집 스크립트
+│   ├── collect_stock_data.py     # 데이터 수집 스크립트
+│   └── re_evaluate_all_news.py   # 뉴스 AI Score 재평가
 ├── supabase_schema.sql           # DB 스키마
 └── README.md                     # 이 문서
 ```
@@ -97,7 +112,26 @@ python scripts/embed_stock_data.py --all
 python scripts/embed_stock_data.py --symbols AAPL MSFT GOOGL
 ```
 
-### 3. API 호출
+### 3. 뉴스 AI Score 재평가
+
+```bash
+# 테스트 실행 (10개, DB 업데이트 안함)
+python scripts/re_evaluate_all_news.py --limit 10 --dry-run
+
+# 미평가 뉴스만 평가 (권장)
+python scripts/re_evaluate_all_news.py --unevaluated --limit 100
+
+# 특정 종목만 재평가
+python scripts/re_evaluate_all_news.py --symbol AAPL --limit 50
+
+# 전체 재평가 (주의: 시간과 비용이 많이 듦)
+python scripts/re_evaluate_all_news.py --all --limit 200
+
+# 배치 크기와 딜레이 조정
+python scripts/re_evaluate_all_news.py --unevaluated --batch-size 3 --delay 2.0
+```
+
+### 4. API 호출
 
 **데이터 수집 API**:
 ```bash
@@ -142,6 +176,26 @@ curl -X POST http://localhost:8000/api/rag/query \
 curl http://localhost:8000/api/v2/embeddings/embeddings/index/stats
 ```
 
+**뉴스 AI Score API**:
+```bash
+# 단일 뉴스 평가
+curl -X POST http://localhost:8000/api/v2/news-ai-score/news/123/evaluate-score
+
+# 배치 평가
+curl -X POST http://localhost:8000/api/v2/news-ai-score/news/batch-evaluate \
+  -H "Content-Type: application/json" \
+  -d '{"news_ids": [123, 124, 125]}'
+
+# 미평가 뉴스 자동 처리
+curl -X POST "http://localhost:8000/api/v2/news-ai-score/news/evaluate-unevaluated?limit=50"
+
+# 통계 조회
+curl http://localhost:8000/api/v2/news-ai-score/statistics
+
+# 헬스 체크
+curl http://localhost:8000/api/v2/news-ai-score/health
+```
+
 ---
 
 ## 🗄️ 데이터베이스 스키마
@@ -179,6 +233,21 @@ curl http://localhost:8000/api/v2/embeddings/embeddings/index/stats
 - status: TEXT (success/failed)
 - records_count: INT
 - sync_date: TIMESTAMP
+```
+
+### news_articles (뉴스 기사)
+```sql
+- id: INTEGER (PK)
+- symbol: TEXT
+- title: TEXT
+- description: TEXT
+- body: TEXT
+- url: TEXT
+- published_at: TIMESTAMP
+- ai_score: FLOAT              # 주가 영향도 (0.0 ~ 1.0)
+- postive_score: FLOAT         # 영향 방향 (0.0 ~ 1.0)
+- ai_analyzed_text: TEXT       # AI 분석 근거
+- analyzed_at: TIMESTAMP       # 분석 시간
 ```
 
 ---
@@ -279,7 +348,23 @@ tail -f backend.log
 
 ## 📝 변경 이력
 
-### 최근 업데이트 (2025-11-10)
+### 최신 업데이트 (2025-11-11)
+
+**뉴스 AI Score 평가 시스템:**
+- GPT-5 Responses API 통합
+- 뉴스 주가 영향도 자동 평가 (ai_score: 0.0~1.0)
+- 긍정/부정 방향 평가 (postive_score: 0.0~1.0)
+- 사용자 친화적 분석 텍스트 자동 생성 (ai_analyzed_text)
+- 배치 재평가 스크립트 (re_evaluate_all_news.py)
+- API 엔드포인트 추가 (/api/v2/news-ai-score/*)
+
+**기술 스택:**
+- OpenAI GPT-5 (Responses API)
+- 45% 낮은 할루시네이션
+- 400K 토큰 컨텍스트 윈도우
+- 향상된 추론 능력
+
+### 이전 업데이트 (2025-11-10)
 
 **데이터 정제:**
 - stock_indicators 테이블에서 8개 열 삭제

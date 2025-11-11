@@ -1,206 +1,482 @@
+"""
+OpenAI GPT-5 서비스
+뉴스 분석, 종목 평가, AI Score 생성 등의 AI 기반 분석 기능 제공
+"""
+
 import os
 import json
 import logging
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Tuple
+from datetime import datetime
 from openai import OpenAI
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
+
 class OpenAIService:
     """
     OpenAI GPT-5 서비스
 
-    모델: gpt-5 (최신 OpenAI 모델)
-    API: https://platform.openai.com/docs/api-reference
+    주요 기능:
+    1. 뉴스 AI Score 평가 (주가 영향도 0~1)
+    2. 뉴스 관련성 분석
+    3. 종목별 감정 분석
+    4. 개인화 요약 생성
+    5. 임베딩 생성
 
     GPT-5 특징:
-    - 최대 400,000 토큰 컨텍스트 윈도우 (272k input + 128k output)
-    - 수학: 94.6% AIME 2025 성능 (도구 없이)
-    - 코딩: 74.9% SWE-bench Verified 성능
-    - 비용: $1.25/M input tokens, $10/M output tokens
-    - 할루시네이션: GPT-4o 대비 45% 감소
-    - 확장 추론: GPT-5 Pro로 80% 추가 감소
+    - 최대 400,000 토큰 컨텍스트 (272k input + 128k output)
+    - 할루시네이션 45% 감소 (GPT-4o 대비)
+    - 향상된 추론 능력
+    - 비용: $1.25/M input, $10/M output
     """
 
     def __init__(self):
+        """OpenAI 클라이언트 초기화"""
         self.client = None
         self.model_name = "gpt-5"
+        self.embedding_model = "text-embedding-ada-002"  # 1536차원
         self._initialize_client()
 
     def _initialize_client(self):
-        """OpenAI GPT-5 클라이언트 초기화"""
+        """OpenAI 클라이언트 초기화"""
         try:
-            # OpenAI API 키 확인
             if not settings.openai_api_key:
-                logger.warning("⚠️ OpenAI API 키가 설정되지 않음. AI 기능을 사용할 수 없습니다.")
+                logger.warning("⚠️ OpenAI API 키가 설정되지 않음")
                 self.client = None
                 return
 
-            # OpenAI 클라이언트 초기화
             self.client = OpenAI(api_key=settings.openai_api_key)
-            self.model_name = "gpt-5"
 
             logger.info("✅ GPT-5 OpenAI 클라이언트 초기화 완료")
             logger.info(f"   모델: {self.model_name}")
-            logger.info(f"   컨텍스트 윈도우: 400,000 tokens (272k input + 128k output)")
-            logger.info(f"   특징: 45% 감소된 할루시네이션 (GPT-4o 대비)")
+            logger.info(f"   컨텍스트: 400K tokens")
+            logger.info(f"   할루시네이션: 45% 감소")
 
         except Exception as e:
             logger.error(f"❌ OpenAI 클라이언트 초기화 실패: {str(e)}")
             self.client = None
-    
+
+    # ============================================================================
+    # 핵심 기능 1: 뉴스 AI Score 평가 (주가 영향도)
+    # ============================================================================
+
+    async def evaluate_news_stock_impact(
+        self,
+        news_article: Dict,
+        symbol: Optional[str] = None
+    ) -> Dict:
+        """
+        뉴스가 주가에 미치는 영향을 AI로 평가
+
+        Args:
+            news_article: 뉴스 기사 정보
+                - title: 제목
+                - description: 요약
+                - content/body: 본문 (선택)
+                - symbol: 관련 종목 (선택)
+                - published_at: 발행일
+            symbol: 특정 종목 지정 (선택)
+
+        Returns:
+            {
+                "ai_score": 0.0~1.0,  # 주가 영향도
+                "impact_direction": "positive|negative|neutral",
+                "confidence": 0.0~1.0,
+                "reasoning": "평가 근거",
+                "key_factors": ["요인1", "요인2"],
+                "time_horizon": "short|medium|long",  # 영향 기간
+                "volatility_impact": "low|medium|high"  # 변동성 영향
+            }
+        """
+        try:
+            if not self.client:
+                logger.warning("[AI_SCORE] OpenAI 클라이언트 없음")
+                return self._fallback_ai_score()
+
+            # 뉴스 정보 추출
+            title = news_article.get('title', '')
+            description = news_article.get('description', '')
+            body = news_article.get('body') or news_article.get('content', '')
+            article_symbol = symbol or news_article.get('symbol', '')
+            published_at = news_article.get('published_at', '')
+
+            # 본문이 너무 길면 잘라내기 (토큰 절약)
+            if body and len(body) > 2000:
+                body = body[:2000] + "..."
+
+            # 프롬프트 구성
+            prompt = self._build_ai_score_prompt(
+                title=title,
+                description=description,
+                body=body,
+                symbol=article_symbol,
+                published_at=published_at
+            )
+
+            logger.info(f"[AI_SCORE] 뉴스 평가 요청 - 제목: {title[:50]}...")
+            logger.debug(f"[AI_SCORE] 프롬프트 길이: {len(prompt)} 문자")
+
+            # GPT-5 호출 (temperature는 1.0 고정 - GPT-5는 기본값만 지원)
+            response = await self._call_gpt5(
+                system_prompt="""당신은 금융 뉴스 분석 전문가입니다.
+
+뉴스가 주가에 미치는 영향을 객관적으로 평가하세요:
+- AI Score: 0.0 (영향 없음) ~ 1.0 (매우 큰 영향)
+- 긍정/부정/중립 방향 판단
+- 근거를 명확히 제시
+- 추측하지 말고 뉴스 내용만 분석
+
+GPT-5 강점 활용:
+- 45% 낮은 할루시네이션 → 정확한 평가
+- 향상된 추론 → 복잡한 시장 영향 분석""",
+                user_prompt=prompt,
+                temperature=1.0,  # GPT-5는 temperature=1.0만 지원
+                max_tokens=500
+            )
+
+            if not response:
+                logger.error("[AI_SCORE] GPT-5 응답 없음")
+                return self._fallback_ai_score()
+
+            # 결과 파싱
+            result = self._parse_ai_score_result(response)
+
+            logger.info(f"[AI_SCORE] 평가 완료 - Score: {result['ai_score']:.3f}, Direction: {result['impact_direction']}")
+
+            return result
+
+        except Exception as e:
+            logger.error(f"[AI_SCORE] 평가 오류: {str(e)}")
+            return self._fallback_ai_score()
+
+    def _build_ai_score_prompt(
+        self,
+        title: str,
+        description: str,
+        body: str,
+        symbol: str,
+        published_at: str
+    ) -> str:
+        """AI Score 평가 프롬프트 구성"""
+
+        # 종목 정보 포함
+        symbol_context = f"관련 종목: {symbol}" if symbol else "종목: 특정되지 않음"
+
+        # 발행 시간 정보
+        time_context = f"발행 시간: {published_at}" if published_at else ""
+
+        return f"""다음 금융 뉴스가 주가에 미치는 영향을 평가해주세요:
+
+{symbol_context}
+{time_context}
+
+# 뉴스 제목
+{title}
+
+# 뉴스 요약
+{description}
+
+# 뉴스 본문
+{body if body else '(본문 없음)'}
+
+---
+
+위 뉴스를 분석하여 **주가에 미치는 영향도**를 평가하고, 아래 JSON 형식으로 응답하세요:
+
+{{
+    "ai_score": <0.0~1.0 사이의 숫자>,
+    "positive_score": <0.0~1.0 사이의 숫자>,
+    "impact_direction": "positive|negative|neutral",
+    "confidence": <0.0~1.0 사이의 신뢰도>,
+    "reasoning": "평가 근거 (2-3문장)",
+    "key_factors": [
+        "영향 요인 1",
+        "영향 요인 2",
+        "영향 요인 3"
+    ],
+    "time_horizon": "short|medium|long",
+    "volatility_impact": "low|medium|high"
+}}
+
+**AI Score 기준** (주가에 미치는 영향의 크기):
+- 0.0~0.2: 영향 거의 없음 (일반적인 뉴스, 루틴 발표)
+- 0.2~0.4: 약간의 영향 (작은 계약, 인사 변경 등)
+- 0.4~0.6: 중간 영향 (분기 실적, 제품 출시 등)
+- 0.6~0.8: 큰 영향 (대규모 인수합병, 규제 변화)
+- 0.8~1.0: 매우 큰 영향 (CEO 교체, 대형 스캔들, 시장 충격)
+
+**Positive Score 기준** (주가에 미치는 영향의 방향):
+- 0.8~1.0: 매우 긍정적 (주가 급등 가능성)
+- 0.6~0.8: 긍정적 (주가 상승 예상)
+- 0.4~0.6: 중립/보통 (방향성 불확실)
+- 0.2~0.4: 부정적 (주가 하락 예상)
+- 0.0~0.2: 매우 부정적 (주가 급락 가능성)
+
+**Impact Direction**:
+- positive: 주가 상승 요인 (positive_score를 0.6 이상으로 설정)
+- negative: 주가 하락 요인 (positive_score를 0.4 이하로 설정)
+- neutral: 방향성 불명확 (positive_score를 0.4~0.6으로 설정)
+
+**Time Horizon**:
+- short: 단기 (당일~1주)
+- medium: 중기 (1주~1개월)
+- long: 장기 (1개월 이상)
+
+**Volatility Impact**:
+- low: 변동성 낮음
+- medium: 중간 변동성
+- high: 높은 변동성 예상
+
+**중요**:
+1. ai_score는 영향의 '크기', positive_score는 영향의 '방향'을 나타냅니다
+2. 뉴스 내용만 분석하고, 추측하지 마세요
+3. positive_score와 impact_direction이 일치하도록 설정하세요
+"""
+
+    def _parse_ai_score_result(self, response: str) -> Dict:
+        """AI Score 결과 파싱"""
+        try:
+            # JSON 추출
+            json_str = self._extract_json(response)
+            parsed = json.loads(json_str)
+
+            # 필수 필드 검증 및 정규화
+            ai_score = float(parsed.get('ai_score', 0.5))
+            ai_score = max(0.0, min(1.0, ai_score))  # 0~1 범위 제한
+
+            # positive_score 추출 및 검증
+            positive_score = float(parsed.get('positive_score', 0.5))
+            positive_score = max(0.0, min(1.0, positive_score))  # 0~1 범위 제한
+
+            confidence = float(parsed.get('confidence', 0.5))
+            confidence = max(0.0, min(1.0, confidence))
+
+            # 방향 검증
+            impact_direction = parsed.get('impact_direction', 'neutral').lower()
+            if impact_direction not in ['positive', 'negative', 'neutral']:
+                impact_direction = 'neutral'
+
+            # positive_score와 impact_direction 일치성 검증
+            # impact_direction이 있지만 positive_score가 맞지 않으면 조정
+            if impact_direction == 'positive' and positive_score < 0.6:
+                logger.warning(f"[PARSE] positive 방향이지만 positive_score가 낮음 ({positive_score}), 0.7로 조정")
+                positive_score = 0.7
+            elif impact_direction == 'negative' and positive_score > 0.4:
+                logger.warning(f"[PARSE] negative 방향이지만 positive_score가 높음 ({positive_score}), 0.3으로 조정")
+                positive_score = 0.3
+            elif impact_direction == 'neutral' and (positive_score < 0.4 or positive_score > 0.6):
+                logger.warning(f"[PARSE] neutral 방향이지만 positive_score가 범위 밖 ({positive_score}), 0.5로 조정")
+                positive_score = 0.5
+
+            # 시간 범위 검증
+            time_horizon = parsed.get('time_horizon', 'medium').lower()
+            if time_horizon not in ['short', 'medium', 'long']:
+                time_horizon = 'medium'
+
+            # 변동성 검증
+            volatility_impact = parsed.get('volatility_impact', 'medium').lower()
+            if volatility_impact not in ['low', 'medium', 'high']:
+                volatility_impact = 'medium'
+
+            result = {
+                'ai_score': round(ai_score, 3),
+                'positive_score': round(positive_score, 3),
+                'impact_direction': impact_direction,
+                'confidence': round(confidence, 3),
+                'reasoning': parsed.get('reasoning', 'AI 분석 완료'),
+                'key_factors': parsed.get('key_factors', []),
+                'time_horizon': time_horizon,
+                'volatility_impact': volatility_impact,
+                'evaluated_at': datetime.now().isoformat()
+            }
+
+            # 사용자에게 보여줄 분석 텍스트 생성
+            result['analyzed_text'] = self._generate_analyzed_text(result)
+
+            return result
+
+        except (json.JSONDecodeError, ValueError, KeyError) as e:
+            logger.warning(f"[PARSE] AI Score 파싱 실패: {str(e)}")
+            return self._fallback_ai_score()
+
+    def _fallback_ai_score(self) -> Dict:
+        """AI Score 폴백 (기본값)"""
+        fallback = {
+            'ai_score': 0.5,
+            'positive_score': 0.5,  # 중립
+            'impact_direction': 'neutral',
+            'confidence': 0.3,
+            'reasoning': 'AI 평가를 수행할 수 없음 (기본값)',
+            'key_factors': ['평가 불가'],
+            'time_horizon': 'medium',
+            'volatility_impact': 'low',
+            'evaluated_at': datetime.now().isoformat()
+        }
+        fallback['analyzed_text'] = self._generate_analyzed_text(fallback)
+        return fallback
+
+    def _generate_analyzed_text(self, evaluation_result: Dict) -> str:
+        """
+        사용자에게 보여줄 분석 텍스트 생성
+
+        Args:
+            evaluation_result: AI 평가 결과
+
+        Returns:
+            간단한 분석 근거 텍스트
+        """
+        try:
+            ai_score = evaluation_result.get('ai_score', 0.5)
+            positive_score = evaluation_result.get('positive_score', 0.5)
+            impact_direction = evaluation_result.get('impact_direction', 'neutral')
+            reasoning = evaluation_result.get('reasoning', '')
+            key_factors = evaluation_result.get('key_factors', [])
+            time_horizon = evaluation_result.get('time_horizon', 'medium')
+            volatility_impact = evaluation_result.get('volatility_impact', 'medium')
+            confidence = evaluation_result.get('confidence', 0.5)
+
+            # 영향 크기 텍스트
+            if ai_score >= 0.8:
+                impact_size_text = "매우 큰 영향"
+            elif ai_score >= 0.6:
+                impact_size_text = "큰 영향"
+            elif ai_score >= 0.4:
+                impact_size_text = "중간 영향"
+            elif ai_score >= 0.2:
+                impact_size_text = "약한 영향"
+            else:
+                impact_size_text = "미미한 영향"
+
+            # 방향 텍스트
+            if positive_score >= 0.8:
+                direction_text = "매우 긍정적"
+                direction_emoji = "📈📈"
+            elif positive_score >= 0.6:
+                direction_text = "긍정적"
+                direction_emoji = "📈"
+            elif positive_score >= 0.4:
+                direction_text = "중립적"
+                direction_emoji = "➡️"
+            elif positive_score >= 0.2:
+                direction_text = "부정적"
+                direction_emoji = "📉"
+            else:
+                direction_text = "매우 부정적"
+                direction_emoji = "📉📉"
+
+            # 시간 범위 텍스트
+            time_text_map = {
+                'short': '단기적',
+                'medium': '중기적',
+                'long': '장기적'
+            }
+            time_text = time_text_map.get(time_horizon, '중기적')
+
+            # 변동성 텍스트
+            volatility_text_map = {
+                'low': '낮은 변동성',
+                'medium': '중간 변동성',
+                'high': '높은 변동성'
+            }
+            volatility_text = volatility_text_map.get(volatility_impact, '중간 변동성')
+
+            # 분석 텍스트 구성
+            lines = []
+
+            # 1. 메인 평가
+            lines.append(f"{direction_emoji} {direction_text}으로 {impact_size_text}이 예상됩니다.")
+
+            # 2. 근거
+            if reasoning and reasoning != 'AI 분석 완료':
+                lines.append(f"\n📋 분석 근거: {reasoning}")
+
+            # 3. 주요 요인
+            if key_factors and key_factors != ['평가 불가']:
+                lines.append(f"\n🔍 주요 요인:")
+                for factor in key_factors[:3]:  # 최대 3개만
+                    lines.append(f"  • {factor}")
+
+            # 4. 추가 정보
+            lines.append(f"\n⏱️ 영향 기간: {time_text} ({time_horizon})")
+            lines.append(f"📊 예상 변동성: {volatility_text}")
+            lines.append(f"💯 신뢰도: {int(confidence * 100)}%")
+
+            # 5. 점수 요약
+            lines.append(f"\n📈 영향 크기: {ai_score:.2f}/1.00")
+            lines.append(f"💚 긍정 지수: {positive_score:.2f}/1.00")
+
+            analyzed_text = "\n".join(lines)
+
+            return analyzed_text
+
+        except Exception as e:
+            logger.error(f"[TEXT_GEN] 분석 텍스트 생성 오류: {str(e)}")
+            return "AI 분석 결과를 생성할 수 없습니다."
+
+    # ============================================================================
+    # 핵심 기능 2: 뉴스 관련성 분석
+    # ============================================================================
+
     async def analyze_news_relevance(
         self,
         news_article: Dict,
         user_interests: List[str],
         user_context: Optional[Dict] = None
     ) -> Dict:
-        """뉴스와 사용자 관심사의 관련성 분석"""
+        """
+        뉴스와 사용자 관심사의 관련성 분석
+
+        Returns:
+            {
+                "relevance_score": 0.0~1.0,
+                "reasoning": "분석 근거",
+                "key_topics": ["토픽1", "토픽2"],
+                "impact_level": "low|medium|high",
+                "recommendation": "추천 사유"
+            }
+        """
         try:
             if not self.client:
-                logger.warning("[RELEVANCE] OpenAI 클라이언트가 없음. 폴백 분석 사용")
-                return self._fallback_analysis(news_article, user_interests)
+                logger.warning("[RELEVANCE] OpenAI 클라이언트 없음")
+                return self._fallback_relevance_analysis(news_article, user_interests)
 
-            # 프롬프트 구성
             prompt = self._build_relevance_prompt(news_article, user_interests, user_context)
 
-            try:
-                response = self.client.chat.completions.create(
-                    model=self.model_name,
-                    messages=[
-                        {"role": "system", "content": "You are a financial news analyst specializing in personalized content recommendation. Always respond with valid JSON."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    max_completion_tokens=300,
-                    temperature=0.3
-                )
-
-                result = response.choices[0].message.content
-                parsed = self._parse_relevance_result(result)
-
-                # 파싱된 결과가 폴백인지 확인
-                if parsed.get("reasoning") == "AI 분석 결과를 파싱할 수 없음":
-                    logger.warning(f"[RELEVANCE] 관련성 분석 결과 파싱 실패. API 응답: {result[:150]}")
-
-                return parsed
-
-            except Exception as api_error:
-                logger.error(f"[RELEVANCE] OpenAI API 호출 실패: {str(api_error)}, 모델: {self.model_name}")
-                return self._fallback_analysis(news_article, user_interests)
-
-        except Exception as e:
-            logger.error(f"[RELEVANCE] 뉴스 관련성 분석 중 예상치 못한 오류: {str(e)}")
-            return self._fallback_analysis(news_article, user_interests)
-    
-    async def generate_personalized_summary(
-        self, 
-        news_articles: List[Dict], 
-        user_interests: List[str]
-    ) -> Dict:
-        """개인화된 뉴스 요약 생성"""
-        try:
-            if not self.client or not news_articles:
-                return {"summary": "뉴스 요약을 생성할 수 없습니다.", "highlights": []}
-            
-            # 상위 5개 뉴스만 분석
-            top_articles = news_articles[:5]
-            
-            prompt = self._build_summary_prompt(top_articles, user_interests)
-
-            response = self.client.chat.completions.create(
-                model=self.model_name,
-                messages=[
-                    {"role": "system", "content": "You are a financial analyst creating personalized news summaries for investors."},
-                    {"role": "user", "content": prompt}
-                ],
-                max_completion_tokens=500,
-                temperature=0.5
+            response = await self._call_gpt5(
+                system_prompt="You are a financial news analyst specializing in personalized content recommendation. Always respond with valid JSON.",
+                user_prompt=prompt,
+                temperature=0.3,
+                max_tokens=300
             )
-            
-            result = response.choices[0].message.content
-            return self._parse_summary_result(result)
-            
-        except Exception as e:
-            logger.error(f"개인화 요약 생성 오류: {str(e)}")
-            return {"summary": "요약 생성 중 오류가 발생했습니다.", "highlights": []}
-    
-    async def analyze_market_sentiment(
-        self, 
-        news_articles: List[Dict], 
-        symbol: str
-    ) -> Dict:
-        """특정 종목에 대한 시장 감정 분석"""
-        try:
-            if not self.client or not news_articles:
-                return {"sentiment": "neutral", "score": 0.0, "reasoning": "분석할 뉴스가 없습니다."}
-            
-            prompt = self._build_sentiment_prompt(news_articles, symbol)
 
-            response = self.client.chat.completions.create(
-                model=self.model_name,
-                messages=[
-                    {"role": "system", "content": "You are a financial sentiment analyst. Analyze news sentiment for stock investments."},
-                    {"role": "user", "content": prompt}
-                ],
-                max_completion_tokens=200,
-                temperature=0.2
-            )
-            
-            result = response.choices[0].message.content
-            return self._parse_sentiment_result(result)
-            
-        except Exception as e:
-            logger.error(f"시장 감정 분석 오류: {str(e)}")
-            return {"sentiment": "neutral", "score": 0.0, "reasoning": "분석 중 오류 발생"}
-    
-    async def recommend_news_categories(
-        self, 
-        user_interaction_history: List[Dict],
-        current_interests: List[str]
-    ) -> List[str]:
-        """사용자 상호작용 기록을 바탕으로 뉴스 카테고리 추천"""
-        try:
-            if not self.client:
-                return self._fallback_categories(current_interests)
-            
-            prompt = self._build_category_prompt(user_interaction_history, current_interests)
+            if not response:
+                return self._fallback_relevance_analysis(news_article, user_interests)
 
-            response = self.client.chat.completions.create(
-                model=self.model_name,
-                messages=[
-                    {"role": "system", "content": "You are a recommendation system analyst specializing in financial news categorization."},
-                    {"role": "user", "content": prompt}
-                ],
-                max_completion_tokens=150,
-                temperature=0.4
-            )
-            
-            result = response.choices[0].message.content
-            return self._parse_category_result(result)
-            
+            result = self._parse_relevance_result(response)
+            return result
+
         except Exception as e:
-            logger.error(f"카테고리 추천 오류: {str(e)}")
-            return self._fallback_categories(current_interests)
-    
+            logger.error(f"[RELEVANCE] 분석 오류: {str(e)}")
+            return self._fallback_relevance_analysis(news_article, user_interests)
+
     def _build_relevance_prompt(
-        self, 
-        news_article: Dict, 
-        user_interests: List[str], 
+        self,
+        news_article: Dict,
+        user_interests: List[str],
         user_context: Optional[Dict] = None
     ) -> str:
-        """관련성 분석 프롬프트 구성"""
+        """관련성 분석 프롬프트"""
         title = news_article.get('title', '')
         description = news_article.get('description', '')
         symbol = news_article.get('symbol', '')
-        
+
         context_info = ""
         if user_context:
-            context_info = f"User trading experience: {user_context.get('experience_level', 'intermediate')}, "
-            context_info += f"Risk tolerance: {user_context.get('risk_tolerance', 'moderate')}"
-        
-        return f"""
-Analyze the relevance of this financial news to the user's interests:
+            context_info = f"User experience: {user_context.get('experience_level', 'intermediate')}, Risk tolerance: {user_context.get('risk_tolerance', 'moderate')}"
+
+        return f"""Analyze the relevance of this financial news to the user's interests:
 
 News Title: {title}
 News Description: {description}
@@ -209,45 +485,110 @@ Related Symbol: {symbol}
 User Interests: {', '.join(user_interests)}
 {context_info}
 
-Please provide analysis in JSON format:
+Provide analysis in JSON format:
 {{
     "relevance_score": <0.0 to 1.0>,
     "reasoning": "<brief explanation>",
     "key_topics": ["<topic1>", "<topic2>"],
     "impact_level": "<low/medium/high>",
     "recommendation": "<why this is relevant to user>"
-}}
-"""
-    
-    def _build_summary_prompt(self, news_articles: List[Dict], user_interests: List[str]) -> str:
-        """요약 생성 프롬프트 구성"""
-        articles_text = ""
-        for i, article in enumerate(news_articles, 1):
-            articles_text += f"{i}. {article.get('title', '')} - {article.get('description', '')[:100]}\n"
-        
-        return f"""
-Create a personalized financial news summary for a user interested in: {', '.join(user_interests)}
+}}"""
 
-Recent News Articles:
-{articles_text}
+    def _parse_relevance_result(self, response: str) -> Dict:
+        """관련성 분석 결과 파싱"""
+        try:
+            json_str = self._extract_json(response)
+            parsed = json.loads(json_str)
 
-Please provide a summary in JSON format:
-{{
-    "summary": "<2-3 sentence overview focusing on user's interests>",
-    "highlights": ["<key point 1>", "<key point 2>", "<key point 3>"],
-    "market_outlook": "<brief market outlook based on the news>",
-    "actionable_insights": ["<insight 1>", "<insight 2>"]
-}}
-"""
-    
+            # 필수 필드 검증
+            if all(key in parsed for key in ["relevance_score", "reasoning", "key_topics", "impact_level", "recommendation"]):
+                return parsed
+
+        except (json.JSONDecodeError, ValueError) as e:
+            logger.warning(f"[PARSE] 관련성 파싱 실패: {str(e)}")
+
+        return {
+            "relevance_score": 0.5,
+            "reasoning": "AI 분석 결과를 파싱할 수 없음",
+            "key_topics": ["general"],
+            "impact_level": "medium",
+            "recommendation": "일반적인 관련성"
+        }
+
+    def _fallback_relevance_analysis(self, news_article: Dict, user_interests: List[str]) -> Dict:
+        """관련성 분석 폴백 (키워드 매칭)"""
+        title = news_article.get('title', '').lower()
+        description = news_article.get('description', '').lower()
+
+        relevance_score = 0.0
+        matched_interests = []
+
+        for interest in user_interests:
+            if interest.lower() in title or interest.lower() in description:
+                relevance_score += 0.3
+                matched_interests.append(interest)
+
+        relevance_score = min(1.0, relevance_score)
+
+        return {
+            "relevance_score": relevance_score,
+            "reasoning": f"키워드 매칭: {', '.join(matched_interests) if matched_interests else '직접 매치 없음'}",
+            "key_topics": matched_interests or ["general"],
+            "impact_level": "medium" if relevance_score > 0.5 else "low",
+            "recommendation": "기본 관련성 분석"
+        }
+
+    # ============================================================================
+    # 핵심 기능 3: 시장 감정 분석
+    # ============================================================================
+
+    async def analyze_market_sentiment(
+        self,
+        news_articles: List[Dict],
+        symbol: str
+    ) -> Dict:
+        """
+        특정 종목에 대한 시장 감정 분석
+
+        Returns:
+            {
+                "sentiment": "positive|negative|neutral",
+                "score": -1.0~1.0,
+                "confidence": 0.0~1.0,
+                "reasoning": "분석 근거",
+                "key_factors": ["요인1", "요인2"]
+            }
+        """
+        try:
+            if not self.client or not news_articles:
+                return self._fallback_sentiment()
+
+            prompt = self._build_sentiment_prompt(news_articles, symbol)
+
+            response = await self._call_gpt5(
+                system_prompt="You are a financial sentiment analyst. Analyze news sentiment for stock investments.",
+                user_prompt=prompt,
+                temperature=0.2,
+                max_tokens=200
+            )
+
+            if not response:
+                return self._fallback_sentiment()
+
+            result = self._parse_sentiment_result(response)
+            return result
+
+        except Exception as e:
+            logger.error(f"[SENTIMENT] 분석 오류: {str(e)}")
+            return self._fallback_sentiment()
+
     def _build_sentiment_prompt(self, news_articles: List[Dict], symbol: str) -> str:
-        """감정 분석 프롬프트 구성"""
+        """감정 분석 프롬프트"""
         articles_text = ""
-        for article in news_articles:
+        for article in news_articles[:10]:  # 최대 10개
             articles_text += f"- {article.get('title', '')} | {article.get('description', '')[:150]}\n"
-        
-        return f"""
-Analyze the overall market sentiment for {symbol} based on these news articles:
+
+        return f"""Analyze the overall market sentiment for {symbol} based on these news articles:
 
 {articles_text}
 
@@ -256,367 +597,41 @@ Provide sentiment analysis in JSON format:
     "sentiment": "<positive/negative/neutral>",
     "score": <-1.0 to 1.0>,
     "confidence": <0.0 to 1.0>,
-    "reasoning": "<brief explanation of the sentiment>",
+    "reasoning": "<brief explanation>",
     "key_factors": ["<factor1>", "<factor2>"]
-}}
-"""
-    
-    def _build_category_prompt(
-        self, 
-        user_interaction_history: List[Dict], 
-        current_interests: List[str]
-    ) -> str:
-        """카테고리 추천 프롬프트 구성"""
-        interactions_text = ""
-        for interaction in user_interaction_history[-10:]:  # 최근 10개만
-            interactions_text += f"- {interaction.get('action', '')} on {interaction.get('category', '')} news\n"
-        
-        return f"""
-Based on user's interaction history and current interests, recommend 3-5 news categories:
+}}"""
 
-Current Interests: {', '.join(current_interests)}
-
-Recent Interactions:
-{interactions_text}
-
-Available Categories: earnings, mergers, analyst_ratings, market_trends, technology, regulation, economic_indicators, company_news
-
-Respond with JSON array: ["category1", "category2", "category3"]
-"""
-    
-    def _parse_relevance_result(self, result: str) -> Dict:
-        """관련성 분석 결과 파싱"""
-        try:
-            # JSON 파싱 시도
-            if '{' in result and '}' in result:
-                json_start = result.find('{')
-                json_end = result.rfind('}') + 1
-                json_str = result[json_start:json_end]
-                parsed = json.loads(json_str)
-
-                # 필수 필드 검증
-                if all(key in parsed for key in ["relevance_score", "reasoning", "key_topics", "impact_level", "recommendation"]):
-                    return parsed
-                else:
-                    logger.warning(f"[PARSE] 관련성 분석 결과에 필수 필드 누락: {json_str[:100]}")
-
-        except json.JSONDecodeError as e:
-            logger.warning(f"[PARSE] 관련성 분석 JSON 파싱 실패: {str(e)}, 입력: {result[:100]}")
-        except Exception as e:
-            logger.error(f"[PARSE] 예상치 못한 파싱 오류: {str(e)}")
-
-        # 기본값 반환
-        return {
-            "relevance_score": 0.5,
-            "reasoning": "AI 분석 결과를 파싱할 수 없음",
-            "key_topics": ["general"],
-            "impact_level": "medium",
-            "recommendation": "일반적인 관련성"
-        }
-    
-    def _parse_summary_result(self, result: str) -> Dict:
-        """요약 결과 파싱"""
-        try:
-            if '{' in result and '}' in result:
-                json_start = result.find('{')
-                json_end = result.rfind('}') + 1
-                json_str = result[json_start:json_end]
-                parsed = json.loads(json_str)
-
-                # 필수 필드 검증
-                if all(key in parsed for key in ["summary", "highlights", "market_outlook", "actionable_insights"]):
-                    return parsed
-                else:
-                    logger.warning(f"[PARSE] 요약 결과에 필수 필드 누락: {json_str[:100]}")
-
-        except json.JSONDecodeError as e:
-            logger.warning(f"[PARSE] 요약 JSON 파싱 실패: {str(e)}, 입력: {result[:100]}")
-        except Exception as e:
-            logger.error(f"[PARSE] 요약 파싱 중 예상치 못한 오류: {str(e)}")
-
-        return {
-            "summary": "요약을 생성할 수 없습니다.",
-            "highlights": ["분석 중 오류 발생"],
-            "market_outlook": "중립적",
-            "actionable_insights": ["추가 정보 필요"]
-        }
-
-    def _parse_sentiment_result(self, result: str) -> Dict:
+    def _parse_sentiment_result(self, response: str) -> Dict:
         """감정 분석 결과 파싱"""
         try:
-            if '{' in result and '}' in result:
-                json_start = result.find('{')
-                json_end = result.rfind('}') + 1
-                json_str = result[json_start:json_end]
-                parsed = json.loads(json_str)
+            json_str = self._extract_json(response)
+            parsed = json.loads(json_str)
 
-                # 필수 필드 검증
-                if all(key in parsed for key in ["sentiment", "score", "confidence", "reasoning", "key_factors"]):
-                    return parsed
-                else:
-                    logger.warning(f"[PARSE] 감정 분석 결과에 필수 필드 누락: {json_str[:100]}")
+            if all(key in parsed for key in ["sentiment", "score", "confidence", "reasoning", "key_factors"]):
+                return parsed
 
-        except json.JSONDecodeError as e:
-            logger.warning(f"[PARSE] 감정 분석 JSON 파싱 실패: {str(e)}, 입력: {result[:100]}")
-        except Exception as e:
-            logger.error(f"[PARSE] 감정 분석 파싱 중 예상치 못한 오류: {str(e)}")
+        except (json.JSONDecodeError, ValueError) as e:
+            logger.warning(f"[PARSE] 감정 파싱 실패: {str(e)}")
 
+        return self._fallback_sentiment()
+
+    def _fallback_sentiment(self) -> Dict:
+        """감정 분석 폴백"""
         return {
             "sentiment": "neutral",
             "score": 0.0,
             "confidence": 0.5,
-            "reasoning": "분석 결과 파싱 실패",
-            "key_factors": ["분석 오류"]
+            "reasoning": "분석 데이터 부족",
+            "key_factors": ["분석 불가"]
         }
 
-    def _parse_category_result(self, result: str) -> List[str]:
-        """카테고리 추천 결과 파싱"""
-        try:
-            if '[' in result and ']' in result:
-                json_start = result.find('[')
-                json_end = result.rfind(']') + 1
-                json_str = result[json_start:json_end]
-                parsed = json.loads(json_str)
-
-                # 결과가 리스트인지 확인
-                if isinstance(parsed, list) and len(parsed) > 0:
-                    return parsed
-                else:
-                    logger.warning(f"[PARSE] 카테고리 추천 결과가 유효한 리스트가 아님: {json_str[:100]}")
-
-        except json.JSONDecodeError as e:
-            logger.warning(f"[PARSE] 카테고리 JSON 파싱 실패: {str(e)}, 입력: {result[:100]}")
-        except Exception as e:
-            logger.error(f"[PARSE] 카테고리 파싱 중 예상치 못한 오류: {str(e)}")
-
-        return ["earnings", "market_trends", "company_news"]
-    
-    def _fallback_analysis(self, news_article: Dict, user_interests: List[str]) -> Dict:
-        """AI 분석 실패 시 폴백 분석"""
-        title = news_article.get('title', '').lower()
-        description = news_article.get('description', '').lower()
-        
-        # 간단한 키워드 매칭
-        relevance_score = 0.0
-        matched_interests = []
-        
-        for interest in user_interests:
-            if interest.lower() in title or interest.lower() in description:
-                relevance_score += 0.3
-                matched_interests.append(interest)
-        
-        relevance_score = min(1.0, relevance_score)
-        
-        return {
-            "relevance_score": relevance_score,
-            "reasoning": f"키워드 매칭 기반 분석: {', '.join(matched_interests) if matched_interests else '직접적인 매치 없음'}",
-            "key_topics": matched_interests or ["general"],
-            "impact_level": "medium" if relevance_score > 0.5 else "low",
-            "recommendation": "기본 관련성 분석"
-        }
-    
-    def _fallback_categories(self, current_interests: List[str]) -> List[str]:
-        """카테고리 추천 폴백"""
-        base_categories = ["earnings", "market_trends", "company_news"]
-        
-        # 현재 관심사가 기술주면 기술 카테고리 추가
-        tech_symbols = ["AAPL", "GOOGL", "MSFT", "NVDA", "META"]
-        if any(symbol in current_interests for symbol in tech_symbols):
-            base_categories.append("technology")
-        
-        return base_categories[:4]
-    
-    async def generate_stock_specific_summary(
-        self, 
-        news_articles: List[Dict], 
-        symbol: str
-    ) -> Dict:
-        """특정 종목에 대한 AI 요약 생성"""
-        try:
-            # 회사 정보 매핑
-            company_info = {
-                'AAPL': {'name': 'Apple Inc.', 'sector': '기술', 'description': 'iPhone, Mac 등을 제조하는 글로벌 기술 회사'},
-                'GOOGL': {'name': 'Alphabet Inc.', 'sector': '기술', 'description': 'Google 검색, 클라우드, AI 서비스 제공업체'},
-                'MSFT': {'name': 'Microsoft Corporation', 'sector': '기술', 'description': 'Windows, Office, Azure 클라우드 서비스 제공업체'},
-                'NVDA': {'name': 'NVIDIA Corporation', 'sector': '반도체', 'description': 'GPU, AI 칩 전문 반도체 회사'},
-                'TSLA': {'name': 'Tesla Inc.', 'sector': '자동차', 'description': '전기차 및 에너지 저장 솔루션 제조업체'},
-                'AMZN': {'name': 'Amazon.com Inc.', 'sector': 'e커머스/클라우드', 'description': '글로벌 전자상거래 및 AWS 클라우드 서비스 제공업체'},
-                'META': {'name': 'Meta Platforms Inc.', 'sector': 'SNS/메타버스', 'description': 'Facebook, Instagram 등 소셜미디어 플랫폼 운영업체'},
-            }
-            
-            company = company_info.get(symbol.upper(), {
-                'name': symbol, 
-                'sector': '일반', 
-                'description': f'{symbol} 관련 기업'
-            })
-            
-            # 뉴스 제목들을 문자열로 결합
-            news_titles = []
-            news_summaries = []
-            
-            for i, article in enumerate(news_articles[:5]):
-                news_titles.append(f"{i+1}. {article.get('title', 'N/A')}")
-                summary = article.get('description', '')[:100]
-                if summary:
-                    news_summaries.append(f"{i+1}. {summary}...")
-            
-            news_context = "\\n".join(news_titles)
-            summary_context = "\\n".join(news_summaries) if news_summaries else news_context
-            
-            prompt = f"""
-다음은 {company['name']} ({symbol}) 관련 최신 뉴스입니다.
-
-회사 정보:
-- 회사명: {company['name']}
-- 섹터: {company['sector']}
-- 설명: {company['description']}
-
-최신 뉴스 제목들:
-{news_context}
-
-뉴스 요약:
-{summary_context}
-
-위 뉴스들을 바탕으로 {symbol} 종목에 대한 전문적인 분석을 다음 JSON 형식으로 작성해주세요:
-
-{{
-    "summary": "해당 종목의 현재 상황을 2-3문장으로 요약",
-    "highlights": [
-        "주요 이슈 1",
-        "주요 이슈 2", 
-        "주요 이슈 3"
-    ],
-    "market_outlook": "긍정적|중립적|부정적 중 하나",
-    "stock_impact": "상승|보합|하락 중 하나",
-    "actionable_insights": [
-        "투자자를 위한 실용적인 조언 1",
-        "투자자를 위한 실용적인 조언 2"
-    ],
-    "risk_factors": [
-        "주의해야 할 리스크 요소 1",
-        "주의해야 할 리스크 요소 2"
-    ],
-    "key_metrics": [
-        "주목해야 할 지표나 이벤트 1",
-        "주목해야 할 지표나 이벤트 2"
-    ]
-}}
-
-응답은 반드시 유효한 JSON 형식이어야 하며, 한국어로 작성해주세요.
-"""
-
-            # OpenAI API 호출
-            response = self.client.chat.completions.create(
-                model=self.model_name,
-                messages=[
-                    {"role": "system", "content": "당신은 금융 분석 전문가입니다. 뉴스를 바탕으로 종목별 전문적인 분석을 제공합니다."},
-                    {"role": "user", "content": prompt}
-                ],
-                max_completion_tokens=1500,
-                temperature=0.3
-            )
-            
-            result_text = response.choices[0].message.content.strip()
-            
-            # JSON 파싱
-            try:
-                # JSON 블록 추출
-                if '```json' in result_text:
-                    json_start = result_text.find('```json') + 7
-                    json_end = result_text.find('```', json_start)
-                    json_str = result_text[json_start:json_end].strip()
-                elif '{' in result_text and '}' in result_text:
-                    json_start = result_text.find('{')
-                    json_end = result_text.rfind('}') + 1
-                    json_str = result_text[json_start:json_end]
-                else:
-                    json_str = result_text
-                
-                parsed_summary = json.loads(json_str)
-                
-                # 필수 필드 검증 및 기본값 설정
-                required_fields = {
-                    'summary': f'{symbol} 관련 최신 뉴스 분석 결과입니다.',
-                    'highlights': [f'{symbol} 주요 이슈들'],
-                    'market_outlook': '중립적',
-                    'stock_impact': '보합',
-                    'actionable_insights': ['상세한 분석을 위해 추가 정보를 확인해보세요.'],
-                    'risk_factors': ['시장 변동성에 주의하세요.'],
-                    'key_metrics': ['주요 재무 지표를 모니터링하세요.']
-                }
-                
-                for field, default_value in required_fields.items():
-                    if field not in parsed_summary or not parsed_summary[field]:
-                        parsed_summary[field] = default_value
-                
-                logger.info(f"{symbol} AI 종목별 요약 생성 성공")
-                return parsed_summary
-                
-            except json.JSONDecodeError as json_error:
-                logger.warning(f"JSON 파싱 실패 ({symbol}): {str(json_error)}")
-                return self._fallback_stock_summary(symbol, news_articles)
-                
-        except Exception as e:
-            logger.error(f"{symbol} AI 종목별 요약 생성 오류: {str(e)}")
-            return self._fallback_stock_summary(symbol, news_articles)
-    
-    def _fallback_stock_summary(self, symbol: str, news_articles: List[Dict]) -> Dict:
-        """종목별 요약 생성 실패 시 폴백"""
-        # 간단한 키워드 분석
-        all_text = " ".join([
-            article.get('title', '') + " " + article.get('description', '') 
-            for article in news_articles[:3]
-        ]).lower()
-        
-        # 긍정/부정 키워드 분석
-        positive_keywords = ['up', 'rise', 'gain', 'growth', 'strong', 'beat', 'exceed', 'positive', '상승', '성장', '호조']
-        negative_keywords = ['down', 'fall', 'drop', 'loss', 'weak', 'miss', 'decline', 'negative', '하락', '감소', '부진']
-        
-        positive_count = sum(1 for keyword in positive_keywords if keyword in all_text)
-        negative_count = sum(1 for keyword in negative_keywords if keyword in all_text)
-        
-        if positive_count > negative_count:
-            outlook = "긍정적"
-            impact = "상승"
-        elif negative_count > positive_count:
-            outlook = "부정적" 
-            impact = "하락"
-        else:
-            outlook = "중립적"
-            impact = "보합"
-        
-        # 주요 이슈 추출 (제목에서)
-        highlights = []
-        for article in news_articles[:3]:
-            title = article.get('title', '')
-            if title and len(title) > 10:
-                highlights.append(title[:50] + "..." if len(title) > 50 else title)
-        
-        if not highlights:
-            highlights = [f"{symbol} 관련 최신 동향"]
-        
-        return {
-            "summary": f"{symbol}에 대한 최근 뉴스들을 분석한 결과, {outlook.lower()} 흐름을 보이고 있습니다.",
-            "highlights": highlights,
-            "market_outlook": outlook,
-            "stock_impact": impact,
-            "actionable_insights": [
-                "최신 뉴스와 시장 동향을 지속적으로 모니터링하세요.",
-                f"{symbol} 관련 공식 발표나 실적 정보를 확인해보세요."
-            ],
-            "risk_factors": [
-                "시장 전반의 변동성에 주의하세요.",
-                "개별 종목의 펀더멘털을 면밀히 검토하세요."
-            ],
-            "key_metrics": [
-                "주요 재무 지표 변화 추이",
-                "업계 전반의 성장률 비교"
-            ]
-        }
+    # ============================================================================
+    # 핵심 기능 4: 임베딩 생성
+    # ============================================================================
 
     async def generate_embedding(self, text: str) -> Optional[List[float]]:
         """
-        텍스트를 벡터로 변환하는 임베딩 생성
+        텍스트를 1536차원 벡터로 변환
 
         Args:
             text: 임베딩할 텍스트
@@ -626,27 +641,103 @@ Respond with JSON array: ["category1", "category2", "category3"]
         """
         try:
             if not self.client:
-                logger.warning("[EMBEDDING] OpenAI 클라이언트가 없음")
+                logger.warning("[EMBEDDING] OpenAI 클라이언트 없음")
                 return None
 
             if not text or len(text.strip()) == 0:
-                logger.warning("[EMBEDDING] 임베딩할 텍스트가 비어있음")
+                logger.warning("[EMBEDDING] 텍스트 비어있음")
                 return None
 
-            # OpenAI 임베딩 API 호출
-            # text-embedding-3-small: 512차원
-            # text-embedding-3-large: 3072차원 (Pinecone과 맞지 않음)
-            # text-embedding-ada-002: 1536차원 (Pinecone과 일치)
             response = self.client.embeddings.create(
-                model="text-embedding-ada-002",  # 1536차원 (Pinecone 인덱스와 일치)
+                model=self.embedding_model,
                 input=text.strip(),
                 encoding_format="float"
             )
 
             embedding = response.data[0].embedding
-            logger.debug(f"[EMBEDDING] 임베딩 생성 완료: {len(embedding)}차원")
+            logger.debug(f"[EMBEDDING] 생성 완료: {len(embedding)}차원")
+
             return embedding
 
         except Exception as e:
-            logger.error(f"[EMBEDDING] 임베딩 생성 실패: {str(e)}")
+            logger.error(f"[EMBEDDING] 생성 실패: {str(e)}")
             return None
+
+    # ============================================================================
+    # 유틸리티 함수
+    # ============================================================================
+
+    async def _call_gpt5(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        temperature: float = 0.7,
+        max_tokens: int = 1000
+    ) -> Optional[str]:
+        """GPT-5 API 호출 (Responses API 사용)"""
+        try:
+            if not self.client:
+                return None
+
+            # GPT-5는 Responses API 사용
+            # instructions는 developer 역할, input은 user 역할
+            response = self.client.responses.create(
+                model=self.model_name,
+                instructions=system_prompt,
+                input=user_prompt
+            )
+
+            # output_text 속성으로 텍스트 응답 가져오기
+            content = response.output_text
+            logger.info(f"[GPT5] API 응답 수신 완료 (길이: {len(content) if content else 0})")
+
+            return content
+
+        except Exception as e:
+            logger.error(f"[GPT5] API 호출 실패: {str(e)}")
+            import traceback
+            logger.error(f"[GPT5] 상세 오류:\n{traceback.format_exc()}")
+            return None
+
+    async def async_chat_completion(
+        self,
+        messages: List[Dict],
+        temperature: float = 0.7,
+        max_tokens: int = 2000
+    ) -> Optional[str]:
+        """비동기 채팅 완성 (외부에서 사용)"""
+        try:
+            if not self.client:
+                return None
+
+            # GPT-5는 temperature 0.0-2.0 지원
+            params = {
+                "model": self.model_name,
+                "messages": messages,
+                "max_completion_tokens": max_tokens,
+                "temperature": temperature
+            }
+
+            response = self.client.chat.completions.create(**params)
+
+            return response.choices[0].message.content
+
+        except Exception as e:
+            logger.error(f"[CHAT] 호출 실패: {str(e)}")
+            return None
+
+    def _extract_json(self, text: str) -> str:
+        """텍스트에서 JSON 추출"""
+        # ```json ... ``` 형식
+        if '```json' in text:
+            json_start = text.find('```json') + 7
+            json_end = text.find('```', json_start)
+            return text[json_start:json_end].strip()
+
+        # { ... } 형식
+        elif '{' in text and '}' in text:
+            json_start = text.find('{')
+            json_end = text.rfind('}') + 1
+            return text[json_start:json_end]
+
+        return text
