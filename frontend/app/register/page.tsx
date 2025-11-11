@@ -1,23 +1,9 @@
-"use client";
+import RegisterForm from '@/features/auth/components/RegisterForm';
 
-import { useRouter } from 'next/navigation';
-import { RegisterPage } from '@/components/auth/RegisterPage';
-
-export default function Register() {
-  const router = useRouter();
-
-  const handleRegister = (accessToken: string) => {
-    router.push('/main');
-  };
-
-  const handleSwitchToLogin = () => {
-    router.push('/login');
-  };
-
+export default function RegisterPage() {
   return (
-    <RegisterPage
-      onRegister={handleRegister}
-      onSwitchToLogin={handleSwitchToLogin}
-    />
+    <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-12">
+      <RegisterForm />
+    </div>
   );
 }

@@ -1,23 +1,9 @@
-"use client";
+import LoginForm from '@/features/auth/components/LoginForm';
 
-import { useRouter } from 'next/navigation';
-import { LoginPage } from '@/components/auth/LoginPage';
-
-export default function Login() {
-  const router = useRouter();
-
-  const handleLogin = (accessToken: string) => {
-    router.push('/main');
-  };
-
-  const handleSwitchToRegister = () => {
-    router.push('/register');
-  };
-
+export default function LoginPage() {
   return (
-    <LoginPage
-      onLogin={handleLogin}
-      onSwitchToRegister={handleSwitchToRegister}
-    />
+    <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-12">
+      <LoginForm />
+    </div>
   );
 }

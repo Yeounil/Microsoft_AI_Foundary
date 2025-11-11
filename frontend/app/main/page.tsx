@@ -1,127 +1,22 @@
-"use client";
+import { StockChart } from '@/features/main/components/StockChart';
+import { StockList } from '@/features/main/components/StockList';
+import { NewsSection } from '@/features/main/components/NewsSection';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { MainPage } from '@/components/main/MainPage';
-import { authService } from '@/services/authService';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+export default function MainPage() {
+  return (
+    <div className="container px-4 py-6">
+      <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
+        {/* Left Side - Chart and Stock List (65%) */}
+        <div className="space-y-6">
+          <StockChart />
+          <StockList />
+        </div>
 
-export default function Main() {
-  const router = useRouter();
-  const [username, setUsername] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const token = authService.getToken();
-        if (!token) {
-          setShowAuthModal(true);
-          setIsLoading(false);
-          return;
-        }
-
-        const isValid = await authService.verifyToken();
-        if (!isValid) {
-          authService.logout();
-          setShowAuthModal(true);
-          setIsLoading(false);
-          return;
-        }
-
-        // 토큰에서 사용자명 추출
-        try {
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          setUsername(payload.sub || 'user');
-        } catch {
-          setUsername('user');
-        }
-      } catch (error) {
-        console.error('Auth check failed:', error);
-        setShowAuthModal(true);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, [router]);
-
-  const handleLoginRedirect = () => {
-    router.push('/login');
-  };
-
-  const handleLogout = () => {
-    authService.logout();
-    router.push('/');
-  };
-
-  const handleNavigateToAnalysis = () => {
-    router.push('/dashboard');
-  };
-
-  const handleNavigateToWatchlist = () => {
-    router.push('/dashboard');
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary mx-auto mb-4"></div>
-          <p className="text-secondary text-lg font-medium">로딩 중...</p>
+        {/* Right Side - News (35%) */}
+        <div>
+          <NewsSection />
         </div>
       </div>
-    );
-  }
-
-  if (showAuthModal) {
-    return (
-      <>
-        <div className="min-h-screen bg-white flex items-center justify-center">
-          <div className="text-center text-muted-foreground">
-            로그인이 필요한 페이지입니다.
-          </div>
-        </div>
-        <AlertDialog open={showAuthModal}>
-          <AlertDialogContent onEscapeKeyDown={(e) => e.preventDefault()} onPointerDownOutside={(e) => e.preventDefault()}>
-            <AlertDialogHeader>
-              <AlertDialogTitle>로그인이 필요합니다</AlertDialogTitle>
-              <AlertDialogDescription>
-                이 페이지를 이용하시려면 로그인이 필요합니다.
-                로그인 페이지로 이동하시겠습니까?
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => router.push('/')}>
-                취소
-              </AlertDialogCancel>
-              <AlertDialogAction onClick={handleLoginRedirect}>
-                로그인 페이지로 이동
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </>
-    );
-  }
-
-  return (
-    <MainPage
-      username={username}
-      onLogout={handleLogout}
-      onNavigateToAnalysis={handleNavigateToAnalysis}
-      onNavigateToWatchlist={handleNavigateToWatchlist}
-    />
+    </div>
   );
 }
