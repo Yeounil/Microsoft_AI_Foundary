@@ -13,7 +13,10 @@ import {
   type IChartApi,
   type ISeriesApi,
 } from "lightweight-charts";
-import { getFMPWebSocketClient, type CandleData } from "@/lib/fmp-websocket-client";
+import {
+  getFMPWebSocketClient,
+  type CandleData,
+} from "@/lib/fmp-websocket-client";
 import apiClient from "@/lib/api-client";
 
 type ChartType = "area" | "line" | "candle";
@@ -29,13 +32,32 @@ type SeriesType =
   | ISeriesApi<"Line">
   | ISeriesApi<"Area">;
 
-export function RealtimeStockChart({ symbol = "AAPL" }: RealtimeStockChartProps) {
+interface ChartDataItem {
+  date: string | number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+}
+
+interface ProcessedChartData {
+  time: import("lightweight-charts").Time;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  value: number;
+}
+
+export function RealtimeStockChart({
+  symbol = "AAPL",
+}: RealtimeStockChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<SeriesType | null>(null);
 
   const [chartType, setChartType] = useState<ChartType>("candle");
-  const [timeRange, setTimeRange] = useState<TimeRange>("1D");
+  const [timeRange, setTimeRange] = useState<TimeRange>("1M");
   const [interval, setInterval] = useState<ChartInterval>("1m");
   const [isLoading, setIsLoading] = useState(false);
   const [isRealtime, setIsRealtime] = useState(false);
@@ -110,7 +132,7 @@ export function RealtimeStockChart({ symbol = "AAPL" }: RealtimeStockChartProps)
         chartRef.current.removeSeries(seriesRef.current);
         seriesRef.current = null;
       } catch (error) {
-        console.warn('[Chart] Failed to remove series:', error);
+        console.warn("[Chart] Failed to remove series:", error);
         seriesRef.current = null;
       }
     }
@@ -139,7 +161,7 @@ export function RealtimeStockChart({ symbol = "AAPL" }: RealtimeStockChartProps)
         });
       }
     } catch (error) {
-      console.error('[Chart] Failed to create series:', error);
+      console.error("[Chart] Failed to create series:", error);
     }
   }, [chartType]);
 
@@ -151,7 +173,7 @@ export function RealtimeStockChart({ symbol = "AAPL" }: RealtimeStockChartProps)
   // Historical 데이터 로드
   const loadHistoricalData = useCallback(async () => {
     if (!seriesRef.current) {
-      console.warn('[Chart] Series not ready for data loading');
+      console.warn("[Chart] Series not ready for data loading");
       return;
     }
 
@@ -162,14 +184,16 @@ export function RealtimeStockChart({ symbol = "AAPL" }: RealtimeStockChartProps)
       // 1D일 때는 interval을 사용, 아니면 1d 고정
       const chartInterval = timeRange === "1D" ? interval : "1d";
 
-      console.log(`Loading historical data: ${symbol}, period: ${period}, interval: ${chartInterval}`);
+      console.log(
+        `Loading historical data: ${symbol}, period: ${period}, interval: ${chartInterval}`
+      );
 
       const data = await apiClient.getChartData(symbol, period, chartInterval);
 
       if (data.chart_data && data.chart_data.length > 0) {
         // 데이터 변환
         const processedData = data.chart_data
-          .map((item) => {
+          .map((item: ChartDataItem): ProcessedChartData | null => {
             const timestamp =
               typeof item.date === "string"
                 ? Math.floor(new Date(item.date).getTime() / 1000)
@@ -188,32 +212,41 @@ export function RealtimeStockChart({ symbol = "AAPL" }: RealtimeStockChartProps)
               value: item.close, // for line/area
             };
           })
-          .filter((item) => item !== null)
-          .sort((a, b) => (a!.time as number) - (b!.time as number));
+          .filter((item: ProcessedChartData | null): item is ProcessedChartData => item !== null)
+          .sort(
+            (a: ProcessedChartData, b: ProcessedChartData) =>
+              (a.time as number) - (b.time as number)
+          );
 
         if (processedData.length > 0) {
           try {
             if (chartType === "candle") {
-              const candleData = processedData.map((item) => ({
-                time: item!.time,
-                open: item!.open,
-                high: item!.high,
-                low: item!.low,
-                close: item!.close,
-              }));
+              const candleData = processedData.map(
+                (item: ProcessedChartData) => ({
+                  time: item.time,
+                  open: item.open,
+                  high: item.high,
+                  low: item.low,
+                  close: item.close,
+                })
+              );
               seriesRef.current?.setData(candleData);
             } else {
-              const lineData = processedData.map((item) => ({
-                time: item!.time,
-                value: item!.value,
-              }));
+              const lineData = processedData.map(
+                (item: ProcessedChartData) => ({
+                  time: item.time,
+                  value: item.value,
+                })
+              );
               seriesRef.current?.setData(lineData);
             }
 
             chartRef.current?.timeScale().fitContent();
-            console.log(`Loaded ${processedData.length} historical data points`);
+            console.log(
+              `Loaded ${processedData.length} historical data points`
+            );
           } catch (error) {
-            console.error('[Chart] Failed to set data:', error);
+            console.error("[Chart] Failed to set data:", error);
           }
         }
       }
@@ -254,7 +287,18 @@ export function RealtimeStockChart({ symbol = "AAPL" }: RealtimeStockChartProps)
 
         // 실시간 캔들 콜백
         const handleCandle = (candle: CandleData) => {
-          if (!seriesRef.current || !mounted) return;
+          if (!seriesRef.current || !mounted) {
+            console.warn(`[Chart] ⚠️ Cannot update: series=${!!seriesRef.current}, mounted=${mounted}`);
+            return;
+          }
+
+          console.log(`[Chart] 📈 Received candle data:`, {
+            time: new Date(candle.time * 1000).toLocaleTimeString(),
+            type: chartType,
+            data: chartType === "candle"
+              ? `O:$${candle.open.toFixed(2)} H:$${candle.high.toFixed(2)} L:$${candle.low.toFixed(2)} C:$${candle.close.toFixed(2)}`
+              : `$${candle.close.toFixed(2)}`
+          });
 
           try {
             if (chartType === "candle") {
@@ -265,28 +309,35 @@ export function RealtimeStockChart({ symbol = "AAPL" }: RealtimeStockChartProps)
                 low: candle.low,
                 close: candle.close,
               });
+              console.log(`[Chart] ✅ Candle chart updated successfully`);
             } else {
               seriesRef.current.update({
                 time: candle.time as import("lightweight-charts").Time,
                 value: candle.close,
               });
+              console.log(`[Chart] ✅ Line/Area chart updated successfully`);
             }
 
             // 실시간 위치로 스크롤
-            chartRef.current?.timeScale().scrollToRealtime();
+            chartRef.current?.timeScale().scrollToRealTime();
           } catch (error) {
-            console.error("[WebSocket] Update error:", error);
+            console.error("[Chart] ❌ Update error:", error);
           }
         };
 
         // 구독 시작
         const intervalMs = getIntervalMs(interval);
+        console.log(`[Chart] 🔌 Starting WebSocket subscription for ${symbol} with ${interval} interval (${intervalMs}ms)`);
+
         await client.subscribe(symbol, intervalMs);
+        console.log(`[Chart] 📡 Subscribed successfully, registering candle callback...`);
+
         client.onCandle(symbol, handleCandle);
+        console.log(`[Chart] ✅ Candle callback registered, waiting for data...`);
 
         setIsRealtime(true);
         setIsLoading(false);
-        console.log(`[Hybrid Mode] REST API + WebSocket realtime for ${symbol} with ${interval} interval (${intervalMs}ms)`);
+        console.log(`[Chart] 🎉 Realtime mode ACTIVE for ${symbol}`);
 
         // Cleanup
         return () => {

@@ -45,7 +45,8 @@ class ApiClient {
           } catch (refreshError) {
             this.clearTokens();
             if (typeof window !== 'undefined') {
-              window.location.href = '/login';
+              // Dispatch session expired event
+              window.dispatchEvent(new CustomEvent('session-expired'));
             }
             return Promise.reject(refreshError);
           }
