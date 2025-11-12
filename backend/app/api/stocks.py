@@ -1,10 +1,57 @@
-from fastapi import APIRouter, HTTPException, Query, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Query, BackgroundTasks, Body
 from typing import List, Dict
 from app.services.stock_service import StockService
 
 router = APIRouter()
 
 stock_service = StockService()
+
+@router.get("/list")
+async def get_all_stocks(
+    market_cap_more_than: int = Query(1000000000, description="최소 시가총액 (기본: 10억 달러)"),
+    limit: int = Query(500, description="최대 종목 수 (기본: 500)")
+):
+    """
+    모든 거래 가능한 미국 주식 종목 리스트 조회
+
+    FMP Stock Screener API를 통해 NASDAQ, NYSE 거래소의 종목을 조회합니다.
+    - 시가총액 필터링 가능
+    - 최대 조회 개수 제한 가능
+    """
+    try:
+        stocks = stock_service.get_all_tradable_stocks(market_cap_more_than, limit)
+        return {
+            "count": len(stocks),
+            "stocks": stocks
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/quotes")
+async def get_batch_quotes(symbols: List[str] = Body(..., description="조회할 종목 심볼 리스트")):
+    """
+    여러 종목의 현재 가격을 배치로 조회
+
+    프론트엔드에서 API 키 노출 없이 여러 종목의 실시간 가격을 조회합니다.
+    - 한번에 여러 종목 조회 가능
+    - 현재가, 변동폭, 변동률, 거래량 포함
+    """
+    try:
+        if not symbols or len(symbols) == 0:
+            raise HTTPException(status_code=400, detail="종목 심볼이 필요합니다.")
+
+        if len(symbols) > 100:
+            raise HTTPException(status_code=400, detail="한번에 최대 100개 종목만 조회 가능합니다.")
+
+        quotes = stock_service.get_batch_quotes(symbols)
+        return {
+            "count": len(quotes),
+            "quotes": quotes
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/search")
 async def search_stocks(q: str = Query(..., description="검색할 주식명 또는 심볼")):

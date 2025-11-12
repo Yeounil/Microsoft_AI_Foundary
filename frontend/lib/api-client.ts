@@ -136,6 +136,18 @@ class ApiClient {
   }
 
   // Stock methods
+  async getAllTradableStocks(marketCapMoreThan?: number, limit?: number) {
+    const response = await this.client.get('/api/v1/stocks/list', {
+      params: { market_cap_more_than: marketCapMoreThan, limit },
+    });
+    return response.data;
+  }
+
+  async getBatchQuotes(symbols: string[]) {
+    const response = await this.client.post('/api/v1/stocks/quotes', symbols);
+    return response.data;
+  }
+
   async searchStocks(query: string) {
     const response = await this.client.get('/api/v1/stocks/search', {
       params: { q: query },
@@ -159,7 +171,11 @@ class ApiClient {
 
   async getIntradayData(symbol: string, interval: string, fromDate?: string, toDate?: string) {
     const response = await this.client.get(`/api/v1/stocks/${symbol}/intraday`, {
-      params: { interval, from_date: fromDate, to_date: toDate },
+      params: {
+        interval,
+        from_date: fromDate,
+        to_date: toDate
+      },
     });
     return response.data;
   }

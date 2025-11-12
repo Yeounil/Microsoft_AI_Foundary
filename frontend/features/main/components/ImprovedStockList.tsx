@@ -10,6 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { useStockStore } from '@/store/stock-store';
 import { getFMPWebSocketClient } from '@/lib/fmp-websocket-client';
+import apiClient from '@/lib/api-client';
 
 interface StockItem {
   symbol: string;
@@ -20,30 +21,6 @@ interface StockItem {
   isLoading: boolean;
 }
 
-// 인기 종목 리스트 (Tech 20개)
-const popularStocks: { symbol: string; name: string }[] = [
-  { symbol: 'AAPL', name: 'Apple Inc.' },
-  { symbol: 'MSFT', name: 'Microsoft Corp.' },
-  { symbol: 'GOOGL', name: 'Alphabet Inc.' },
-  { symbol: 'GOOG', name: 'Alphabet Inc. (Class C)' },
-  { symbol: 'AMZN', name: 'Amazon.com Inc.' },
-  { symbol: 'NVDA', name: 'NVIDIA Corp.' },
-  { symbol: 'TSLA', name: 'Tesla Inc.' },
-  { symbol: 'META', name: 'Meta Platforms Inc.' },
-  { symbol: 'NFLX', name: 'Netflix Inc.' },
-  { symbol: 'CRM', name: 'Salesforce Inc.' },
-  { symbol: 'ORCL', name: 'Oracle Corp.' },
-  { symbol: 'ADOBE', name: 'Adobe Inc.' },
-  { symbol: 'INTC', name: 'Intel Corp.' },
-  { symbol: 'AMD', name: 'Advanced Micro Devices' },
-  { symbol: 'MU', name: 'Micron Technology' },
-  { symbol: 'QCOM', name: 'Qualcomm Inc.' },
-  { symbol: 'IBM', name: 'IBM Corp.' },
-  { symbol: 'CSCO', name: 'Cisco Systems' },
-  { symbol: 'HPQ', name: 'HP Inc.' },
-  { symbol: 'AVGO', name: 'Broadcom Inc.' },
-];
-
 interface StockListProps {
   onSelectStock?: (symbol: string) => void;
   selectedSymbol?: string;
@@ -53,66 +30,82 @@ export function ImprovedStockList({ onSelectStock, selectedSymbol }: StockListPr
   const [showAll, setShowAll] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [allStocks, setAllStocks] = useState<{ symbol: string; name: string; marketCap: number }[]>([]);
   const [stockPrices, setStockPrices] = useState<Record<string, { price: number; change: number; changePercent: number }>>({});
+  const [isLoadingStocks, setIsLoadingStocks] = useState(true);
 
   const { watchlist, addToWatchlist, removeFromWatchlist } = useStockStore();
   const fmpWsClient = useRef(getFMPWebSocketClient());
 
-  // REST API로 초기 가격 로드
+  // 1. 모든 종목 리스트 로드 (백엔드에서)
   useEffect(() => {
-    const loadInitialPrices = async () => {
-      const symbols = popularStocks.map(s => s.symbol);
+    const loadAllStocks = async () => {
+      try {
+        console.log('[ImprovedStockList] Loading all tradable stocks from backend...');
+        const response = await apiClient.getAllTradableStocks(1000000000, 500);
 
-      console.log('[ImprovedStockList] Loading initial prices from REST API...');
+        if (response.stocks && Array.isArray(response.stocks)) {
+          const stocks = response.stocks.map((stock: any) => ({
+            symbol: stock.symbol,
+            name: stock.name,
+            marketCap: stock.marketCap || 0,
+          }));
+          setAllStocks(stocks);
+          console.log(`[ImprovedStockList] ✅ Loaded ${response.stocks.length} stocks`);
 
-      // 각 종목의 Quote 데이터 로드 (병렬 처리)
-      const pricePromises = symbols.map(async (symbol) => {
-        try {
-          const response = await fetch(
-            `https://financialmodelingprep.com/api/v3/quote/${symbol}?apikey=${process.env.NEXT_PUBLIC_FMP_API_KEY}`
-          );
-          const data = await response.json();
-
-          if (data && data.length > 0) {
-            const quote = data[0];
-            return {
-              symbol,
-              price: quote.price,
-              change: quote.change,
-              changePercent: quote.changesPercentage,
-            };
+          // 첫 번째 종목을 자동으로 선택
+          if (stocks.length > 0 && onSelectStock && !selectedSymbol) {
+            onSelectStock(stocks[0].symbol);
+            console.log(`[ImprovedStockList] Auto-selected first stock: ${stocks[0].symbol}`);
           }
-          return null;
-        } catch (error) {
-          console.error(`[ImprovedStockList] Failed to load price for ${symbol}:`, error);
-          return null;
         }
-      });
-
-      const results = await Promise.all(pricePromises);
-
-      // 결과를 state에 저장
-      const pricesMap: Record<string, any> = {};
-      results.forEach((result) => {
-        if (result) {
-          pricesMap[result.symbol] = {
-            price: result.price,
-            change: result.change,
-            changePercent: result.changePercent,
-          };
-          console.log(`[ImprovedStockList] ✅ Loaded ${result.symbol}: $${result.price}`);
-        }
-      });
-
-      setStockPrices(pricesMap);
-      console.log(`[ImprovedStockList] Loaded ${Object.keys(pricesMap).length} prices from REST API`);
+        setIsLoadingStocks(false);
+      } catch (error) {
+        console.error('[ImprovedStockList] Failed to load stocks:', error);
+        setIsLoadingStocks(false);
+      }
     };
 
-    loadInitialPrices();
+    loadAllStocks();
   }, []);
 
-  // WebSocket 연결 및 구독 (실시간 업데이트용)
+  // 2. 시가총액 상위 100개의 가격 로드 (배치 조회)
   useEffect(() => {
+    if (allStocks.length === 0) return;
+
+    const loadPrices = async () => {
+      try {
+        // 시가총액 상위 100개 (또는 전체)
+        const topSymbols = allStocks.slice(0, 100).map(s => s.symbol);
+
+        console.log('[ImprovedStockList] Loading prices for top 100 stocks via backend...');
+        const response = await apiClient.getBatchQuotes(topSymbols);
+
+        if (response.quotes && Array.isArray(response.quotes)) {
+          const pricesMap: Record<string, any> = {};
+          response.quotes.forEach((quote: any) => {
+            pricesMap[quote.symbol] = {
+              price: quote.price,
+              change: quote.change,
+              changePercent: quote.changePercent,
+            };
+          });
+
+          setStockPrices(pricesMap);
+          console.log(`[ImprovedStockList] ✅ Loaded ${response.quotes.length} prices`);
+        }
+      } catch (error) {
+        console.error('[ImprovedStockList] Failed to load prices:', error);
+      }
+    };
+
+    loadPrices();
+  }, [allStocks]);
+
+  // 3. WebSocket 구독 (상위 20개만 실시간 업데이트)
+  useEffect(() => {
+    if (allStocks.length === 0) return;
+
     const connectAndSubscribe = async () => {
       try {
         const wsClient = fmpWsClient.current;
@@ -122,11 +115,11 @@ export function ImprovedStockList({ onSelectStock, selectedSymbol }: StockListPr
         // WebSocket 연결
         await wsClient.connect();
 
-        // 인기 종목 구독
-        const symbols = popularStocks.map(s => s.symbol);
+        // 상위 20개만 실시간 구독
+        const topSymbols = allStocks.slice(0, 20).map(s => s.symbol);
 
         // 구독 전에 캔들 콜백 먼저 등록
-        symbols.forEach(symbol => {
+        topSymbols.forEach(symbol => {
           const callback = (candle: any) => {
             console.log(`[ImprovedStockList] 📊 WebSocket update for ${symbol}: $${candle.close}`);
 
@@ -144,8 +137,8 @@ export function ImprovedStockList({ onSelectStock, selectedSymbol }: StockListPr
         });
 
         // 구독
-        await wsClient.subscribe(symbols, 60000); // 1분 간격
-        console.log(`[ImprovedStockList] ✅ WebSocket subscribed to ${symbols.length} symbols (for real-time updates)`);
+        await wsClient.subscribe(topSymbols, 60000); // 1분 간격
+        console.log(`[ImprovedStockList] ✅ WebSocket subscribed to ${topSymbols.length} symbols (for real-time updates)`);
       } catch (error) {
         console.error('[ImprovedStockList] ❌ WebSocket connection failed:', error);
       }
@@ -156,18 +149,18 @@ export function ImprovedStockList({ onSelectStock, selectedSymbol }: StockListPr
     return () => {
       // Cleanup: 구독 해제
       const wsClient = fmpWsClient.current;
-      const symbols = popularStocks.map(s => s.symbol);
+      const topSymbols = allStocks.slice(0, 20).map(s => s.symbol);
 
-      symbols.forEach(symbol => {
+      topSymbols.forEach(symbol => {
         wsClient.offCandle(symbol, () => {});
       });
-      wsClient.unsubscribe(symbols);
+      wsClient.unsubscribe(topSymbols);
     };
-  }, []);
+  }, [allStocks]);
 
   // 종목 데이터 생성 - REST API 또는 WebSocket 데이터 기반
   const stocks = useMemo((): StockItem[] => {
-    return popularStocks.map(stock => {
+    return allStocks.map(stock => {
       const priceData = stockPrices[stock.symbol];
 
       if (priceData && priceData.price) {
@@ -181,7 +174,7 @@ export function ImprovedStockList({ onSelectStock, selectedSymbol }: StockListPr
         };
       }
 
-      // 가격 데이터가 없으면 로딩 중
+      // 가격 데이터가 없으면 로딩 중 (상위 100개 밖의 종목)
       return {
         symbol: stock.symbol,
         name: stock.name,
@@ -191,7 +184,7 @@ export function ImprovedStockList({ onSelectStock, selectedSymbol }: StockListPr
         isLoading: true,
       };
     });
-  }, [stockPrices]);
+  }, [allStocks, stockPrices]);
 
   // 검색 필터링
   const filteredStocks = useMemo(() => {
@@ -233,46 +226,53 @@ export function ImprovedStockList({ onSelectStock, selectedSymbol }: StockListPr
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
+            disabled={isLoadingStocks}
           />
         </div>
       </CardHeader>
       <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-4 w-full">
-            <TabsTrigger value="all" className="flex-1">
-              전체 종목 ({filteredStocks.length})
-            </TabsTrigger>
-            <TabsTrigger value="favorites" className="flex-1">
-              관심 종목 ({favoriteStocks.length})
-            </TabsTrigger>
-          </TabsList>
+        {isLoadingStocks ? (
+          <div className="text-center py-8">
+            <div className="text-sm text-muted-foreground animate-pulse">종목 리스트 로딩 중...</div>
+          </div>
+        ) : (
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="mb-4 w-full">
+              <TabsTrigger value="all" className="flex-1">
+                전체 종목 ({filteredStocks.length})
+              </TabsTrigger>
+              <TabsTrigger value="favorites" className="flex-1">
+                관심 종목 ({favoriteStocks.length})
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="all" className="mt-0">
-            <StockListContent
-              stocks={visibleStocks}
-              showAll={showAll}
-              onToggleShowAll={() => setShowAll(!showAll)}
-              totalCount={displayStocks.length}
-              watchlist={watchlist}
-              onToggleWatchlist={toggleWatchlist}
-              onSelectStock={onSelectStock}
-              selectedSymbol={selectedSymbol}
-            />
-          </TabsContent>
+            <TabsContent value="all" className="mt-0">
+              <StockListContent
+                stocks={visibleStocks}
+                showAll={showAll}
+                onToggleShowAll={() => setShowAll(!showAll)}
+                totalCount={displayStocks.length}
+                watchlist={watchlist}
+                onToggleWatchlist={toggleWatchlist}
+                onSelectStock={onSelectStock}
+                selectedSymbol={selectedSymbol}
+              />
+            </TabsContent>
 
-          <TabsContent value="favorites" className="mt-0">
-            <StockListContent
-              stocks={visibleStocks}
-              showAll={showAll}
-              onToggleShowAll={() => setShowAll(!showAll)}
-              totalCount={displayStocks.length}
-              watchlist={watchlist}
-              onToggleWatchlist={toggleWatchlist}
-              onSelectStock={onSelectStock}
-              selectedSymbol={selectedSymbol}
-            />
-          </TabsContent>
-        </Tabs>
+            <TabsContent value="favorites" className="mt-0">
+              <StockListContent
+                stocks={visibleStocks}
+                showAll={showAll}
+                onToggleShowAll={() => setShowAll(!showAll)}
+                totalCount={displayStocks.length}
+                watchlist={watchlist}
+                onToggleWatchlist={toggleWatchlist}
+                onSelectStock={onSelectStock}
+                selectedSymbol={selectedSymbol}
+              />
+            </TabsContent>
+          </Tabs>
+        )}
       </CardContent>
     </Card>
   );
