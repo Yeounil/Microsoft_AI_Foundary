@@ -96,10 +96,21 @@ async def get_intraday_chart_data(
 @router.get("/{symbol}/indicators")
 async def get_stock_indicators(
     symbol: str,
-    save_to_db: bool = Query(True, description="DB에 저장 여부")
+    force_api: bool = Query(False, description="API 강제 호출 여부 (True: API 우선, False: DB 우선)")
 ):
-    """주식 지표만 조회 (빠른 조회, 자동 캐싱)"""
+    """
+    주식 지표 조회 (DB 우선, 빠른 조회)
+    - DB에 데이터가 있으면 DB에서 조회 (빠름)
+    - DB에 없거나 force_api=True이면 API 호출
+    """
     try:
+        # DB 우선 조회 (force_api가 False일 때만)
+        if not force_api:
+            db_data = await stock_service.get_stock_indicators_from_db(symbol.upper())
+            if db_data:
+                return db_data
+
+        # DB에 없거나 force_api=True면 API 호출
         data = await stock_service.get_stock_data(symbol.upper(), period=None, interval="1d")
 
         # 지표 데이터만 반환
@@ -107,23 +118,22 @@ async def get_stock_indicators(
             "symbol": data["symbol"],
             "company_name": data["company_name"],
             "current_price": data["current_price"],
-            "pe_ratio": data["pe_ratio"],
-            "eps": data["eps"],
-            "dividend_yield": data["dividend_yield"],
+            "previous_close": data.get("previous_close"),
+            "market_cap": data.get("market_cap"),
             "fifty_two_week_high": data["fifty_two_week_high"],
             "fifty_two_week_low": data["fifty_two_week_low"],
-            "technical_indicators": data["technical_indicators"],
+            "technical_indicators": data.get("technical_indicators"),
             "financial_ratios": data["financial_ratios"],
             "exchange": data["exchange"],
             "industry": data["industry"],
             "sector": data["sector"],
             "currency": data["currency"],
-            "cache_info": data.get("cache_info", "")
+            "cache_info": data.get("cache_info", "Fetched from API")
         }
 
-        if save_to_db and "Retrieved from cache" not in indicators.get("cache_info", ""):
-            result = stock_service.save_stock_indicators_to_db(symbol, data)
-            indicators["db_save"] = result
+        # API로 가져온 데이터는 DB에 저장
+        result = stock_service.save_stock_indicators_to_db(symbol, data)
+        indicators["db_save"] = result
 
         return indicators
     except Exception as e:
@@ -160,16 +170,37 @@ async def save_stock_to_db(
 @router.get("/{symbol}/chart")
 async def get_chart_data(
     symbol: str,
-    period: str = Query(None, description="조회 기간 (auto: 자동, 1d, 5d, 1mo, 3mo, 6mo, 1y 등)"),
+    period: str = Query("1y", description="조회 기간 (1d, 5d, 1mo, 3mo, 6mo, 1y, 2y, 5y)"),
     market: str = Query("us", description="시장 구분 (us: 미국만 지원)"),
-    interval: str = Query("1d", description="데이터 간격 (1d, 5d, 1wk, 1mo)")
+    force_api: bool = Query(False, description="API 강제 호출 여부 (True: API 우선, False: DB 우선)")
 ):
-    """차트용 주식 데이터 조회 (자동 캐싱)"""
+    """
+    차트용 주식 데이터 조회 (DB 우선, 빠른 조회)
+    - DB에 데이터가 있으면 DB에서 조회 (빠름, 5년치 데이터 활용)
+    - DB에 없거나 force_api=True이면 API 호출
+    """
     try:
         if market.lower() == "kr":
             raise HTTPException(status_code=400, detail="한국 주식은 FMP API에서 지원하지 않습니다.")
 
-        data = await stock_service.get_stock_data(symbol, period if period != "auto" else None, interval)
+        # DB 우선 조회 (force_api가 False일 때만)
+        if not force_api:
+            price_data = await stock_service.get_price_history_from_db(symbol.upper(), period)
+            if price_data:
+                # 기본 정보는 DB에서 조회
+                indicators = await stock_service.get_stock_indicators_from_db(symbol.upper())
+
+                return {
+                    "symbol": symbol.upper(),
+                    "company_name": indicators.get("company_name") if indicators else symbol.upper(),
+                    "current_price": indicators.get("current_price") if indicators else None,
+                    "currency": indicators.get("currency") if indicators else "USD",
+                    "chart_data": price_data,
+                    "cache_info": f"Retrieved from DB ({len(price_data)} records)"
+                }
+
+        # DB에 없거나 force_api=True면 API 호출
+        data = await stock_service.get_stock_data(symbol, period, "1d")
 
         # 차트에 필요한 데이터만 반환
         return {
@@ -178,7 +209,7 @@ async def get_chart_data(
             "current_price": data["current_price"],
             "currency": data["currency"],
             "chart_data": data["price_data"],
-            "cache_info": data.get("cache_info", "")
+            "cache_info": data.get("cache_info", "Fetched from API")
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -88,17 +88,50 @@ async def test_supabase_connection():
 
 @router.get("/latest")
 async def get_latest_news_public(
-    limit: int = Query(10, description="가져올 뉴스 개수")
+    limit: int = Query(20, description="가져올 뉴스 개수"),
+    offset: int = Query(0, description="건너뛸 뉴스 개수"),
+    start_date: str = Query(None, description="시작 날짜 (YYYY-MM-DD)"),
+    end_date: str = Query(None, description="종료 날짜 (YYYY-MM-DD)"),
+    sort_by: str = Query("published_date", description="정렬 기준 (published_date, ai_score)"),
+    order: str = Query("desc", description="정렬 순서 (asc, desc)")
 ):
-    """최신 뉴스 조회 (인증 불필요)"""
+    """
+    최신 뉴스 조회 (인증 불필요)
+    - news_articles 테이블에서 직접 조회
+    - 페이지네이션 지원 (limit, offset)
+    - 날짜 범위 필터링 지원
+    - 정렬 옵션 지원
+    """
     try:
-        from app.services.news_db_service import NewsDBService
+        from app.db.supabase_client import get_supabase
 
-        news = await NewsDBService.get_latest_financial_news(limit=limit)
+        supabase = get_supabase()
+
+        # 기본 쿼리 구성
+        query = supabase.table("news_articles").select("*")
+
+        # 날짜 범위 필터
+        if start_date:
+            query = query.gte("published_date", start_date)
+        if end_date:
+            query = query.lte("published_date", end_date)
+
+        # 정렬
+        if sort_by == "ai_score":
+            query = query.order("ai_score", desc=(order.lower() == "desc"))
+        else:
+            query = query.order("published_date", desc=(order.lower() == "desc"))
+
+        # 페이지네이션
+        query = query.range(offset, offset + limit - 1)
+
+        result = query.execute()
 
         return {
-            "total_count": len(news),
-            "articles": news
+            "total_count": len(result.data) if result.data else 0,
+            "offset": offset,
+            "limit": limit,
+            "articles": result.data if result.data else []
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -106,18 +139,51 @@ async def get_latest_news_public(
 @router.get("/stock/{symbol}/public")
 async def get_stock_news_public(
     symbol: str,
-    limit: int = Query(10, description="가져올 뉴스 개수")
+    limit: int = Query(20, description="가져올 뉴스 개수"),
+    offset: int = Query(0, description="건너뛸 뉴스 개수"),
+    start_date: str = Query(None, description="시작 날짜 (YYYY-MM-DD)"),
+    end_date: str = Query(None, description="종료 날짜 (YYYY-MM-DD)"),
+    sort_by: str = Query("published_date", description="정렬 기준 (published_date, ai_score)"),
+    order: str = Query("desc", description="정렬 순서 (asc, desc)")
 ):
-    """특정 종목 뉴스 조회 (인증 불필요)"""
+    """
+    특정 종목 뉴스 조회 (인증 불필요)
+    - news_articles 테이블에서 직접 조회
+    - 페이지네이션 지원 (limit, offset)
+    - 날짜 범위 필터링 지원
+    - 정렬 옵션 지원
+    """
     try:
-        from app.services.news_db_service import NewsDBService
+        from app.db.supabase_client import get_supabase
 
-        news = await NewsDBService.get_latest_news_by_symbol(symbol=symbol, limit=limit)
+        supabase = get_supabase()
+
+        # 기본 쿼리 구성
+        query = supabase.table("news_articles").select("*").eq("symbol", symbol.upper())
+
+        # 날짜 범위 필터
+        if start_date:
+            query = query.gte("published_date", start_date)
+        if end_date:
+            query = query.lte("published_date", end_date)
+
+        # 정렬
+        if sort_by == "ai_score":
+            query = query.order("ai_score", desc=(order.lower() == "desc"))
+        else:
+            query = query.order("published_date", desc=(order.lower() == "desc"))
+
+        # 페이지네이션
+        query = query.range(offset, offset + limit - 1)
+
+        result = query.execute()
 
         return {
-            "symbol": symbol,
-            "total_count": len(news),
-            "articles": news
+            "symbol": symbol.upper(),
+            "total_count": len(result.data) if result.data else 0,
+            "offset": offset,
+            "limit": limit,
+            "articles": result.data if result.data else []
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

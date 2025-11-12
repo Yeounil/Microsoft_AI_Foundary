@@ -25,6 +25,103 @@ class StockService:
             StockService._instance = StockService()
         return StockService._instance
 
+    async def get_stock_indicators_from_db(self, symbol: str) -> Optional[Dict]:
+        """DB에서 종목 지표 조회 (빠른 조회)"""
+        try:
+            supabase = get_supabase()
+            result = supabase.table("stock_indicators")\
+                .select("*")\
+                .eq("symbol", symbol.upper())\
+                .execute()
+
+            if result.data and len(result.data) > 0:
+                data = result.data[0]
+                logger.info(f"Stock indicators loaded from DB for {symbol}")
+                return {
+                    "symbol": data.get("symbol"),
+                    "company_name": data.get("company_name"),
+                    "current_price": data.get("current_price"),
+                    "previous_close": data.get("previous_close"),
+                    "market_cap": data.get("market_cap"),
+                    "fifty_two_week_high": data.get("fifty_two_week_high"),
+                    "fifty_two_week_low": data.get("fifty_two_week_low"),
+                    "currency": data.get("currency"),
+                    "exchange": data.get("exchange"),
+                    "industry": data.get("industry"),
+                    "sector": data.get("sector"),
+                    "financial_ratios": {
+                        "current_ratio": data.get("current_ratio", 0),
+                        "profit_margin": data.get("profit_margin", 0),
+                        "quick_ratio": data.get("quick_ratio", 0)
+                    },
+                    "last_updated": data.get("last_updated"),
+                    "cache_info": "Retrieved from DB"
+                }
+
+            return None
+
+        except Exception as e:
+            logger.error(f"Error loading stock indicators from DB for {symbol}: {str(e)}")
+            return None
+
+    async def get_price_history_from_db(
+        self,
+        symbol: str,
+        period: str = "1y",
+        limit: int = None
+    ) -> List[Dict]:
+        """DB에서 주가 히스토리 조회 (빠른 조회)"""
+        try:
+            supabase = get_supabase()
+
+            # 기간에 따른 날짜 계산
+            days_map = {
+                "1d": 1, "5d": 5, "1mo": 30, "3mo": 90, "6mo": 180,
+                "1y": 365, "2y": 730, "5y": 1825, "10y": 3650
+            }
+            days = days_map.get(period, 365)
+
+            # 날짜 계산
+            end_date = datetime.now()
+            start_date = end_date - timedelta(days=days)
+
+            # DB 쿼리
+            query = supabase.table("stock_price_history")\
+                .select("*")\
+                .eq("symbol", symbol.upper())\
+                .gte("date", start_date.strftime("%Y-%m-%d"))\
+                .order("date", desc=True)
+
+            if limit:
+                query = query.limit(limit)
+            else:
+                query = query.limit(days)
+
+            result = query.execute()
+
+            if result.data:
+                price_data = []
+                for record in result.data:
+                    price_data.append({
+                        "date": record.get("date"),
+                        "open": record.get("open"),
+                        "high": record.get("high"),
+                        "low": record.get("low"),
+                        "close": record.get("close"),
+                        "volume": record.get("volume"),
+                        "change": record.get("change"),
+                        "change_percent": record.get("change_percent")
+                    })
+
+                logger.info(f"Loaded {len(price_data)} price records from DB for {symbol}")
+                return price_data
+
+            return []
+
+        except Exception as e:
+            logger.error(f"Error loading price history from DB for {symbol}: {str(e)}")
+            return []
+
     async def _get_last_update_time(self, symbol: str) -> Optional[datetime]:
         """DB에서 해당 종목의 마지막 업데이트 시간 조회"""
         try:
