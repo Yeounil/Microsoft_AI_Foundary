@@ -159,6 +159,76 @@ class StockService:
             logger.error(f"Error fetching stock data for {symbol}: {str(e)}")
             raise Exception(f"Error fetching stock data: {str(e)}")
 
+    async def get_intraday_chart_data(
+        self,
+        symbol: str,
+        interval: str = "1min",
+        from_date: str = None,
+        to_date: str = None
+    ) -> List[Dict]:
+        """
+        FMP Intraday API로 분단위 차트 데이터 조회
+
+        API: https://financialmodelingprep.com/api/v3/historical-chart/{interval}/{symbol}
+
+        Parameters:
+        - interval: 1min, 5min, 15min, 30min, 1hour
+        - from_date: YYYY-MM-DD (선택)
+        - to_date: YYYY-MM-DD (선택)
+
+        Note: Free tier는 최근 7일만 조회 가능
+        """
+        try:
+            if not self.api_key:
+                raise Exception("FMP API Key is not configured")
+
+            # FMP Intraday API 엔드포인트
+            url = f"{self.BASE_URL_V3}/historical-chart/{interval}/{symbol.upper()}"
+
+            params = {"apikey": self.api_key}
+            if from_date:
+                params["from"] = from_date
+            if to_date:
+                params["to"] = to_date
+
+            logger.info(f"Fetching intraday data for {symbol} (interval: {interval})")
+
+            response = requests.get(url, params=params, timeout=30)
+            response.raise_for_status()
+
+            data = response.json()
+
+            if not isinstance(data, list):
+                logger.warning(f"Unexpected response format for {symbol}: {type(data)}")
+                return []
+
+            # 데이터 정규화 (최신 데이터가 먼저 오므로 역순 정렬)
+            normalized_data = []
+            for item in reversed(data):  # 시간순 정렬 (오래된 것 → 최신)
+                try:
+                    # 날짜 형식: "2024-01-15 15:59:00"
+                    date_str = item.get("date", "")
+                    timestamp = int(datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S").timestamp())
+
+                    normalized_data.append({
+                        "time": timestamp,
+                        "open": round(float(item.get("open", 0)), 2),
+                        "high": round(float(item.get("high", 0)), 2),
+                        "low": round(float(item.get("low", 0)), 2),
+                        "close": round(float(item.get("close", 0)), 2),
+                        "volume": int(item.get("volume", 0))
+                    })
+                except Exception as e:
+                    logger.error(f"Error parsing candle data: {e}")
+                    continue
+
+            logger.info(f"Fetched {len(normalized_data)} intraday candles for {symbol}")
+            return normalized_data
+
+        except Exception as e:
+            logger.error(f"Failed to get intraday data for {symbol}: {str(e)}")
+            return []
+
 
     def _get_quote(self, symbol: str) -> Dict:
         """현재 주가 및 기본 정보 조회 (공식 문서: /stable/quote)"""

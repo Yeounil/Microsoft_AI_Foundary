@@ -18,18 +18,19 @@ async def analyze_stock(
     """주식 AI 분석 (Supabase 저장)"""
     try:
         data_service = SupabaseDataService()
-        
+        stock_service = StockService()
+
         # 검색 기록 추가
         await data_service.add_search_history(
             user_id=current_user['id'],
             symbol=symbol
         )
-        
+
         # 주식 데이터 가져오기
         if market.lower() == "kr":
             stock_data = StockService.get_korean_stock_data(symbol, period)
         else:
-            stock_data = StockService.get_stock_data(symbol, period)
+            stock_data = await stock_service.get_stock_data(symbol, period)
         
         # OpenAI 분석 서비스
         openai_service = OpenAIService()
@@ -115,13 +116,14 @@ async def get_market_summary(
         # 주요 지수들의 데이터 가져오기
         major_indices = ["^GSPC", "^DJI", "^IXIC", "^KS11", "^KQ11"]  # S&P500, 다우, 나스닥, 코스피, 코스닥
         market_data = []
-        
+        stock_service = StockService()
+
         for index in major_indices:
             try:
                 if index.startswith("^KS") or index.startswith("^KQ"):
                     data = StockService.get_korean_stock_data(index.replace("^", ""))
                 else:
-                    data = StockService.get_stock_data(index)
+                    data = await stock_service.get_stock_data(index)
                 market_data.append(data)
             except:
                 continue

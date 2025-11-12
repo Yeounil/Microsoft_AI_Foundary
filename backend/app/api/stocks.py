@@ -59,6 +59,40 @@ async def get_stock_data(
             )
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/{symbol}/intraday")
+async def get_intraday_chart_data(
+    symbol: str,
+    interval: str = Query("1min", description="데이터 간격 (1min, 5min, 15min, 30min, 1hour)"),
+    from_date: str = Query(None, description="시작 날짜 (YYYY-MM-DD)"),
+    to_date: str = Query(None, description="종료 날짜 (YYYY-MM-DD)")
+):
+    """
+    분단위 Intraday 차트 데이터 조회
+
+    FMP Intraday API를 사용하여 분단위 캔들 데이터를 제공합니다.
+
+    Note:
+    - Free tier는 최근 7일만 조회 가능
+    - Paid tier는 최근 30일~5년 조회 가능
+    - 실시간 차트 구현 시 이 API + WebSocket 조합 사용
+    """
+    try:
+        data = await stock_service.get_intraday_chart_data(
+            symbol.upper(),
+            interval,
+            from_date,
+            to_date
+        )
+
+        return {
+            "symbol": symbol.upper(),
+            "interval": interval,
+            "data": data,
+            "count": len(data)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/{symbol}/indicators")
 async def get_stock_indicators(
     symbol: str,

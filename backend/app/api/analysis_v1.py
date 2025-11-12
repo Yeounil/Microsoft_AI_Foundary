@@ -14,10 +14,11 @@ async def analyze_stock_v1(
     """주식 기술적 분석 (v1 호환성)"""
     try:
         # 주식 데이터 가져오기
+        stock_service = StockService()
         if market.lower() == "kr":
             stock_data = StockService.get_korean_stock_data(symbol, period, "1d")
         else:
-            stock_data = StockService.get_stock_data(symbol, period, "1d")
+            stock_data = await stock_service.get_stock_data(symbol, period, "1d")
         
         if not stock_data or not stock_data.get("price_data"):
             raise HTTPException(status_code=404, detail=f"{symbol} 주식 데이터를 찾을 수 없습니다.")
@@ -51,10 +52,11 @@ async def get_market_summary_v1():
         # 주요 지수들의 데이터 가져오기
         indices = ["^GSPC", "^DJI", "^IXIC"]  # S&P 500, Dow Jones, NASDAQ
         market_data = {}
-        
+        stock_service = StockService()
+
         for index in indices:
             try:
-                data = StockService.get_stock_data(index, "1d", "1d")
+                data = await stock_service.get_stock_data(index, "1d", "1d")
                 if data:
                     market_data[index] = {
                         "symbol": data.get("symbol"),
