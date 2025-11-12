@@ -545,6 +545,114 @@ class StockService:
         logger.warning("Korean stock data from FMP API not fully supported. Use US stocks instead.")
         raise Exception("Korean stock data is not supported via FMP API. Please use US stock symbols.")
 
+    def get_all_tradable_stocks(
+        self,
+        market_cap_more_than: int = 1000000000,  # 10억 달러 이상
+        limit: int = 500
+    ) -> List[Dict]:
+        """
+        모든 거래 가능한 미국 주식 종목 리스트 조회
+
+        FMP Stock Screener API 사용:
+        - 시가총액 필터링
+        - NASDAQ, NYSE 거래소만
+        - 상위 N개 종목
+        """
+        try:
+            if not self.api_key:
+                raise Exception("FMP API Key is not configured")
+
+            # Stock Screener API
+            url = f"{self.BASE_URL_V3}/stock-screener"
+            params = {
+                "marketCapMoreThan": market_cap_more_than,
+                "exchange": "NASDAQ,NYSE",
+                "limit": limit,
+                "apikey": self.api_key
+            }
+
+            logger.info(f"Fetching tradable stocks (limit: {limit}, marketCap > {market_cap_more_than})")
+
+            response = requests.get(url, params=params, timeout=30)
+            response.raise_for_status()
+
+            data = response.json()
+
+            if not isinstance(data, list):
+                logger.warning(f"Unexpected response format: {type(data)}")
+                return []
+
+            # 필요한 필드만 추출
+            stocks = []
+            for item in data:
+                stocks.append({
+                    "symbol": item.get("symbol", ""),
+                    "name": item.get("companyName", ""),
+                    "exchange": item.get("exchangeShortName", ""),
+                    "marketCap": item.get("marketCap", 0),
+                    "sector": item.get("sector", ""),
+                    "industry": item.get("industry", "")
+                })
+
+            logger.info(f"Fetched {len(stocks)} tradable stocks")
+            return stocks
+
+        except Exception as e:
+            logger.error(f"Error fetching tradable stocks: {str(e)}")
+            return []
+
+    def get_batch_quotes(self, symbols: List[str]) -> List[Dict]:
+        """
+        여러 종목의 현재 가격을 배치로 조회
+
+        FMP Batch Quote API 사용:
+        - 최대 한번에 여러 종목 조회 가능
+        - 프론트엔드에서 API 키 노출 방지
+        """
+        try:
+            if not self.api_key:
+                raise Exception("FMP API Key is not configured")
+
+            if not symbols or len(symbols) == 0:
+                return []
+
+            # 심볼을 쉼표로 구분
+            symbols_str = ",".join([s.upper() for s in symbols])
+
+            # V3 Quote API (배치 지원)
+            url = f"{self.BASE_URL_V3}/quote/{symbols_str}"
+            params = {"apikey": self.api_key}
+
+            logger.info(f"Fetching batch quotes for {len(symbols)} symbols")
+
+            response = requests.get(url, params=params, timeout=30)
+            response.raise_for_status()
+
+            data = response.json()
+
+            if not isinstance(data, list):
+                logger.warning(f"Unexpected response format: {type(data)}")
+                return []
+
+            # 필요한 필드만 추출
+            quotes = []
+            for item in data:
+                quotes.append({
+                    "symbol": item.get("symbol", ""),
+                    "name": item.get("name", ""),
+                    "price": item.get("price", 0),
+                    "change": item.get("change", 0),
+                    "changePercent": item.get("changesPercentage", 0),
+                    "volume": item.get("volume", 0)
+                })
+
+            logger.info(f"Fetched {len(quotes)} quotes")
+            return quotes
+
+        except Exception as e:
+            logger.error(f"Error fetching batch quotes: {str(e)}")
+            return []
+
     @staticmethod
     def search_stocks(query: str) -> List[Dict]:
         """주식 검색 (기본 값 유지)"""

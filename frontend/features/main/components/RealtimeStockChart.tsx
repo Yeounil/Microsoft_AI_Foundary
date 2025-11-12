@@ -26,7 +26,7 @@ type TimeRange = "1D" | "1M" | "3M" | "1Y" | "5Y" | "ALL";
 type ChartInterval = "1m" | "5m" | "15m" | "30m" | "1h" | "1d";
 
 interface RealtimeStockChartProps {
-  symbol?: string;
+  symbol: string;
 }
 
 type SeriesType =
@@ -52,7 +52,7 @@ interface ProcessedChartData {
 }
 
 export function RealtimeStockChart({
-  symbol = "AAPL",
+  symbol,
 }: RealtimeStockChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -230,7 +230,26 @@ export function RealtimeStockChart({
             seriesRef.current?.setData(lineData);
           }
 
-          chartRef.current?.timeScale().fitContent();
+          // 분단위 차트(1D)는 최근 데이터만 보이도록 확대, 나머지는 전체 보기
+          if (timeRange === "1D" && candleData.length > 0) {
+            // 인터벌에 따라 표시할 데이터 포인트 수 조정 (인터벌이 클수록 더 확대)
+            const visibleCountMap: Record<ChartInterval, number> = {
+              "1m": 120,   // 2시간
+              "5m": 80,    // 6시간 40분
+              "15m": 50,   // 12시간 30분
+              "30m": 40,   // 20시간
+              "1h": 24,    // 24시간
+              "1d": 30,
+            };
+            const visibleCount = Math.min(visibleCountMap[interval] || 100, candleData.length);
+            chartRef.current?.timeScale().setVisibleLogicalRange({
+              from: Math.max(0, candleData.length - visibleCount),
+              to: candleData.length - 1,
+            });
+          } else {
+            chartRef.current?.timeScale().fitContent();
+          }
+
           console.log(
             `[Chart] Successfully loaded ${candleData.length} data points`
           );
@@ -489,7 +508,7 @@ export function RealtimeStockChart({
                 onClick={() => handleRangeChange(range)}
                 className="text-xs"
               >
-                {range}
+                {range === '1D' ? '1일' : range === '1M' ? '1개월' : range === '3M' ? '3개월' : range === '1Y' ? '1년' : range === '5Y' ? '5년' : '전체'}
               </Button>
             )
           )}
@@ -510,7 +529,7 @@ export function RealtimeStockChart({
                   onClick={() => setInterval(int)}
                   className="text-xs"
                 >
-                  {int}
+                  {int === '1m' ? '1분' : int === '5m' ? '5분' : int === '15m' ? '15분' : int === '30m' ? '30분' : '1시간'}
                 </Button>
               )
             )}
