@@ -13,26 +13,63 @@ router = APIRouter()
 
 @router.get("/financial")
 async def get_financial_news_v1(
-    query: str = Query("finance", description="검색 키워드"),
-    limit: int = Query(10, description="가져올 뉴스 개수"),
+    symbol: Optional[str] = Query(None, description="특정 종목 심볼 (옵셔널)"),
+    limit: int = Query(5, description="가져올 뉴스 개수"),
+    page: int = Query(1, description="페이지 번호 (1부터 시작)"),
     lang: str = Query("en", description="언어 (en: 영어, kr: 한국어)")
 ):
-    """금융 뉴스 가져오기 (v1 호환성)"""
+    """금융 뉴스 가져오기 (v1 호환성) - 페이지네이션 지원
+
+    조건:
+    - kr_translate가 NULL이 아닌 기사만
+    - ai_score가 0.5 이상인 기사만
+    - published_at 내림차순 정렬 (최신 기사부터)
+    - symbol이 제공되면 해당 종목 기사만
+    """
     try:
-        # 동기 함수 호출
-        if lang.lower() == "kr":
-            news = NewsService.get_korean_financial_news(limit)
-        else:
-            news = NewsService.get_financial_news(query, limit)
-        
+        from app.db.supabase_client import get_supabase
+
+        supabase = get_supabase()
+
+        # offset 계산 (페이지네이션)
+        offset = (page - 1) * limit
+
+        # 쿼리 빌드
+        query_builder = supabase.table("news_articles").select("*")
+
+        # 필터링 조건
+        # 1. kr_translate가 NULL이 아닌 것만
+        query_builder = query_builder.not_.is_("kr_translate", "null")
+
+        # 2. ai_score가 0.5 이상인 것만
+        query_builder = query_builder.gte("ai_score", 0.5)
+
+        # 3. symbol이 제공되면 해당 종목만
+        if symbol:
+            query_builder = query_builder.eq("symbol", symbol.upper())
+
+        # 4. published_at 내림차순 정렬 (최신 기사부터)
+        query_builder = query_builder.order("published_at", desc=True)
+
+        # 5. 페이지네이션 (offset과 limit)
+        query_builder = query_builder.range(offset, offset + limit - 1)
+
+        # 실행
+        result = query_builder.execute()
+
+        news = result.data if result.data else []
+
         return {
-            "query": query,
+            "symbol": symbol,
             "language": lang,
+            "page": page,
+            "limit": limit,
             "total_count": len(news),
             "articles": news
         }
-        
+
     except Exception as e:
+        logger.error(f"금융 뉴스 조회 오류: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/stock/{symbol}")
