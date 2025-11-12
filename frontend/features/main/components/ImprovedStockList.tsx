@@ -42,7 +42,7 @@ export function ImprovedStockList({ onSelectStock, selectedSymbol }: StockListPr
     const loadAllStocks = async () => {
       try {
         console.log('[ImprovedStockList] Loading all tradable stocks from backend...');
-        const response = await apiClient.getAllTradableStocks(1000000000, 500);
+        const response = await apiClient.getAllTradableStocks(1000000000, 100);
 
         if (response.stocks && Array.isArray(response.stocks)) {
           const stocks = response.stocks.map((stock: any) => ({

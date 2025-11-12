@@ -53,6 +53,68 @@ async def get_batch_quotes(symbols: List[str] = Body(..., description="조회할
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/supported")
+async def get_supported_stocks():
+    """
+    지원하는 100개 주식 종목 심볼 리스트 반환
+
+    카테고리별로 분류된 주식 종목 리스트를 제공합니다:
+    - Tech (20개)
+    - Finance (15개)
+    - Healthcare (15개)
+    - Retail/Consumer (15개)
+    - Industrials (10개)
+    - Energy (10개)
+    - Communications (3개)
+    - ETFs (12개)
+
+    총 100개 종목
+    """
+    try:
+        supported_stocks = {
+            "tech": [
+                "AAPL", "MSFT", "GOOGL", "GOOG", "AMZN", "NVDA", "TSLA", "META", "NFLX", "CRM",
+                "ORCL", "ADBE", "INTC", "AMD", "MU", "QCOM", "IBM", "CSCO", "HPQ", "AVGO"
+            ],
+            "finance": [
+                "JPM", "BAC", "WFC", "GS", "MS", "C", "BLK", "SCHW", "AXP", "CB",
+                "AIG", "MMC", "ICE", "CBOE", "V"
+            ],
+            "healthcare": [
+                "JNJ", "UNH", "PFE", "ABBV", "MRK", "TMO", "LLY", "ABT", "AMGN", "GILD",
+                "CVS", "ISRG", "REGN", "BIIB", "VRTX"
+            ],
+            "retail_consumer": [
+                "WMT", "TGT", "HD", "LOW", "MCD", "SBUX", "KO", "PEP", "NKE", "VFC",
+                "LULU", "DKS", "RH", "COST", "DIS"
+            ],
+            "industrials": [
+                "CAT", "BA", "MMM", "RTX", "HON", "JCI", "PCAR", "GE", "DE", "LMT"
+            ],
+            "energy": [
+                "XOM", "CVX", "COP", "MPC", "PSX", "VLO", "EOG", "OXY", "MRO", "SLB"
+            ],
+            "communications": [
+                "VZ", "T", "TMUS"
+            ],
+            "etfs": [
+                "SPY", "QQQ", "DIA", "IWM", "VTI", "VOO", "VEA", "VWO", "AGG", "BND", "GLD", "SLV"
+            ]
+        }
+
+        # 전체 심볼 리스트 (평면화)
+        all_symbols = []
+        for category_symbols in supported_stocks.values():
+            all_symbols.extend(category_symbols)
+
+        return {
+            "total_count": len(all_symbols),
+            "categories": supported_stocks,
+            "all_symbols": all_symbols
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/search")
 async def search_stocks(q: str = Query(..., description="검색할 주식명 또는 심볼")):
     """주식 검색"""
