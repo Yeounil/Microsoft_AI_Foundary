@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 250" width="450" height="250">
+  <defs>
+    <linearGradient id="arrowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#C8E652;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#5FDC8A;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Main news document rectangle -->
+  <rect x="70" y="65" width="155" height="130" rx="12" fill="#0A5E5E"/>
+  
+  <!-- Bookmark tab on right side -->
+  <path d="M 225 65 L 245 65 L 245 135 L 235 125 L 225 135 Z" fill="#0A5E5E"/>
+  
+  <!-- NEWS text -->
+  <text x="147" y="105" font-family="Arial, sans-serif" font-size="26" font-weight="bold" fill="white" text-anchor="middle">NEWS</text>
+  
+  <!-- Horizontal lines under NEWS -->
+  <rect x="85" y="125" width="115" height="5" rx="2.5" fill="white"/>
+  <rect x="85" y="145" width="115" height="5" rx="2.5" fill="white"/>
+  <rect x="85" y="165" width="70" height="5" rx="2.5" fill="white"/>
+  
+  <!-- Yellow-green bottom curve with arrow -->
+  <path d="M 20 210 Q 120 180, 220 130 Q 320 80, 380 40" 
+        fill="none" 
+        stroke="#C8E652" 
+        stroke-width="16" 
+        stroke-linecap="round"/>
+  
+  <!-- Green top curve with arrow -->
+  <path d="M 35 205 Q 135 175, 235 125 Q 335 75, 395 35" 
+        fill="none" 
+        stroke="#4CAF50" 
+        stroke-width="16" 
+        stroke-linecap="round"/>
+  
+  <!-- Arrow head - properly positioned and angled -->
+  <g transform="translate(395, 35)">
+    <path d="M 0 0 L -20 -15 L -15 -5 L -20 5 Z" 
+          fill="#4CAF50" 
+          transform="rotate(-35)"/>
+  </g>
+  
+  <!-- Arrow head back part for depth -->
+  <g transform="translate(395, 35)">
+    <path d="M -15 -5 L -8 0 L -15 5" 
+          fill="#3D9970" 
+          transform="rotate(-35)"/>
+  </g>
+</svg>

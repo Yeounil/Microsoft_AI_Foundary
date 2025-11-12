@@ -7,7 +7,7 @@ from typing import Dict, Any
 
 from app.core.config import settings
 from app.api import stocks, stock_data
-from app.api import auth_supabase, analysis_supabase, news_supabase, recommendations_supabase, news_v1, analysis_v1, embeddings, rag, websocket_realtime, news_ai_score
+from app.api import auth_supabase, analysis_supabase, news_supabase, recommendations_supabase, news_v1, analysis_v1, embeddings, rag, websocket_realtime, news_ai_score, news_translation
 from app.services.news_scheduler import get_scheduler
 from app.db.supabase_client import get_supabase
 
@@ -85,11 +85,14 @@ app.include_router(embeddings.router, prefix="/api/v2/embeddings", tags=["embedd
 # RAG (Retrieval Augmented Generation) API
 app.include_router(rag.router, prefix="/api/v2/rag", tags=["rag"])
 
-# Real-time WebSocket API (FMP)
-app.include_router(websocket_realtime.router, prefix="/api/v2/realtime", tags=["realtime"])
+# Real-time WebSocket API (FMP) - 비활성화: 프론트엔드에서 직접 FMP WebSocket 사용
+# app.include_router(websocket_realtime.router, prefix="/api/v2/realtime", tags=["realtime"])
 
 # News AI Score API (GPT-5 기반 뉴스 영향도 평가)
 app.include_router(news_ai_score.router, prefix="/api/v2/news-ai-score", tags=["news-ai-score"])
+
+# News Translation API (Claude Sonnet API 기반 뉴스 번역)
+app.include_router(news_translation.router, prefix="/api/v2/news-translation", tags=["news-translation"])
 
 # Stock Data Collection API
 app.include_router(stock_data.router)

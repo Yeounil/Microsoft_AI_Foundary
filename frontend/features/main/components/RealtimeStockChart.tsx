@@ -241,13 +241,22 @@ export function RealtimeStockChart({ symbol = "AAPL" }: RealtimeStockChartProps)
 
     const setupRealtimeData = async () => {
       try {
-        // WebSocket 연결
         const client = wsClient.current;
         const status = client.getConnectionStatus();
 
         if (!status.isConnected) {
           console.log("[WebSocket] Connecting...");
-          await client.connect();
+          try {
+            await client.connect();
+          } catch (error) {
+            console.warn("[WebSocket] Connection failed, retrying in 3 seconds...", error);
+            // 재시도 (3초 후)
+            if (mounted) {
+              await new Promise(r => setTimeout(r, 3000));
+              if (!mounted) return;
+              await client.connect();
+            }
+          }
         }
 
         if (!mounted) return;
@@ -286,7 +295,7 @@ export function RealtimeStockChart({ symbol = "AAPL" }: RealtimeStockChartProps)
 
         setIsRealtime(true);
         setIsLoading(false);
-        console.log(`[Hybrid Mode] REST API + WebSocket realtime for ${symbol} with ${interval} interval (${intervalMs}ms)`);
+        console.log(`[Realtime] FMP WebSocket realtime for ${symbol} with ${interval} interval (${intervalMs}ms)`);
 
         // Cleanup
         return () => {

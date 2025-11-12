@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import apiClient from "@/lib/api-client";
 import { NewsArticle } from "@/types";
+import { getNewsArticles, getHotNews } from "@/lib/supabase-news";
 // import { useAuthStore } from "@/store/auth-store";
 
 // 더미 뉴스 데이터 (API 실패 시 사용)
@@ -247,17 +248,24 @@ export function NewsSection() {
   const itemsPerPage = 5;
   // const { isAuthenticated } = useAuthStore();
 
-  // Hot 뉴스 가져오기
+  // Supabase에서 Hot 뉴스 가져오기 (다양성 알고리즘 적용)
   const { data: hotNews, isLoading: loadingHot } = useQuery({
-    queryKey: ["news", "latest", currentPage],
-    queryFn: () => apiClient.getLatestNews(20),
+    queryKey: ["news", "hot"],
+    queryFn: async () => {
+      const articles = await getHotNews(20, 7); // 7일 이내 HOT 뉴스
+      return { articles };
+    },
+    staleTime: 5 * 60 * 1000, // 5분
   });
 
-  // 관심 종목 뉴스 (메인 페이지에서는 사용 안 함)
-  const { data: favoriteNews, isLoading: loadingFavorite } = useQuery({
-    queryKey: ["news", "personalized", currentPage],
-    queryFn: () => apiClient.getPersonalizedRecommendations(10),
-    enabled: false, // 메인 페이지에서는 비활성화
+  // Supabase에서 모든 뉴스 가져오기 (다양성 알고리즘 적용)
+  const { data: allNews, isLoading: loadingAll } = useQuery({
+    queryKey: ["news", "all"],
+    queryFn: async () => {
+      const articles = await getNewsArticles(20, true); // 다양성 알고리즘 활성화
+      return { articles };
+    },
+    staleTime: 5 * 60 * 1000, // 5분
   });
 
   return (
@@ -304,14 +312,12 @@ export function NewsSection() {
           <TabsContent value="favorites" className="mt-0">
             <NewsListContent
               news={
-                favoriteNews?.recommendations?.length
-                  ? favoriteNews.recommendations
-                  : dummyNewsData.filter((_, i) => i % 2 === 0)
+                allNews?.articles?.length ? allNews.articles : dummyNewsData
               }
               currentPage={currentPage}
               onPageChange={setCurrentPage}
               itemsPerPage={itemsPerPage}
-              isLoading={loadingFavorite}
+              isLoading={loadingAll}
               searchQuery={searchQuery}
             />
           </TabsContent>

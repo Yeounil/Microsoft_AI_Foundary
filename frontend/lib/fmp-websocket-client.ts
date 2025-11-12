@@ -44,6 +44,10 @@ class FMPWebSocketClient {
   // 로그인 응답 대기를 위한 Promise resolver
   private loginResolver: ((success: boolean) => void) | null = null;
 
+  // Heartbeat 타임아웃 처리
+  private heartbeatTimeout: NodeJS.Timeout | null = null;
+  private readonly HEARTBEAT_TIMEOUT = 30000; // 30초
+
   constructor(apiKey: string) {
     this.apiKey = apiKey;
   }
@@ -74,19 +78,25 @@ class FMPWebSocketClient {
         this.ws.onopen = async () => {
           console.log('[FMP WS] Connected');
           this.isConnected = true;
-          this.reconnectAttempts = 0;
 
           // 로그인
           const loginSuccess = await this.login();
 
           if (loginSuccess) {
+            console.log('[FMP WS] Login successful');
+            this.reconnectAttempts = 0;
             // 이전 구독 복원
             if (this.subscriptions.size > 0) {
               await this.resubscribe();
             }
             resolve(true);
           } else {
+            console.error('[FMP WS] Login failed - attempting reconnect');
+            this.isConnected = false;
             reject(new Error('Login failed'));
+            // 재연결 시도
+            await new Promise(r => setTimeout(r, 2000));
+            await this.handleReconnect();
           }
         };
 
@@ -133,26 +143,30 @@ class FMPWebSocketClient {
         }
       };
 
+      console.log('[FMP WS] Sending login message with API key:', this.apiKey.substring(0, 10) + '...');
+
+      // 로그인 메시지 전송
+      this.ws.send(JSON.stringify(loginMessage));
+
       // 로그인 응답을 기다리기 위한 Promise 생성
       const loginPromise = new Promise<boolean>((resolve) => {
         this.loginResolver = resolve;
 
-        // 5초 타임아웃
+        // 3초 타임아웃 (FMP가 응답을 보내지 않을 수도 있음)
         setTimeout(() => {
           if (this.loginResolver) {
-            console.warn('[FMP WS] Login timeout - assuming success');
+            console.warn('[FMP WS] Login timeout - WebSocket might not send login confirmation');
+            // 타임아웃 시에도 성공으로 처리 (subscribe로 진행)
             this.loginResolver(true);
             this.loginResolver = null;
           }
-        }, 5000);
+        }, 3000);
       });
 
-      this.ws.send(JSON.stringify(loginMessage));
-      console.log('[FMP WS] Login message sent, waiting for response...');
-
+      console.log('[FMP WS] Waiting for login response (up to 3 seconds)...');
       return await loginPromise;
     } catch (error) {
-      console.error('[FMP WS] Login failed:', error);
+      console.error('[FMP WS] Login error:', error);
       return false;
     }
   }
@@ -229,25 +243,56 @@ class FMPWebSocketClient {
   }
 
   /**
+   * Heartbeat 타임아웃 리셋
+   */
+  private resetHeartbeatTimeout() {
+    if (this.heartbeatTimeout) {
+      clearTimeout(this.heartbeatTimeout);
+    }
+
+    this.heartbeatTimeout = setTimeout(() => {
+      console.warn('[FMP WS] Heartbeat timeout - reconnecting...');
+      this.disconnect();
+      this.handleReconnect();
+    }, this.HEARTBEAT_TIMEOUT);
+  }
+
+  /**
    * 메시지 핸들러
    */
   private handleMessage(data: string) {
     try {
       const message: any = JSON.parse(data);
+      console.log('[FMP WS] Raw message received:', JSON.stringify(message));
+
+      // Heartbeat 메시지 처리
+      if (message.event === 'heartbeat') {
+        this.resetHeartbeatTimeout();
+        return;
+      }
 
       // 로그인 응답 처리
       if ('event' in message) {
         if (message.event === 'login') {
-          const success = message.status === 'success' || message.statusCode === 200;
-          console.log('[FMP WS] Login response:', success ? 'success' : 'failed', message);
+          // FMP API 로그인 응답:
+          // 성공: { "event":"login","status":200,"message":"Authenticated" }
+          // 실패: { "event":"login","status":401,"message":"Connected from another location" }
+          const success = message.status === 200;
+
+          console.log('[FMP WS] Login response received:', JSON.stringify(message));
+          console.log('[FMP WS] Login success status:', success);
+
+          // 로그인 성공하면 heartbeat 타임아웃 시작
+          if (success) {
+            this.resetHeartbeatTimeout();
+          } else {
+            // 401: 다른 곳에서 연결됨 - 재연결 권장
+            console.error('[FMP WS] Login failed with status:', message.status, 'Message:', message.message);
+          }
 
           if (this.loginResolver) {
             this.loginResolver(success);
             this.loginResolver = null;
-          }
-
-          if (!success) {
-            console.error('[FMP WS] Login failed. Check your API key:', message);
           }
         } else {
           console.log('[FMP WS] Event:', message);
@@ -400,9 +445,23 @@ class FMPWebSocketClient {
    * 연결 해제
    */
   disconnect() {
+    console.log('[FMP WS] Disconnecting...');
+
+    // Heartbeat 타임아웃 정리
+    if (this.heartbeatTimeout) {
+      clearTimeout(this.heartbeatTimeout);
+      this.heartbeatTimeout = null;
+    }
+
     if (this.ws) {
+      // 먼저 onmessage, onerror 핸들러 제거
+      this.ws.onmessage = null;
+      this.ws.onerror = null;
+      this.ws.onclose = null;
+
       this.ws.close();
       this.ws = null;
+      console.log('[FMP WS] WebSocket closed');
     }
 
     this.isConnected = false;
@@ -411,6 +470,7 @@ class FMPWebSocketClient {
     this.candleCallbacks.clear();
     this.currentCandles.clear();
     this.candleIntervals.clear();
+    console.log('[FMP WS] Disconnected - all data cleared');
   }
 
   /**
@@ -441,6 +501,17 @@ export function getFMPWebSocketClient(): FMPWebSocketClient {
   }
 
   return fmpWSClient;
+}
+
+/**
+ * 싱글톤 인스턴스 재설정 (연결 문제 시 사용)
+ */
+export function resetFMPWebSocketClient(): void {
+  if (fmpWSClient) {
+    console.log('[FMP WS] Resetting singleton instance');
+    fmpWSClient.disconnect();
+    fmpWSClient = null;
+  }
 }
 
 export type { FMPWebSocketMessage, CandleData, MessageCallback, CandleCallback };
