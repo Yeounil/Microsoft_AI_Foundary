@@ -9,6 +9,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  showSessionExpiredDialog: boolean;
 
   // Actions
   login: (credentials: { username?: string; email?: string; password: string }) => Promise<void>;
@@ -16,6 +17,7 @@ interface AuthState {
   logout: () => Promise<void>;
   fetchUser: () => Promise<void>;
   clearError: () => void;
+  setSessionExpired: (show: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -25,6 +27,7 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: false,
       error: null,
+      showSessionExpiredDialog: false,
 
       login: async (credentials) => {
         set({ isLoading: true, error: null });
@@ -104,6 +107,10 @@ export const useAuthStore = create<AuthState>()(
 
       clearError: () => {
         set({ error: null });
+      },
+
+      setSessionExpired: (show: boolean) => {
+        set({ showSessionExpiredDialog: show });
       },
     }),
     {
