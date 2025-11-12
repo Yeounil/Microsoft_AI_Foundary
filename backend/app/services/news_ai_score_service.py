@@ -259,11 +259,11 @@ class NewsAIScoreService:
         limit: int,
         symbol: Optional[str] = None
     ) -> List[Dict]:
-        """AI Score가 없는 뉴스 조회"""
+        """부분 평가 또는 미평가 뉴스 조회 (ai_analyzed_text 또는 postive_score가 NULL)"""
         try:
             query = self.supabase.table("news_articles")\
-                .select("id, title, description, body, symbol, published_at")\
-                .is_("ai_score", "null")\
+                .select("id, title, description, body, symbol, published_at, ai_score, analyzed_at, ai_analyzed_text, postive_score")\
+                .is_("ai_analyzed_text", "null")\
                 .order("published_at", desc=True)\
                 .limit(limit)
 

@@ -1,34 +1,34 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-전체 뉴스 AI Score 재평가 스크립트
+뉴스 배치 번역 스크립트
 
-기존 데이터가 이상하거나 AI Score를 다시 매기고 싶을 때 사용
+Claude Sonnet API를 사용하여 뉴스 기사를 한글로 번역하고 Supabase에 저장합니다.
 
 사용법:
-    python scripts/re_evaluate_all_news.py [옵션]
+    python scripts/translate_all_news.py [옵션]
 
 옵션:
-    --all                  모든 뉴스 재평가 (기존 점수 무시)
-    --unevaluated          미평가 뉴스만 평가
-    --symbol AAPL          특정 종목만 재평가
+    --all                  모든 뉴스 번역 (기존 번역 무시)
+    --untranslated         미번역 뉴스만 번역
+    --symbol AAPL          특정 종목만 번역
     --limit 100            최대 처리 개수 (기본: 무제한)
-    --batch-size 5         동시 처리 개수 (기본: 5)
-    --delay 1.0            배치 간 딜레이 초 (기본: 1.0)
+    --batch-size 3         동시 처리 개수 (기본: 3)
+    --delay 2.0            배치 간 딜레이 초 (기본: 2.0)
     --dry-run              실제 업데이트 없이 테스트만
 
 예시:
-    # 모든 뉴스 재평가 (주의: 시간 오래 걸림)
-    python scripts/re_evaluate_all_news.py --all
+    # 미번역 뉴스만 번역
+    python scripts/translate_all_news.py --untranslated --limit 50
 
-    # 미평가 뉴스만 평가
-    python scripts/re_evaluate_all_news.py --unevaluated --limit 50
+    # 모든 뉴스 번역 (기존 번역 덮어쓰기)
+    python scripts/translate_all_news.py --all --limit 100
 
-    # AAPL 뉴스만 재평가
-    python scripts/re_evaluate_all_news.py --symbol AAPL
+    # AAPL 종목만 번역
+    python scripts/translate_all_news.py --symbol AAPL
 
-    # 테스트 실행 (DB 업데이트 안함)
-    python scripts/re_evaluate_all_news.py --limit 10 --dry-run
+    # 테스트 실행 (5개만, DB 업데이트 안함)
+    python scripts/translate_all_news.py --limit 5 --dry-run
 """
 
 import sys
@@ -55,46 +55,46 @@ load_dotenv(dotenv_path=env_path)
 # 프로젝트 루트를 Python 경로에 추가
 sys.path.insert(0, project_root)
 
-from app.services.news_ai_score_service import NewsAIScoreService
-from app.services.openai_service import OpenAIService
+from app.services.news_translation_service import NewsTranslationService
 from app.db.supabase_client import get_supabase
 
 
-class NewsReEvaluator:
-    """뉴스 재평가 실행기"""
+class NewsTranslator:
+    """뉴스 번역 실행기"""
 
     def __init__(self, dry_run: bool = False):
-        self.ai_score_service = NewsAIScoreService()
-        self.openai_service = OpenAIService()
+        self.translation_service = NewsTranslationService()
         self.supabase = get_supabase()
         self.dry_run = dry_run
 
         if dry_run:
             print("🔵 DRY RUN 모드: 실제 DB 업데이트는 하지 않습니다\n")
 
-    async def re_evaluate_all_news(
+    async def translate_all_news(
         self,
         symbol: Optional[str] = None,
         limit: Optional[int] = None,
-        batch_size: int = 5,
-        delay: float = 1.0,
-        unevaluated_only: bool = False
+        batch_size: int = 3,
+        delay: float = 2.0,
+        untranslated_only: bool = False,
+        all_news: bool = False
     ):
         """
-        전체 뉴스 재평가
+        전체 뉴스 번역
 
         Args:
             symbol: 특정 종목만 (None이면 전체)
             limit: 최대 처리 개수 (None이면 무제한)
             batch_size: 동시 처리 개수
             delay: 배치 간 딜레이
-            unevaluated_only: True이면 미평가 뉴스만
+            untranslated_only: True이면 미번역 뉴스만
+            all_news: True이면 모든 뉴스 (기존 번역 무시)
         """
         print("=" * 80)
-        print("🔄 뉴스 AI Score 재평가 시작")
+        print("🔄 뉴스 번역 시작")
         print("=" * 80)
         print(f"📅 시작 시간: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        print(f"🎯 대상: {'미평가 뉴스만' if unevaluated_only else '모든 뉴스'}")
+        print(f"🎯 대상: {'모든 뉴스' if all_news else '미번역 뉴스만' if untranslated_only else '전체 뉴스'}")
         if symbol:
             print(f"🏷️  종목: {symbol}")
         if limit:
@@ -109,7 +109,8 @@ class NewsReEvaluator:
         news_list = await self._fetch_target_news(
             symbol=symbol,
             limit=limit,
-            unevaluated_only=unevaluated_only
+            untranslated_only=untranslated_only,
+            all_news=all_news
         )
 
         if not news_list:
@@ -121,13 +122,13 @@ class NewsReEvaluator:
 
         # 2단계: 사용자 확인
         if not self.dry_run and total > 50:
-            confirm = input(f"⚠️  {total}개 뉴스를 재평가하시겠습니까? (yes/no): ")
+            confirm = input(f"⚠️  {total}개 뉴스를 번역하시겠습니까? (yes/no): ")
             if confirm.lower() not in ['yes', 'y']:
                 print("❌ 취소되었습니다.")
                 return
 
-        # 3단계: 재평가 실행
-        print(f"\n🚀 [2/3] AI Score 재평가 시작... (총 {total}개)")
+        # 3단계: 번역 실행
+        print(f"\n🚀 [2/3] 뉴스 번역 시작... (총 {total}개)")
         print(f"{'='*80}\n")
 
         results = {
@@ -139,14 +140,14 @@ class NewsReEvaluator:
 
         # 배치 단위로 처리
         for i in range(0, total, batch_size):
-            batch = news_list[i:i+batch_size]
+            batch = news_list[i:i + batch_size]
             batch_num = i // batch_size + 1
             total_batches = (total + batch_size - 1) // batch_size
 
             print(f"📦 배치 {batch_num}/{total_batches} 처리 중...")
 
-            # 배치 평가
-            batch_results = await self._evaluate_batch(batch)
+            # 배치 번역
+            batch_results = await self._translate_batch(batch)
 
             # 결과 집계
             for idx, result in enumerate(batch_results):
@@ -159,28 +160,14 @@ class NewsReEvaluator:
                     results["errors"].append(f"ID {news_id}: {str(result)}")
                     print(f"  ❌ [{news_id}] {title}... - 오류: {str(result)[:50]}")
 
-                elif result.get("status") == "success":
+                elif result:
                     results["successful"] += 1
-                    ai_score = result.get("ai_score", 0)
-                    positive_score = result.get("positive_score", 0)
-                    direction = result.get("impact_direction", "neutral")
-                    reasoning = result.get("reasoning", "")
-
-                    # 방향 이모지
-                    direction_emoji = "📈" if direction == "positive" else "📉" if direction == "negative" else "➡️"
-
-                    print(f"  ✅ [{news_id}] {title}... - AI: {ai_score:.3f}, Pos: {positive_score:.3f} {direction_emoji} ({direction})")
-
-                    # 간단한 근거 표시 (첫 100자만)
-                    if reasoning:
-                        reasoning_preview = reasoning[:100] + "..." if len(reasoning) > 100 else reasoning
-                        print(f"     💡 근거: {reasoning_preview}")
+                    print(f"  ✅ [{news_id}] {title}... - 번역 완료")
 
                 else:
                     results["failed"] += 1
-                    reason = result.get("reason", "Unknown error")
-                    results["errors"].append(f"ID {news_id}: {reason}")
-                    print(f"  ❌ [{news_id}] {title}... - 실패: {reason}")
+                    results["errors"].append(f"ID {news_id}: 번역 실패")
+                    print(f"  ❌ [{news_id}] {title}... - 번역 실패")
 
             # 진행률 표시
             progress = min(i + batch_size, total)
@@ -193,7 +180,7 @@ class NewsReEvaluator:
 
         # 4단계: 결과 요약
         print(f"\n{'='*80}")
-        print("📊 [3/3] 재평가 완료")
+        print("📊 [3/3] 번역 완료")
         print(f"{'='*80}")
         print(f"✅ 성공: {results['successful']}개")
         print(f"❌ 실패: {results['failed']}개")
@@ -213,18 +200,19 @@ class NewsReEvaluator:
         self,
         symbol: Optional[str],
         limit: Optional[int],
-        unevaluated_only: bool
+        untranslated_only: bool,
+        all_news: bool
     ) -> List[Dict]:
         """대상 뉴스 조회"""
         try:
             query = self.supabase.table("news_articles")\
-                .select("id, title, description, body, symbol, published_at, ai_score, analyzed_at, ai_analyzed_text")\
+                .select("id, title, description, body, symbol, published_at, kr_translate, ai_score")\
+                .order("ai_score", desc=True)\
                 .order("published_at", desc=True)
 
-            # 미평가만 (ai_analyzed_text 또는 postive_score가 NULL인 경우)
-            if unevaluated_only:
-                # ai_analyzed_text가 NULL이거나 postive_score가 NULL인 뉴스
-                query = query.is_("ai_analyzed_text", "null")
+            # 미번역만
+            if untranslated_only and not all_news:
+                query = query.is_("kr_translate", "null")
 
             # 종목 필터
             if symbol:
@@ -242,58 +230,39 @@ class NewsReEvaluator:
             print(f"❌ 뉴스 조회 오류: {str(e)}")
             return []
 
-    async def _evaluate_batch(self, news_batch: List[Dict]) -> List:
-        """배치 평가"""
+    async def _translate_batch(self, news_batch: List[Dict]) -> List:
+        """배치 번역"""
         if self.dry_run:
-            # DRY RUN: 실제 평가는 하지만 DB 업데이트는 안함
+            # DRY RUN: 번역을 수행하지만 DB 업데이트는 안함
             tasks = [
-                self._evaluate_single_dry_run(news)
+                self._translate_single_dry_run(news)
                 for news in news_batch
             ]
         else:
-            # 실제 평가 및 업데이트
+            # 실제 번역 및 저장
             tasks = [
-                self.ai_score_service.evaluate_and_update_news_score(
-                    news_id=news['id'],
-                    news_article=news
-                )
+                self.translation_service.translate_and_save_news(news['id'])
                 for news in news_batch
             ]
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
         return results
 
-    async def _evaluate_single_dry_run(self, news: Dict) -> Dict:
-        """DRY RUN용 단일 평가 (DB 업데이트 없음)"""
+    async def _translate_single_dry_run(self, news: Dict) -> bool:
+        """DRY RUN용 단일 번역 (DB 업데이트 없음)"""
         try:
-            # AI 평가만 수행
-            evaluation_result = await self.openai_service.evaluate_news_stock_impact(
-                news_article=news,
-                symbol=news.get('symbol')
-            )
-
-            return {
-                "status": "success",
-                "news_id": news['id'],
-                "ai_score": evaluation_result.get('ai_score', 0.5),
-                "positive_score": evaluation_result.get('positive_score', 0.5),
-                "impact_direction": evaluation_result.get('impact_direction', 'neutral'),
-                "reasoning": evaluation_result.get('reasoning', ''),
-                "updated": False  # DRY RUN이므로 업데이트 안됨
-            }
-
+            # 번역만 수행 (DB 저장 없음)
+            translated = await self.translation_service.translate_article(news.get('body', ''))
+            return translated is not None
         except Exception as e:
-            return {
-                "status": "error",
-                "news_id": news['id'],
-                "reason": str(e)
-            }
+            print(f"    오류: {str(e)}")
+            return False
 
 
 async def main():
     """메인 함수"""
     # 환경변수 확인
-    required_env_vars = ['OPENAI_API_KEY', 'SUPABASE_URL', 'SUPABASE_KEY']
+    required_env_vars = ['ANTHROPIC_API_KEY', 'SUPABASE_URL', 'SUPABASE_KEY']
     missing_vars = [var for var in required_env_vars if not os.getenv(var)]
 
     if missing_vars:
@@ -305,40 +274,40 @@ async def main():
     print(f"✅ 환경변수 로드 완료 (.env 파일: {env_path})\n")
 
     parser = argparse.ArgumentParser(
-        description="뉴스 AI Score 재평가 스크립트",
+        description="뉴스 번역 스크립트",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 예시:
-  # 모든 뉴스 재평가
-  python scripts/re_evaluate_all_news.py --all
+  # 미번역 뉴스만 번역 (최대 50개)
+  python scripts/translate_all_news.py --untranslated --limit 50
 
-  # 미평가 뉴스만 평가 (최대 50개)
-  python scripts/re_evaluate_all_news.py --unevaluated --limit 50
+  # 모든 뉴스 번역
+  python scripts/translate_all_news.py --all --limit 100
 
-  # AAPL 뉴스만 재평가
-  python scripts/re_evaluate_all_news.py --symbol AAPL
+  # AAPL 종목만 번역
+  python scripts/translate_all_news.py --symbol AAPL
 
   # 테스트 실행
-  python scripts/re_evaluate_all_news.py --limit 10 --dry-run
+  python scripts/translate_all_news.py --limit 5 --dry-run
         """
     )
 
     parser.add_argument(
         '--all',
         action='store_true',
-        help='모든 뉴스 재평가 (기존 점수 무시)'
+        help='모든 뉴스 번역 (기존 번역 무시)'
     )
 
     parser.add_argument(
-        '--unevaluated',
+        '--untranslated',
         action='store_true',
-        help='미평가 뉴스만 평가'
+        help='미번역 뉴스만 번역'
     )
 
     parser.add_argument(
         '--symbol',
         type=str,
-        help='특정 종목만 재평가 (예: AAPL)'
+        help='특정 종목만 번역 (예: AAPL)'
     )
 
     parser.add_argument(
@@ -350,15 +319,15 @@ async def main():
     parser.add_argument(
         '--batch-size',
         type=int,
-        default=5,
-        help='동시 처리 개수 (기본: 5)'
+        default=3,
+        help='동시 처리 개수 (기본: 3)'
     )
 
     parser.add_argument(
         '--delay',
         type=float,
-        default=1.0,
-        help='배치 간 딜레이 초 (기본: 1.0)'
+        default=2.0,
+        help='배치 간 딜레이 초 (기본: 2.0)'
     )
 
     parser.add_argument(
@@ -370,24 +339,25 @@ async def main():
     args = parser.parse_args()
 
     # 옵션 검증
-    if not args.all and not args.unevaluated and not args.symbol and not args.limit:
+    if not args.all and not args.untranslated and not args.symbol and not args.limit:
         print("⚠️  옵션을 지정해야 합니다:")
-        print("   --all: 모든 뉴스 재평가")
-        print("   --unevaluated: 미평가 뉴스만")
+        print("   --all: 모든 뉴스 번역")
+        print("   --untranslated: 미번역 뉴스만")
         print("   --symbol AAPL: 특정 종목만")
         print("   --limit 100: 개수 제한")
-        print("\n자세한 사용법: python scripts/re_evaluate_all_news.py --help")
+        print("\n자세한 사용법: python scripts/translate_all_news.py --help")
         sys.exit(1)
 
-    # 재평가 실행
-    evaluator = NewsReEvaluator(dry_run=args.dry_run)
+    # 번역 실행
+    translator = NewsTranslator(dry_run=args.dry_run)
 
-    await evaluator.re_evaluate_all_news(
+    await translator.translate_all_news(
         symbol=args.symbol,
         limit=args.limit,
         batch_size=args.batch_size,
         delay=args.delay,
-        unevaluated_only=args.unevaluated or False
+        untranslated_only=args.untranslated or False,
+        all_news=args.all or False
     )
 
 
