@@ -266,6 +266,39 @@ curl http://localhost:8000/api/v2/news-ai-score/health
 
 ---
 
+## 지원하는 주식
+            # Tech (20개)
+            "AAPL", "MSFT", "GOOGL", "GOOG", "AMZN", "NVDA", "TSLA", "META", "NFLX", "CRM",
+            "ORACLE", "ADOBE", "INTEL", "AMD", "MU", "QCOM", "IBM", "CSCO", "HPQ", "AVGO",
+
+            # Finance (15개)
+            "JPM", "BAC", "WFC", "GS", "MS", "C", "BLK", "SCHW", "AXP", "CB",
+            "BLK", "AIG", "MMC", "ICE", "CBOE",
+
+            # Healthcare (15개)
+            "JNJ", "UNH", "PFE", "ABBV", "MRK", "TMO", "LLY", "ABT", "AMGN", "GILD",
+            "CVS", "AMAT", "REGN", "BIIB", "VRTX",
+
+            # Retail/Consumer (15개)
+            "WMT", "TGT", "HD", "LOW", "MCD", "SBUX", "KO", "PEP", "NKE", "VFC",
+            "LULU", "DKS", "RH", "ORCL", "COST",
+
+            # Industrials (10개)
+            "CAT", "BA", "MMM", "RTX", "HON", "JCI", "PCAR", "GE", "DE", "LMT",
+
+            # Energy (10개)
+            "XOM", "CVX", "COP", "MPC", "PSX", "VLO", "EOG", "OXY", "MRO", "SLB",
+
+            # Communications (5개)
+            "VZ", "T", "TMUS", "CMCSA", "CHTR",
+
+            # Real Estate (5개)
+            "SPG", "DLR", "PLD", "PSA", "EQIX",
+
+            # Utilities (5개)
+            "NEE", "DUK", "SO", "EXC", "AEP"
+
+
 ## 🔧 주요 기술 스택
 
 | 영역 | 기술 |
