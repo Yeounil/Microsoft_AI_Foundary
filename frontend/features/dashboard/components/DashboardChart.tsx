@@ -1,15 +1,20 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Star } from 'lucide-react';
-import { createChart, ColorType, IChartApi, ISeriesApi } from 'lightweight-charts';
+import {
+  createChart,
+  ColorType,
+  CandlestickSeries,
+  type IChartApi,
+  type ISeriesApi
+} from 'lightweight-charts';
 import { useStockStore } from '@/store/stock-store';
+import { useChartData } from '@/hooks/use-chart-data';
 
 type TimeRange = '1D' | '1W' | '1M' | '3M' | '6M' | '1Y' | '5Y' | 'ALL';
-type ChartInterval = '1m' | '3m' | '15m' | '30m' | '1h' | '1d';
 
 interface DashboardChartProps {
   symbol: string;
@@ -18,14 +23,41 @@ interface DashboardChartProps {
 export function DashboardChart({ symbol }: DashboardChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const seriesRef = useRef<ISeriesApi<any> | null>(null);
 
   const [timeRange, setTimeRange] = useState<TimeRange>('1D');
-  const [interval, setInterval] = useState<ChartInterval>('1m');
 
-  const { selectedStock, chartData, loadChartData, watchlist, addToWatchlist, removeFromWatchlist } = useStockStore();
+  const { selectedStock, watchlist, addToWatchlist, removeFromWatchlist } = useStockStore();
 
   const isInWatchlist = watchlist.includes(symbol);
+
+  // Helper function - memoized
+  const getPeriodFromRange = useCallback((range: TimeRange): string => {
+    switch (range) {
+      case '1D': return '1mo';  // 1개월 데이터로 더 많은 포인트 제공
+      case '1W': return '1mo';
+      case '1M': return '1mo';
+      case '3M': return '3mo';
+      case '6M': return '6mo';
+      case '1Y': return '1y';
+      case '5Y': return '5y';
+      case 'ALL': return 'max';
+      default: return '1mo';
+    }
+  }, []);
+
+  // React Query로 차트 데이터 가져오기 (자동 캐싱)
+  const period = useMemo(() => getPeriodFromRange(timeRange), [timeRange, getPeriodFromRange]);
+  const chartInterval = '1d';  // 백엔드가 일별 데이터만 지원
+
+  const { data: chartResponse, isLoading: isLoadingChart } = useChartData({
+    symbol,
+    period,
+    interval: chartInterval,
+  });
+
+  const chartData = useMemo(() => chartResponse?.chart_data || null, [chartResponse]);
 
   // Initialize chart
   useEffect(() => {
@@ -37,7 +69,9 @@ export function DashboardChart({ symbol }: DashboardChartProps) {
       });
     };
 
-    const chart = createChart(chartContainerRef.current, {
+    try {
+      // Create chart (v5 API)
+      const chart = createChart(chartContainerRef.current, {
       layout: {
         background: { type: ColorType.Solid, color: 'transparent' },
         textColor: '#71717a',
@@ -45,8 +79,8 @@ export function DashboardChart({ symbol }: DashboardChartProps) {
       width: chartContainerRef.current.clientWidth,
       height: 400,
       grid: {
-        vertLines: { color: '#e5e5e5', style: 1 },
-        horzLines: { color: '#e5e5e5', style: 1 },
+        vertLines: { color: '#e5e5e5' },
+        horzLines: { color: '#e5e5e5' },
       },
       crosshair: {
         mode: 0,
@@ -63,7 +97,18 @@ export function DashboardChart({ symbol }: DashboardChartProps) {
 
     chartRef.current = chart;
 
-    seriesRef.current = chart.addCandlestickSeries({
+    // Remove TradingView watermark from DOM
+    setTimeout(() => {
+      if (chartContainerRef.current) {
+        const links = chartContainerRef.current.querySelectorAll('a[href*="tradingview"]');
+        links.forEach(link => {
+          link.remove();
+        });
+      }
+    }, 100);
+
+    // Add candlestick series (v5 API)
+    seriesRef.current = chart.addSeries(CandlestickSeries, {
       upColor: '#26a69a',
       downColor: '#ef5350',
       borderVisible: false,
@@ -71,50 +116,69 @@ export function DashboardChart({ symbol }: DashboardChartProps) {
       wickDownColor: '#ef5350',
     });
 
-    window.addEventListener('resize', handleResize);
+      window.addEventListener('resize', handleResize);
 
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      chart.remove();
-    };
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        chart.remove();
+      };
+    } catch (error) {
+      console.error('차트 초기화 실패:', error);
+    }
   }, []);
 
-  // Load chart data
+
+  // Update chart data with error handling
   useEffect(() => {
-    const period = getPeriodFromRange(timeRange);
-    const chartInterval = timeRange === '1D' ? interval : '1d';
-    loadChartData(symbol, period, chartInterval);
-  }, [symbol, timeRange, interval]);
-
-  // Update chart data
-  useEffect(() => {
-    if (!seriesRef.current || !chartData) return;
-
-    const formattedData = chartData.map(item => ({
-      time: item.date,
-      open: item.open,
-      high: item.high,
-      low: item.low,
-      close: item.close,
-    }));
-
-    seriesRef.current.setData(formattedData);
-    chartRef.current?.timeScale().fitContent();
-  }, [chartData]);
-
-  const getPeriodFromRange = (range: TimeRange): string => {
-    switch (range) {
-      case '1D': return '1d';
-      case '1W': return '5d';
-      case '1M': return '1mo';
-      case '3M': return '3mo';
-      case '6M': return '6mo';
-      case '1Y': return '1y';
-      case '5Y': return '5y';
-      case 'ALL': return 'max';
-      default: return '1mo';
+    if (!seriesRef.current || !chartData || chartData.length === 0) {
+      console.log('No dashboard chart data available');
+      return;
     }
-  };
+
+    try {
+      // Convert date strings to Unix timestamps and validate
+      const processedData = chartData.map(item => {
+        const timestamp = typeof item.date === 'string'
+          ? Math.floor(new Date(item.date).getTime() / 1000)
+          : item.date;
+
+        // Validate timestamp
+        if (isNaN(timestamp) || timestamp <= 0) {
+          console.warn('Invalid timestamp for item:', item);
+          return null;
+        }
+
+        return {
+          ...item,
+          date: timestamp
+        };
+      }).filter(item => item !== null);
+
+      if (processedData.length === 0) {
+        console.warn('No valid data after processing');
+        return;
+      }
+
+      // Sort data by time in ascending order
+      const sortedData = processedData.sort((a, b) => (a?.date || 0) - (b?.date || 0));
+
+      const candleData = sortedData.map(item => ({
+        time: item!.date as import("lightweight-charts").Time,
+        open: item!.open,
+        high: item!.high,
+        low: item!.low,
+        close: item!.close,
+      }));
+
+      console.log(`Updating dashboard chart with ${candleData.length} data points`);
+
+      seriesRef.current.setData(candleData);
+      chartRef.current?.timeScale().fitContent();
+    } catch (error) {
+      console.error('차트 데이터 업데이트 실패:', error);
+      console.error('Chart data:', chartData);
+    }
+  }, [chartData]);
 
   const toggleWatchlist = () => {
     if (isInWatchlist) {
@@ -138,42 +202,25 @@ export function DashboardChart({ symbol }: DashboardChartProps) {
               </span>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggleWatchlist}
-            className="flex items-center gap-2"
-          >
-            <Star
-              className={`h-4 w-4 ${
-                isInWatchlist ? 'fill-yellow-400 text-yellow-400' : ''
-              }`}
-            />
-            관심 종목 {isInWatchlist ? '제거' : '추가'}
-          </Button>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleWatchlist}
+              className="flex items-center gap-2"
+            >
+              <Star
+                className={`h-4 w-4 ${
+                  isInWatchlist ? 'fill-yellow-400 text-yellow-400' : ''
+                }`}
+              />
+              관심 종목 {isInWatchlist ? '제거' : '추가'}
+            </Button>
+          </div>
         </div>
 
-        {/* Time Range and Interval Selector */}
-        <div className="mt-6 space-y-4">
-          {/* Minute intervals for 1D */}
-          {timeRange === '1D' && (
-            <div className="flex flex-wrap gap-2">
-              <span className="text-sm text-muted-foreground">분단위:</span>
-              {(['1m', '3m', '15m', '30m', '1h'] as ChartInterval[]).map((int) => (
-                <Button
-                  key={int}
-                  variant={interval === int ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setInterval(int)}
-                  className="text-xs"
-                >
-                  {int === '1m' ? '1분' : int === '3m' ? '3분' : int === '15m' ? '15분' : int === '30m' ? '30분' : '1시간'}
-                </Button>
-              ))}
-            </div>
-          )}
-
-          {/* Time Range */}
+        {/* Time Range Selector */}
+        <div className="mt-6">
           <div className="flex flex-wrap gap-2">
             {(['1D', '1W', '1M', '3M', '6M', '1Y', '5Y', 'ALL'] as TimeRange[]).map((range) => (
               <Button
@@ -181,7 +228,7 @@ export function DashboardChart({ symbol }: DashboardChartProps) {
                 variant={timeRange === range ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setTimeRange(range)}
-                className="text-xs"
+                className="text-xs transition-all duration-200 hover:shadow-sm"
               >
                 {range === '1D' ? '1일' : range === '1W' ? '1주' : range === '1M' ? '1개월' : range === '3M' ? '3개월' :
                  range === '6M' ? '6개월' : range === '1Y' ? '1년' : range === '5Y' ? '5년' : '전체'}

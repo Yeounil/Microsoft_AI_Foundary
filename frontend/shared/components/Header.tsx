@@ -1,21 +1,20 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
-import { useState, useEffect } from 'react';
-import { Bell, Search, User, LogOut, Menu, X, TrendingUp } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
+import { Bell, Search, User, LogOut, Menu, X, TrendingUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
-import { useAuthStore } from '@/store/auth-store';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/dropdown-menu";
+import { useAuthStore } from "@/store/auth-store";
+import { cn } from "@/lib/utils";
 
 interface NavItem {
   label: string;
@@ -23,17 +22,17 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: '홈', href: '/' },
-  { label: '관심', href: '/watchlist' },
-  { label: '발견', href: '/discover' },
+  { label: "홈", href: "/main" },
+  { label: "관심", href: "/watchlist" },
+  { label: "발견", href: "/discover" },
 ];
 
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
   const { user, isAuthenticated, logout } = useAuthStore();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [hasNotification, setHasNotification] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [hasNotification] = useState(false); // TODO: Implement notification system
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -42,28 +41,28 @@ export default function Header() {
       setIsScrolled(window.scrollY > 0);
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
-      setSearchQuery('');
+      setSearchQuery("");
     }
   };
 
   const handleLogout = async () => {
     await logout();
-    router.push('/');
+    router.push("/");
   };
 
   return (
     <header
       className={cn(
-        'sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all',
-        isScrolled && 'shadow-sm'
+        "sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 transition-all",
+        isScrolled && "shadow-sm"
       )}
     >
       <div className="container mx-auto px-4">
@@ -71,7 +70,10 @@ export default function Header() {
           {/* Logo and Navigation */}
           <div className="flex items-center gap-8">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2">
+            <Link
+              href="/main"
+              className="flex items-center gap-2 cursor-pointer"
+            >
               <TrendingUp className="h-6 w-6 text-primary" />
               <span className="text-xl font-bold hidden sm:inline">
                 AI Finance
@@ -85,10 +87,10 @@ export default function Header() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    'text-sm font-medium transition-colors hover:text-primary',
+                    "text-sm font-medium transition-colors hover:text-primary cursor-pointer",
                     pathname === item.href
-                      ? 'text-foreground'
-                      : 'text-muted-foreground'
+                      ? "text-foreground"
+                      : "text-muted-foreground"
                   )}
                 >
                   {item.label}
@@ -122,7 +124,7 @@ export default function Header() {
                 variant="ghost"
                 size="icon"
                 className="relative"
-                onClick={() => router.push('/notifications')}
+                onClick={() => router.push("/notifications")}
               >
                 <Bell className="h-5 w-5" />
                 {hasNotification && (
@@ -150,10 +152,10 @@ export default function Header() {
                     </p>
                   </div>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => router.push('/profile')}>
+                  <DropdownMenuItem onClick={() => router.push("/profile")}>
                     프로필
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/settings')}>
+                  <DropdownMenuItem onClick={() => router.push("/settings")}>
                     설정
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -168,13 +170,13 @@ export default function Header() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => router.push('/login')}
+                  onClick={() => router.push("/login")}
                 >
                   로그인
                 </Button>
                 <Button
                   size="sm"
-                  onClick={() => router.push('/register')}
+                  onClick={() => router.push("/register")}
                   className="hidden sm:inline-flex"
                 >
                   회원가입
@@ -223,10 +225,10 @@ export default function Header() {
                   href={item.href}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={cn(
-                    'block px-3 py-2 text-sm font-medium rounded-md transition-colors',
+                    "block px-3 py-2 text-sm font-medium rounded-md transition-colors",
                     pathname === item.href
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
                   )}
                 >
                   {item.label}

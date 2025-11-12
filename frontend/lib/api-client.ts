@@ -248,10 +248,11 @@ class ApiClient {
   }
 
   // Generic request method
-  async request<T = any>(config: AxiosRequestConfig): Promise<T> {
+  async request<T = unknown>(config: AxiosRequestConfig): Promise<T> {
     const response = await this.client.request<T>(config);
     return response.data;
   }
 }
 
-export default new ApiClient();
+const apiClient = new ApiClient();
+export default apiClient;

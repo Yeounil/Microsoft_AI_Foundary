@@ -8,7 +8,8 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60 * 1000, // 1 minute
+      staleTime: 5 * 60 * 1000, // 5 minutes (차트 데이터는 자주 변하지 않음)
+      gcTime: 10 * 60 * 1000, // 10 minutes (가비지 컬렉션 시간)
       refetchOnWindowFocus: false,
       retry: 1,
     },

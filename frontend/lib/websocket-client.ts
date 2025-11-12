@@ -1,4 +1,10 @@
-import { PriceUpdate, WebSocketMessage } from '@/types';
+import {
+  PriceUpdate,
+  WebSocketMessage,
+  WebSocketCommand,
+  isPriceUpdate,
+  isWebSocketMessage
+} from '@/types/websocket';
 
 type MessageHandler = (data: PriceUpdate) => void;
 type ConnectionHandler = (connected: boolean) => void;
@@ -83,16 +89,45 @@ class WebSocketClient {
     });
   }
 
-  private handleMessage(data: any) {
-    if (data.type === 'price_update') {
-      this.notifyMessageHandlers(data as PriceUpdate);
-    } else if (data.type === 'connected') {
-      console.log('Connected to price stream:', data.message);
-    } else if (data.type === 'subscription') {
-      console.log('Subscription update:', data);
-    } else if (data.type === 'error') {
-      console.error('WebSocket error:', data.message);
+  private handleMessage(data: unknown) {
+    // Type guard to ensure data is a WebSocketMessage
+    if (!isWebSocketMessage(data)) {
+      console.warn('Invalid WebSocket message received:', data);
+      return;
     }
+
+    const message = data as WebSocketMessage;
+
+    switch (message.type) {
+      case 'price_update':
+        if (isPriceUpdate(message.data)) {
+          this.notifyMessageHandlers(message.data);
+        }
+        break;
+      case 'connected':
+        console.log('Connected to price stream:', message.data);
+        break;
+      case 'error':
+        console.error('WebSocket error:', message.error || message.data);
+        break;
+      case 'ping':
+        // Respond with pong if needed
+        this.send({ type: 'pong' });
+        break;
+      case 'pong':
+        // Handle pong response
+        break;
+      default:
+        console.log('Unhandled message type:', message.type, message);
+    }
+  }
+
+  private send(message: WebSocketCommand | { type: string }): void {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      console.error('WebSocket is not connected');
+      return;
+    }
+    this.ws.send(JSON.stringify(message));
   }
 
   private attemptReconnect() {
@@ -122,12 +157,12 @@ class WebSocketClient {
     const upperSymbols = symbols.map(s => s.toUpperCase());
     upperSymbols.forEach(symbol => this.subscribedSymbols.add(symbol));
 
-    const message: WebSocketMessage = {
+    const command: WebSocketCommand = {
       action: 'subscribe',
       symbols: upperSymbols,
     };
 
-    this.ws.send(JSON.stringify(message));
+    this.ws.send(JSON.stringify(command));
   }
 
   unsubscribe(symbols: string[]): void {
@@ -139,12 +174,12 @@ class WebSocketClient {
     const upperSymbols = symbols.map(s => s.toUpperCase());
     upperSymbols.forEach(symbol => this.subscribedSymbols.delete(symbol));
 
-    const message: WebSocketMessage = {
+    const command: WebSocketCommand = {
       action: 'unsubscribe',
       symbols: upperSymbols,
     };
 
-    this.ws.send(JSON.stringify(message));
+    this.ws.send(JSON.stringify(command));
   }
 
   getSubscriptions(): void {
@@ -153,11 +188,11 @@ class WebSocketClient {
       return;
     }
 
-    const message: WebSocketMessage = {
+    const command: WebSocketCommand = {
       action: 'get_subscriptions',
     };
 
-    this.ws.send(JSON.stringify(message));
+    this.ws.send(JSON.stringify(command));
   }
 
   ping(): void {
@@ -165,11 +200,11 @@ class WebSocketClient {
       return;
     }
 
-    const message: WebSocketMessage = {
+    const command: WebSocketCommand = {
       action: 'ping',
     };
 
-    this.ws.send(JSON.stringify(message));
+    this.ws.send(JSON.stringify(command));
   }
 
   onMessage(handler: MessageHandler): () => void {
@@ -225,4 +260,5 @@ class WebSocketClient {
   }
 }
 
-export default new WebSocketClient();
+const webSocketClient = new WebSocketClient();
+export default webSocketClient;

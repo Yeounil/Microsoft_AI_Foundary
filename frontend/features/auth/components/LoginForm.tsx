@@ -14,7 +14,7 @@ export default function LoginForm() {
   const router = useRouter();
   const { login, isLoading, error, clearError } = useAuthStore();
   const [formData, setFormData] = useState({
-    email: '',
+    username: '',
     password: '',
   });
 
@@ -24,7 +24,7 @@ export default function LoginForm() {
 
     try {
       await login({
-        email: formData.email,
+        username: formData.username,
         password: formData.password,
       });
       router.push('/main');
@@ -55,12 +55,12 @@ export default function LoginForm() {
             </div>
           )}
           <div className="space-y-2">
-            <Label htmlFor="email">이메일</Label>
+            <Label htmlFor="username">사용자명</Label>
             <Input
-              id="email"
-              type="email"
-              placeholder="example@email.com"
-              value={formData.email}
+              id="username"
+              type="text"
+              placeholder="사용자명을 입력하세요"
+              value={formData.username}
               onChange={handleChange}
               required
               disabled={isLoading}

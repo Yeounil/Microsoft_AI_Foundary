@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { Stock, StockPriceData, PriceUpdate } from '@/types';
 import apiClient from '@/lib/api-client';
 import wsClient from '@/lib/websocket-client';
+import { extractErrorMessage } from '@/types/api';
 
 interface StockState {
   // Current stock data
@@ -64,10 +65,11 @@ export const useStockStore = create<StockState>((set, get) => ({
         chartData: stockData.price_data || null,
         isLoadingStock: false,
       });
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = extractErrorMessage(error);
       set({
         isLoadingStock: false,
-        error: error.response?.data?.detail || 'Failed to load stock data',
+        error: errorMessage,
       });
     }
   },
@@ -80,10 +82,11 @@ export const useStockStore = create<StockState>((set, get) => ({
         chartData: data.chart_data,
         isLoadingChart: false,
       });
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = extractErrorMessage(error);
       set({
         isLoadingChart: false,
-        error: error.response?.data?.detail || 'Failed to load chart data',
+        error: errorMessage,
       });
     }
   },
@@ -136,11 +139,11 @@ export const useStockStore = create<StockState>((set, get) => ({
 
     // Update selected stock price if it matches
     const currentStock = get().selectedStock;
-    if (currentStock && currentStock.symbol === priceUpdate.symbol && priceUpdate.last_price) {
+    if (currentStock && currentStock.symbol === priceUpdate.symbol && priceUpdate.price) {
       set((state) => ({
         selectedStock: state.selectedStock ? {
           ...state.selectedStock,
-          current_price: priceUpdate.last_price!,
+          current_price: priceUpdate.price,
         } : null,
       }));
     }

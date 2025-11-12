@@ -84,7 +84,7 @@ export default function NewsAnalysisPage() {
             관련 뉴스 AI 분석
           </Button>
           <Popover>
-            <PopoverTrigger>
+            <PopoverTrigger asChild>
               <Button variant="ghost" size="icon">
                 <HelpCircle className="h-4 w-4" />
               </Button>

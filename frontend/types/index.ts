@@ -60,25 +60,8 @@ export interface ChartData {
   cache_info?: string;
 }
 
-// WebSocket types
-export interface PriceUpdate {
-  type: 'price_update';
-  symbol: string;
-  timestamp: number;
-  data_type?: string;
-  last_price?: number;
-  last_size?: number;
-  ask_price?: number;
-  ask_size?: number;
-  bid_price?: number;
-  bid_size?: number;
-  cached_at?: string;
-}
-
-export interface WebSocketMessage {
-  action: 'subscribe' | 'unsubscribe' | 'ping' | 'get_subscriptions';
-  symbols?: string[];
-}
+// WebSocket types - Import from dedicated websocket types file
+export type { PriceUpdate, WebSocketMessage } from '@/types/websocket';
 
 // News types
 export interface NewsArticle {

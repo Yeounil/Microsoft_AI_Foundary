@@ -1,15 +1,20 @@
-import { StockChart } from '@/features/main/components/StockChart';
-import { StockList } from '@/features/main/components/StockList';
-import { NewsSection } from '@/features/main/components/NewsSection';
+"use client";
+
+import { useState } from "react";
+import { RealtimeStockChart } from "@/features/main/components/RealtimeStockChart";
+import { ImprovedStockList } from "@/features/main/components/ImprovedStockList";
+import { NewsSection } from "@/features/main/components/NewsSection";
 
 export default function MainPage() {
+  const [selectedSymbol, setSelectedSymbol] = useState<string>("AAPL");
+
   return (
-    <div className="container px-4 py-6">
+    <div className="container px-4 py-6 m-auto">
       <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
         {/* Left Side - Chart and Stock List (65%) */}
         <div className="space-y-6">
-          <StockChart />
-          <StockList />
+          <RealtimeStockChart symbol={selectedSymbol} />
+          <ImprovedStockList onSelectStock={setSelectedSymbol} selectedSymbol={selectedSymbol} />
         </div>
 
         {/* Right Side - News (35%) */}

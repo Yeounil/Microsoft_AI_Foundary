@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { ChevronUp, ChevronDown, Star } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,19 +30,23 @@ const mockStocks: StockItem[] = [
   { symbol: 'NFLX', name: '넷플릭스', price: 478.23, change: -2.34, changePercent: -0.49 },
 ];
 
-export function StockList() {
+interface StockListProps {
+  onSelectStock?: (symbol: string) => void;
+  selectedSymbol?: string;
+}
+
+export function StockList({ onSelectStock, selectedSymbol }: StockListProps) {
   const [showAll, setShowAll] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
-  const [stocks, setStocks] = useState<StockItem[]>(mockStocks);
 
   const { watchlist, addToWatchlist, removeFromWatchlist, realtimePrices, subscribeToRealtime } = useStockStore();
 
+  // WebSocket 연결 및 구독
   useEffect(() => {
-    // WebSocket 연결 및 구독
     const connectAndSubscribe = async () => {
       try {
         await wsClient.connect();
-        const symbols = stocks.map(s => s.symbol);
+        const symbols = mockStocks.map(s => s.symbol);
         subscribeToRealtime(symbols);
       } catch (error) {
         console.error('WebSocket connection failed:', error);
@@ -54,14 +58,14 @@ export function StockList() {
     return () => {
       // Cleanup은 store에서 처리
     };
-  }, []);
+  }, [subscribeToRealtime]);
 
-  // 실시간 가격 업데이트 반영
-  useEffect(() => {
-    const updatedStocks = stocks.map(stock => {
+  // 실시간 가격 업데이트 반영 - useMemo로 변경하여 cascading setState 방지
+  const stocks = useMemo(() => {
+    return mockStocks.map(stock => {
       const realtimeData = realtimePrices[stock.symbol];
-      if (realtimeData && realtimeData.last_price) {
-        const newPrice = realtimeData.last_price;
+      if (realtimeData && realtimeData.price) {
+        const newPrice = realtimeData.price;
         const oldPrice = stock.price;
         const change = newPrice - oldPrice;
         const changePercent = (change / oldPrice) * 100;
@@ -75,8 +79,6 @@ export function StockList() {
       }
       return stock;
     });
-
-    setStocks(updatedStocks);
   }, [realtimePrices]);
 
   const favoriteStocks = stocks.filter(stock => watchlist.includes(stock.symbol));
@@ -115,6 +117,8 @@ export function StockList() {
               totalCount={stocks.length}
               watchlist={watchlist}
               onToggleWatchlist={toggleWatchlist}
+              onSelectStock={onSelectStock}
+              selectedSymbol={selectedSymbol}
             />
           </TabsContent>
 
@@ -126,6 +130,8 @@ export function StockList() {
               totalCount={favoriteStocks.length}
               watchlist={watchlist}
               onToggleWatchlist={toggleWatchlist}
+              onSelectStock={onSelectStock}
+              selectedSymbol={selectedSymbol}
             />
           </TabsContent>
         </Tabs>
@@ -141,6 +147,8 @@ interface StockListContentProps {
   totalCount: number;
   watchlist: string[];
   onToggleWatchlist: (symbol: string) => void;
+  onSelectStock?: (symbol: string) => void;
+  selectedSymbol?: string;
 }
 
 function StockListContent({
@@ -150,13 +158,18 @@ function StockListContent({
   totalCount,
   watchlist,
   onToggleWatchlist,
+  onSelectStock,
+  selectedSymbol,
 }: StockListContentProps) {
   const content = (
     <div className="space-y-2">
       {stocks.map((stock) => (
         <div
           key={stock.symbol}
-          className="flex items-center justify-between rounded-lg border border-border p-4 transition-colors hover:bg-muted/50"
+          className={`flex items-center justify-between rounded-lg border border-border p-4 transition-all duration-200 hover:bg-muted/50 hover:shadow-sm cursor-pointer ${
+            selectedSymbol === stock.symbol ? 'bg-primary/10 border-primary shadow-sm' : ''
+          }`}
+          onClick={() => onSelectStock?.(stock.symbol)}
         >
           <div className="flex-1">
             <div className="flex items-center gap-2">
@@ -184,7 +197,7 @@ function StockListContent({
               size="sm"
               variant="ghost"
               onClick={() => onToggleWatchlist(stock.symbol)}
-              className="h-8 w-8 p-0"
+              className="h-8 w-8 p-0 cursor-pointer"
             >
               <Star
                 className={`h-4 w-4 ${
@@ -203,11 +216,11 @@ function StockListContent({
 
   return (
     <div className="space-y-4">
-      {showAll ? <ScrollArea className="h-[600px]">{content}</ScrollArea> : content}
+      {showAll ? <ScrollArea className="h-[700px]">{content}</ScrollArea> : content}
 
       {totalCount > 5 && (
         <Button variant="outline" className="w-full" onClick={onToggleShowAll}>
-          {showAll ? '접기' : `더보기 (${totalCount - 5}개)`}
+          {showAll ? '접기' : '더보기'}
         </Button>
       )}
     </div>

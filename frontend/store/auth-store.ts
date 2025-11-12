@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User } from '@/types';
 import apiClient from '@/lib/api-client';
+import { extractErrorMessage } from '@/types/api';
 
 interface AuthState {
   user: User | null;
@@ -28,7 +29,7 @@ export const useAuthStore = create<AuthState>()(
       login: async (credentials) => {
         set({ isLoading: true, error: null });
         try {
-          const tokens = await apiClient.login(credentials);
+          await apiClient.login(credentials);
           const userData = await apiClient.getMe();
           set({
             user: userData,
@@ -36,10 +37,11 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             error: null
           });
-        } catch (error: any) {
+        } catch (error) {
+          const errorMessage = extractErrorMessage(error);
           set({
             isLoading: false,
-            error: error.response?.data?.detail || 'Login failed',
+            error: errorMessage,
             isAuthenticated: false,
             user: null
           });
@@ -53,10 +55,11 @@ export const useAuthStore = create<AuthState>()(
           await apiClient.register(data);
           // Auto login after registration
           await get().login({ username: data.username, password: data.password });
-        } catch (error: any) {
+        } catch (error) {
+          const errorMessage = extractErrorMessage(error);
           set({
             isLoading: false,
-            error: error.response?.data?.detail || 'Registration failed'
+            error: errorMessage
           });
           throw error;
         }
@@ -90,7 +93,7 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: true,
             isLoading: false
           });
-        } catch (error) {
+        } catch {
           set({
             isAuthenticated: false,
             user: null,

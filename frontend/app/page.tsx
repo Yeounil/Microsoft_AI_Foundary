@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ChevronDown, TrendingUp, Sparkles, BookOpen, BarChart3, Shield, Zap, ArrowRight } from "lucide-react"
+import { ChevronDown, TrendingUp, Sparkles, BookOpen, BarChart3 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
