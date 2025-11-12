@@ -116,8 +116,19 @@ export class FMPWebSocketClient {
       const priceMessage = message as FMPWebSocketMessage;
       const symbol = priceMessage.s.toUpperCase();
 
+      // FMP timestamp는 나노초 단위 (1762958806918000000)
+      let timestamp = priceMessage.t;
+      if (timestamp && timestamp > 1e15) {
+        // 나노초를 밀리초로 변환
+        timestamp = Math.floor(timestamp / 1000000);
+      }
+
+      const timeStr = timestamp
+        ? new Date(timestamp).toLocaleTimeString()
+        : 'No timestamp';
+
       this.logger.debug(
-        `Price data: ${symbol} = $${priceMessage.lp} (time: ${new Date(priceMessage.t).toLocaleTimeString()})`
+        `Price data: ${symbol} = $${priceMessage.lp} (time: ${timeStr})`
       );
 
       // 메시지 콜백 실행

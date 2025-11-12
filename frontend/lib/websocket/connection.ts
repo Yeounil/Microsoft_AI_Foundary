@@ -199,9 +199,12 @@ export class WebSocketConnection {
         return;
       }
 
-      // 다른 이벤트 처리
+      // 다른 이벤트 처리 (subscribe/unsubscribe는 정상 동작이므로 로깅 생략)
       if ("event" in message) {
-        this.logger.debug(`Event received: ${message.event}`, message);
+        const eventType = message.event;
+        if (eventType !== "subscribe" && eventType !== "unsubscribe") {
+          this.logger.debug(`Event received: ${eventType}`, message);
+        }
       }
 
       // 메시지 핸들러에 전달

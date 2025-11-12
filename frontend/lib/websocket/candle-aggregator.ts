@@ -38,7 +38,14 @@ export class CandleAggregator {
       return null;
     }
 
-    const timestamp = message.t || Date.now();
+    // FMP WebSocket은 나노초 단위로 timestamp를 보냄 (1762958806918000000)
+    // JavaScript는 밀리초 사용이므로 1,000,000으로 나눔
+    let timestamp = message.t || Date.now();
+    if (timestamp > 1e15) {
+      // 나노초인 경우 (16자리 이상)
+      timestamp = Math.floor(timestamp / 1000000);
+    }
+
     const candleTime = Math.floor(timestamp / intervalMs) * intervalMs;
     const candleTimeSeconds = Math.floor(candleTime / 1000);
 
@@ -50,8 +57,12 @@ export class CandleAggregator {
       this.currentCandles.set(symbol, candle);
       this.candleIntervals.set(symbol, intervalMs);
 
+      const timeStr = candleTimeSeconds
+        ? new Date(candleTimeSeconds * 1000).toLocaleTimeString()
+        : 'No timestamp';
+
       this.logger.debug(`New candle for ${symbol}:`, {
-        time: new Date(candleTimeSeconds * 1000).toLocaleTimeString(),
+        time: timeStr,
         price: `$${price}`,
         interval: `${intervalMs / 1000}s`,
       });

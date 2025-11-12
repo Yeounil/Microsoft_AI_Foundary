@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { Star, Search, TrendingUp, TrendingDown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { useStockStore } from '@/store/stock-store';
-import { getFMPWebSocketClient } from '@/lib/fmp-websocket-client';
 import apiClient from '@/lib/api-client';
 
 interface StockItem {
@@ -35,14 +34,13 @@ export function ImprovedStockList({ onSelectStock, selectedSymbol }: StockListPr
   const [isLoadingStocks, setIsLoadingStocks] = useState(true);
 
   const { watchlist, addToWatchlist, removeFromWatchlist } = useStockStore();
-  const fmpWsClient = useRef(getFMPWebSocketClient());
 
   // 1. 모든 종목 리스트 로드 (백엔드에서)
   useEffect(() => {
     const loadAllStocks = async () => {
       try {
         console.log('[ImprovedStockList] Loading all tradable stocks from backend...');
-        const response = await apiClient.getAllTradableStocks(1000000000, 500);
+        const response = await apiClient.getAllTradableStocks(1000000000, 100);
 
         if (response.stocks && Array.isArray(response.stocks)) {
           const stocks = response.stocks.map((stock: any) => ({
@@ -102,59 +100,37 @@ export function ImprovedStockList({ onSelectStock, selectedSymbol }: StockListPr
     loadPrices();
   }, [allStocks]);
 
-  // 3. WebSocket 구독 (상위 20개만 실시간 업데이트)
+  // 3. 주기적으로 가격 업데이트 (WebSocket 대신 polling)
   useEffect(() => {
     if (allStocks.length === 0) return;
 
-    const connectAndSubscribe = async () => {
+    const updatePrices = async () => {
       try {
-        const wsClient = fmpWsClient.current;
-
-        console.log('[ImprovedStockList] Starting WebSocket connection for real-time updates...');
-
-        // WebSocket 연결
-        await wsClient.connect();
-
-        // 상위 20개만 실시간 구독
         const topSymbols = allStocks.slice(0, 20).map(s => s.symbol);
+        const response = await apiClient.getBatchQuotes(topSymbols);
 
-        // 구독 전에 캔들 콜백 먼저 등록
-        topSymbols.forEach(symbol => {
-          const callback = (candle: any) => {
-            console.log(`[ImprovedStockList] 📊 WebSocket update for ${symbol}: $${candle.close}`);
+        if (response.quotes && Array.isArray(response.quotes)) {
+          const pricesMap: Record<string, any> = {};
+          response.quotes.forEach((quote: any) => {
+            pricesMap[quote.symbol] = {
+              price: quote.price,
+              change: quote.change,
+              changePercent: quote.changePercent,
+            };
+          });
 
-            setStockPrices(prev => ({
-              ...prev,
-              [symbol]: {
-                price: candle.close,
-                change: candle.close - candle.open,
-                changePercent: ((candle.close - candle.open) / candle.open) * 100,
-              }
-            }));
-          };
-
-          wsClient.onCandle(symbol, callback);
-        });
-
-        // 구독
-        await wsClient.subscribe(topSymbols, 60000); // 1분 간격
-        console.log(`[ImprovedStockList] ✅ WebSocket subscribed to ${topSymbols.length} symbols (for real-time updates)`);
+          setStockPrices(prev => ({ ...prev, ...pricesMap }));
+        }
       } catch (error) {
-        console.error('[ImprovedStockList] ❌ WebSocket connection failed:', error);
+        console.error('[ImprovedStockList] Failed to update prices:', error);
       }
     };
 
-    connectAndSubscribe();
+    // 30초마다 가격 업데이트
+    const interval = setInterval(updatePrices, 30000);
 
     return () => {
-      // Cleanup: 구독 해제
-      const wsClient = fmpWsClient.current;
-      const topSymbols = allStocks.slice(0, 20).map(s => s.symbol);
-
-      topSymbols.forEach(symbol => {
-        wsClient.offCandle(symbol, () => {});
-      });
-      wsClient.unsubscribe(topSymbols);
+      clearInterval(interval);
     };
   }, [allStocks]);
 

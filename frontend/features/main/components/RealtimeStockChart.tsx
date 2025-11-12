@@ -19,7 +19,6 @@ import {
   type CandleData,
 } from "@/lib/fmp-websocket-client";
 import { ChartDataLoader, type ChartPeriod as LoaderChartPeriod, type ChartInterval as LoaderChartInterval } from "@/lib/chart/chart-data-loader";
-import apiClient from "@/lib/api-client";
 
 type ChartType = "area" | "line" | "candle";
 type TimeRange = "1D" | "1M" | "3M" | "1Y" | "5Y" | "ALL";
@@ -137,10 +136,14 @@ export function RealtimeStockChart({
     // 기존 시리즈 제거
     if (seriesRef.current) {
       try {
-        chartRef.current.removeSeries(seriesRef.current);
-        seriesRef.current = null;
+        // 시리즈가 차트에 실제로 존재하는지 확인
+        if (chartRef.current && seriesRef.current) {
+          chartRef.current.removeSeries(seriesRef.current);
+        }
       } catch (error) {
-        console.warn("[Chart] Failed to remove series:", error);
+        // 이미 제거된 경우 무시
+        console.warn("[Chart] Series already removed or invalid");
+      } finally {
         seriesRef.current = null;
       }
     }
@@ -271,7 +274,7 @@ export function RealtimeStockChart({
     loadHistoricalData();
   }, [loadHistoricalData]);
 
-  // 실시간 WebSocket 연결 (1D일 때만)
+  // 실시간 WebSocket 연결 (1D일 때만, 현재 보고 있는 종목만)
   useEffect(() => {
     if (timeRange !== "1D" || !seriesRef.current) {
       setIsRealtime(false);
@@ -279,47 +282,36 @@ export function RealtimeStockChart({
     }
 
     let mounted = true;
-    setIsLoading(true);
+    let handleCandle: ((candle: CandleData) => void) | null = null;
 
     const setupRealtimeData = async () => {
       try {
-        // WebSocket 연결
         const client = wsClient.current;
         const status = client.getConnectionStatus();
 
+        // 모든 기존 구독 해제 (깨끗한 시작)
+        const currentSubscriptions = status.subscriptions;
+        if (currentSubscriptions.length > 0) {
+          console.log(`[Chart] Cleaning up old subscriptions: ${currentSubscriptions.join(', ')}`);
+          await client.unsubscribe(currentSubscriptions);
+        }
+
         if (!status.isConnected) {
-          console.log("[WebSocket] Connecting...");
+          console.log(`[Chart] Connecting WebSocket...`);
           await client.connect();
         }
 
         if (!mounted) return;
 
         // 실시간 캔들 콜백
-        const handleCandle = (candle: CandleData) => {
-          if (!seriesRef.current || !mounted) {
-            console.warn(`[Chart] ⚠️ Cannot update: series=${!!seriesRef.current}, mounted=${mounted}`);
-            return;
-          }
-
-          console.log(`[Chart] 📈 Received candle data:`, {
-            time: new Date(candle.time * 1000).toLocaleTimeString(),
-            type: chartType,
-            data: chartType === "candle"
-              ? `O:$${candle.open.toFixed(2)} H:$${candle.high.toFixed(2)} L:$${candle.low.toFixed(2)} C:$${candle.close.toFixed(2)}`
-              : `$${candle.close.toFixed(2)}`
-          });
+        handleCandle = (candle: CandleData) => {
+          if (!seriesRef.current || !mounted) return;
 
           // 실시간 가격 정보 업데이트
           setCurrentPrice(candle.close);
           if (previousClose !== null) {
             const change = candle.close - previousClose;
             const changePercent = (change / previousClose) * 100;
-            setPriceChange(change);
-            setPriceChangePercent(changePercent);
-          } else {
-            // 이전 종가가 없으면 첫 캔들의 open을 기준으로
-            const change = candle.close - candle.open;
-            const changePercent = (change / candle.open) * 100;
             setPriceChange(change);
             setPriceChangePercent(changePercent);
           }
@@ -333,58 +325,49 @@ export function RealtimeStockChart({
                 low: candle.low,
                 close: candle.close,
               });
-              console.log(`[Chart] ✅ Candle chart updated successfully`);
             } else {
               seriesRef.current.update({
                 time: candle.time as import("lightweight-charts").Time,
                 value: candle.close,
               });
-              console.log(`[Chart] ✅ Line/Area chart updated successfully`);
             }
 
-            // 실시간 위치로 스크롤
             chartRef.current?.timeScale().scrollToRealTime();
           } catch (error) {
-            console.error("[Chart] ❌ Update error:", error);
+            console.error("[Chart] Update error:", error);
           }
         };
 
-        // 구독 시작
+        // 현재 종목만 구독
         const intervalMs = getIntervalMs(interval);
-        console.log(`[Chart] 🔌 Starting WebSocket subscription for ${symbol} with ${interval} interval (${intervalMs}ms)`);
+        console.log(`[Chart] 📡 Subscribing ONLY ${symbol} (${interval}, ${intervalMs}ms)`);
 
         await client.subscribe(symbol, intervalMs);
-        console.log(`[Chart] 📡 Subscribed successfully, registering candle callback...`);
-
         client.onCandle(symbol, handleCandle);
-        console.log(`[Chart] ✅ Candle callback registered, waiting for data...`);
 
         setIsRealtime(true);
-        setIsLoading(false);
-        console.log(`[Chart] 🎉 Realtime mode ACTIVE for ${symbol}`);
-
-        // Cleanup
-        return () => {
-          mounted = false;
-          client.offCandle(symbol, handleCandle);
-          client.unsubscribe(symbol);
-          setIsRealtime(false);
-          console.log(`[WebSocket] Stopped for ${symbol}`);
-        };
+        console.log(`[Chart] ✅ Realtime active for ${symbol}`);
       } catch (error) {
-        console.error("[WebSocket] Setup failed:", error);
+        console.error("[Chart WebSocket] Setup failed:", error);
         setIsRealtime(false);
-        setIsLoading(false);
       }
     };
 
     setupRealtimeData();
 
+    // Cleanup
     return () => {
+      console.log(`[Chart] 🔌 Cleanup for ${symbol}`);
       mounted = false;
-      setIsLoading(false);
+      const client = wsClient.current;
+
+      if (handleCandle) {
+        client.offCandle(symbol, handleCandle);
+      }
+      client.unsubscribe(symbol);
+      setIsRealtime(false);
     };
-  }, [symbol, timeRange, interval, chartType]);
+  }, [symbol, timeRange, interval, chartType, previousClose]);
 
   // Helper functions
   const getPeriodFromRange = (range: TimeRange): string => {
