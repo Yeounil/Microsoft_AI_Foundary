@@ -148,6 +148,11 @@ class ApiClient {
     return response.data;
   }
 
+  async getSupportedStocks() {
+    const response = await this.client.get('/api/v1/stocks/supported');
+    return response.data;
+  }
+
   async searchStocks(query: string) {
     const response = await this.client.get('/api/v1/stocks/search', {
       params: { q: query },

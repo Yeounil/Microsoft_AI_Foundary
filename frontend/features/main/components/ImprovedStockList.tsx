@@ -35,21 +35,22 @@ export function ImprovedStockList({ onSelectStock, selectedSymbol }: StockListPr
 
   const { watchlist, addToWatchlist, removeFromWatchlist } = useStockStore();
 
-  // 1. 모든 종목 리스트 로드 (백엔드에서)
+  // 1. WebSocket 지원 종목 리스트 로드 (백엔드에서)
   useEffect(() => {
-    const loadAllStocks = async () => {
+    const loadSupportedStocks = async () => {
       try {
-        console.log('[ImprovedStockList] Loading all tradable stocks from backend...');
-        const response = await apiClient.getAllTradableStocks(1000000000, 100);
+        console.log('[ImprovedStockList] Loading WebSocket supported stocks from backend...');
+        const response = await apiClient.getSupportedStocks();
 
-        if (response.stocks && Array.isArray(response.stocks)) {
-          const stocks = response.stocks.map((stock: any) => ({
-            symbol: stock.symbol,
-            name: stock.name,
-            marketCap: stock.marketCap || 0,
+        if (response.all_symbols && Array.isArray(response.all_symbols)) {
+          // 심볼만 있으므로 name은 symbol과 동일하게 설정
+          const stocks = response.all_symbols.map((symbol: string) => ({
+            symbol: symbol,
+            name: symbol,
+            marketCap: 0, // marketCap 정보 없음
           }));
           setAllStocks(stocks);
-          console.log(`[ImprovedStockList] ✅ Loaded ${response.stocks.length} stocks`);
+          console.log(`[ImprovedStockList] ✅ Loaded ${stocks.length} WebSocket supported stocks`);
 
           // 첫 번째 종목을 자동으로 선택
           if (stocks.length > 0 && onSelectStock && !selectedSymbol) {
@@ -64,7 +65,7 @@ export function ImprovedStockList({ onSelectStock, selectedSymbol }: StockListPr
       }
     };
 
-    loadAllStocks();
+    loadSupportedStocks();
   }, []);
 
   // 2. 시가총액 상위 100개의 가격 로드 (배치 조회)
