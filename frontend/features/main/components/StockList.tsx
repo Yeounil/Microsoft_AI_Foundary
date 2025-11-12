@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { ChevronUp, ChevronDown, Star } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,27 +8,19 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useStockStore } from '@/store/stock-store';
-import wsClient from '@/lib/websocket-client';
+import { getFMPWebSocketClient } from '@/lib/fmp-websocket-client';
 
 interface StockItem {
   symbol: string;
   name: string;
-  price: number;
+  price: number | null;
   change: number;
   changePercent: number;
+  isLoading: boolean;
 }
 
-// Mock data - 실제로는 API에서 가져올 예정
-const mockStocks: StockItem[] = [
-  { symbol: 'AAPL', name: '애플', price: 186.45, change: 2.34, changePercent: 1.27 },
-  { symbol: 'GOOGL', name: '구글', price: 142.38, change: -1.25, changePercent: -0.87 },
-  { symbol: 'MSFT', name: '마이크로소프트', price: 378.91, change: 5.67, changePercent: 1.52 },
-  { symbol: 'TSLA', name: '테슬라', price: 245.12, change: -3.45, changePercent: -1.39 },
-  { symbol: 'NVDA', name: '엔비디아', price: 512.76, change: 8.23, changePercent: 1.63 },
-  { symbol: 'META', name: '메타', price: 389.45, change: 4.12, changePercent: 1.07 },
-  { symbol: 'AMZN', name: '아마존', price: 156.78, change: 2.89, changePercent: 1.88 },
-  { symbol: 'NFLX', name: '넷플릭스', price: 478.23, change: -2.34, changePercent: -0.49 },
-];
+// 기본 표시할 인기 종목 (watchlist가 비어있을 때)
+const DEFAULT_SYMBOLS = ['AAPL', 'GOOGL', 'MSFT', 'TSLA', 'NVDA', 'META', 'AMZN', 'NFLX'];
 
 interface StockListProps {
   onSelectStock?: (symbol: string) => void;
@@ -38,48 +30,159 @@ interface StockListProps {
 export function StockList({ onSelectStock, selectedSymbol }: StockListProps) {
   const [showAll, setShowAll] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
+  const [localRealtimePrices, setLocalRealtimePrices] = useState<Record<string, any>>({});
 
-  const { watchlist, addToWatchlist, removeFromWatchlist, realtimePrices, subscribeToRealtime } = useStockStore();
+  const { watchlist, addToWatchlist, removeFromWatchlist } = useStockStore();
+  const fmpWsClient = useRef(getFMPWebSocketClient());
 
-  // WebSocket 연결 및 구독
+  // REST API로 초기 가격 로드
+  useEffect(() => {
+    const loadInitialPrices = async () => {
+      const symbolsToLoad = watchlist.length > 0
+        ? [...new Set([...watchlist, ...DEFAULT_SYMBOLS])]
+        : DEFAULT_SYMBOLS;
+
+      console.log('[StockList] Loading initial prices from REST API...');
+
+      // 각 종목의 Quote 데이터 로드 (병렬 처리)
+      const pricePromises = symbolsToLoad.map(async (symbol) => {
+        try {
+          const response = await fetch(
+            `https://financialmodelingprep.com/api/v3/quote/${symbol}?apikey=${process.env.NEXT_PUBLIC_FMP_API_KEY}`
+          );
+          const data = await response.json();
+
+          if (data && data.length > 0) {
+            const quote = data[0];
+            return {
+              symbol,
+              price: quote.price,
+              change: quote.change,
+              changePercent: quote.changesPercentage,
+              volume: quote.volume,
+            };
+          }
+          return null;
+        } catch (error) {
+          console.error(`[StockList] Failed to load price for ${symbol}:`, error);
+          return null;
+        }
+      });
+
+      const results = await Promise.all(pricePromises);
+
+      // 결과를 state에 저장
+      const pricesMap: Record<string, any> = {};
+      results.forEach((result) => {
+        if (result) {
+          pricesMap[result.symbol] = {
+            price: result.price,
+            change: result.change,
+            change_percent: result.changePercent,
+            volume: result.volume,
+          };
+          console.log(`[StockList] ✅ Loaded ${result.symbol}: $${result.price}`);
+        }
+      });
+
+      setLocalRealtimePrices(pricesMap);
+      console.log(`[StockList] Loaded ${Object.keys(pricesMap).length} prices from REST API`);
+    };
+
+    loadInitialPrices();
+  }, [watchlist]);
+
+  // WebSocket 연결 및 구독 (실시간 업데이트용)
   useEffect(() => {
     const connectAndSubscribe = async () => {
       try {
+        const wsClient = fmpWsClient.current;
+
+        console.log('[StockList] Starting WebSocket connection for real-time updates...');
+
+        // WebSocket 연결
         await wsClient.connect();
-        const symbols = mockStocks.map(s => s.symbol);
-        subscribeToRealtime(symbols);
+
+        // watchlist가 있으면 watchlist 종목, 없으면 기본 종목 구독
+        const symbolsToSubscribe = watchlist.length > 0
+          ? [...new Set([...watchlist, ...DEFAULT_SYMBOLS])]
+          : DEFAULT_SYMBOLS;
+
+        // 구독 전에 캔들 콜백 먼저 등록
+        symbolsToSubscribe.forEach(symbol => {
+          const callback = (candle: any) => {
+            console.log(`[StockList] 📊 WebSocket update for ${symbol}: $${candle.close}`);
+
+            setLocalRealtimePrices(prev => ({
+              ...prev,
+              [symbol]: {
+                price: candle.close,
+                change: candle.close - candle.open,
+                change_percent: ((candle.close - candle.open) / candle.open) * 100,
+                volume: candle.volume || 0,
+              }
+            }));
+          };
+
+          wsClient.onCandle(symbol, callback);
+        });
+
+        // 구독
+        await wsClient.subscribe(symbolsToSubscribe, 60000); // 1분 간격
+        console.log(`[StockList] ✅ WebSocket subscribed to ${symbolsToSubscribe.length} symbols (for real-time updates)`);
       } catch (error) {
-        console.error('WebSocket connection failed:', error);
+        console.error('[StockList] ❌ WebSocket connection failed:', error);
       }
     };
 
     connectAndSubscribe();
 
     return () => {
-      // Cleanup은 store에서 처리
+      // Cleanup: 구독 해제
+      const wsClient = fmpWsClient.current;
+      const symbolsToUnsubscribe = watchlist.length > 0
+        ? [...new Set([...watchlist, ...DEFAULT_SYMBOLS])]
+        : DEFAULT_SYMBOLS;
+
+      symbolsToUnsubscribe.forEach(symbol => {
+        wsClient.offCandle(symbol, () => {});
+      });
+      wsClient.unsubscribe(symbolsToUnsubscribe);
     };
-  }, [subscribeToRealtime]);
+  }, [watchlist]);
 
-  // 실시간 가격 업데이트 반영 - useMemo로 변경하여 cascading setState 방지
+  // 실시간 가격 업데이트 반영 - WebSocket 데이터 기반
   const stocks = useMemo(() => {
-    return mockStocks.map(stock => {
-      const realtimeData = realtimePrices[stock.symbol];
-      if (realtimeData && realtimeData.price) {
-        const newPrice = realtimeData.price;
-        const oldPrice = stock.price;
-        const change = newPrice - oldPrice;
-        const changePercent = (change / oldPrice) * 100;
+    // WebSocket에서 받은 종목들을 StockItem으로 변환
+    const symbolsToShow = watchlist.length > 0
+      ? [...new Set([...watchlist, ...DEFAULT_SYMBOLS])] // watchlist + 기본 종목
+      : DEFAULT_SYMBOLS; // 기본 종목만
 
+    return symbolsToShow.map(symbol => {
+      const realtimeData = localRealtimePrices[symbol];
+
+      if (realtimeData && realtimeData.price) {
         return {
-          ...stock,
-          price: newPrice,
-          change,
-          changePercent,
+          symbol: symbol,
+          name: symbol, // TODO: 회사명 매핑 추가 필요
+          price: realtimeData.price,
+          change: realtimeData.change || 0,
+          changePercent: realtimeData.change_percent || 0,
+          isLoading: false,
         };
       }
-      return stock;
+
+      // WebSocket 데이터가 없으면 로딩 중
+      return {
+        symbol: symbol,
+        name: symbol,
+        price: null,
+        change: 0,
+        changePercent: 0,
+        isLoading: true,
+      };
     });
-  }, [realtimePrices]);
+  }, [localRealtimePrices, watchlist]);
 
   const favoriteStocks = stocks.filter(stock => watchlist.includes(stock.symbol));
   const displayStocks = activeTab === 'all' ? stocks : favoriteStocks;
@@ -177,19 +280,25 @@ function StockListContent({
               <span className="text-xs text-muted-foreground">{stock.symbol}</span>
             </div>
             <div className="mt-1 flex items-center gap-2">
-              <span className="text-sm font-medium">${stock.price.toFixed(2)}</span>
-              <span
-                className={`flex items-center text-xs ${
-                  stock.change >= 0 ? 'text-green-600' : 'text-red-600'
-                }`}
-              >
-                {stock.change >= 0 ? (
-                  <ChevronUp className="h-3 w-3" />
-                ) : (
-                  <ChevronDown className="h-3 w-3" />
-                )}
-                {Math.abs(stock.change).toFixed(2)} ({Math.abs(stock.changePercent).toFixed(2)}%)
-              </span>
+              {stock.isLoading || stock.price === null ? (
+                <span className="text-sm text-muted-foreground animate-pulse">가격 로딩 중...</span>
+              ) : (
+                <>
+                  <span className="text-sm font-medium">${stock.price.toFixed(2)}</span>
+                  <span
+                    className={`flex items-center text-xs ${
+                      stock.change >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}
+                  >
+                    {stock.change >= 0 ? (
+                      <ChevronUp className="h-3 w-3" />
+                    ) : (
+                      <ChevronDown className="h-3 w-3" />
+                    )}
+                    {Math.abs(stock.change).toFixed(2)} ({Math.abs(stock.changePercent).toFixed(2)}%)
+                  </span>
+                </>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2">

@@ -32,7 +32,8 @@
       "Bash(taskkill:*)",
       "Bash(dir:*)",
       "Bash(npm uninstall:*)",
-      "WebFetch(domain:tradingview.github.io)"
+      "WebFetch(domain:tradingview.github.io)",
+      "WebFetch(domain:site.financialmodelingprep.com)"
     ],
     "deny": [],
     "ask": []

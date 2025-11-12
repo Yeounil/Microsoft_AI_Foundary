@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TrendingUp, TrendingDown } from "lucide-react";
 import {
   createChart,
   ColorType,
@@ -17,6 +18,7 @@ import {
   getFMPWebSocketClient,
   type CandleData,
 } from "@/lib/fmp-websocket-client";
+import { ChartDataLoader, type ChartPeriod as LoaderChartPeriod, type ChartInterval as LoaderChartInterval } from "@/lib/chart/chart-data-loader";
 import apiClient from "@/lib/api-client";
 
 type ChartType = "area" | "line" | "candle";
@@ -61,6 +63,12 @@ export function RealtimeStockChart({
   const [interval, setInterval] = useState<ChartInterval>("1m");
   const [isLoading, setIsLoading] = useState(false);
   const [isRealtime, setIsRealtime] = useState(false);
+
+  // 실시간 가격 정보
+  const [currentPrice, setCurrentPrice] = useState<number | null>(null);
+  const [priceChange, setPriceChange] = useState<number>(0);
+  const [priceChangePercent, setPriceChangePercent] = useState<number>(0);
+  const [previousClose, setPreviousClose] = useState<number | null>(null);
 
   const wsClient = useRef(getFMPWebSocketClient());
 
@@ -185,73 +193,55 @@ export function RealtimeStockChart({
       const chartInterval = timeRange === "1D" ? interval : "1d";
 
       console.log(
-        `Loading historical data: ${symbol}, period: ${period}, interval: ${chartInterval}`
+        `[Chart] Loading historical data: ${symbol}, period: ${period}, interval: ${chartInterval}`
       );
 
-      const data = await apiClient.getChartData(symbol, period, chartInterval);
+      // ChartDataLoader 사용 (자동으로 Intraday API 라우팅)
+      const candleData = await ChartDataLoader.loadHistoricalData(
+        symbol,
+        period as LoaderChartPeriod,
+        chartInterval as LoaderChartInterval
+      );
 
-      if (data.chart_data && data.chart_data.length > 0) {
-        // 데이터 변환
-        const processedData = data.chart_data
-          .map((item: ChartDataItem): ProcessedChartData | null => {
-            const timestamp =
-              typeof item.date === "string"
-                ? Math.floor(new Date(item.date).getTime() / 1000)
-                : item.date;
+      console.log(`[Chart] Received ${candleData.length} candles from API`);
 
-            if (isNaN(timestamp) || timestamp <= 0) {
-              return null;
-            }
+      if (candleData.length > 0) {
+        // 초기 가격 정보 설정 (마지막 캔들 기준)
+        const lastCandle = candleData[candleData.length - 1];
+        const firstCandle = candleData[0];
 
-            return {
-              time: timestamp as import("lightweight-charts").Time,
-              open: item.open,
-              high: item.high,
-              low: item.low,
-              close: item.close,
-              value: item.close, // for line/area
-            };
-          })
-          .filter((item: ProcessedChartData | null): item is ProcessedChartData => item !== null)
-          .sort(
-            (a: ProcessedChartData, b: ProcessedChartData) =>
-              (a.time as number) - (b.time as number)
-          );
+        setCurrentPrice(lastCandle.close);
+        setPreviousClose(firstCandle.close);
 
-        if (processedData.length > 0) {
-          try {
-            if (chartType === "candle") {
-              const candleData = processedData.map(
-                (item: ProcessedChartData) => ({
-                  time: item.time,
-                  open: item.open,
-                  high: item.high,
-                  low: item.low,
-                  close: item.close,
-                })
-              );
-              seriesRef.current?.setData(candleData);
-            } else {
-              const lineData = processedData.map(
-                (item: ProcessedChartData) => ({
-                  time: item.time,
-                  value: item.value,
-                })
-              );
-              seriesRef.current?.setData(lineData);
-            }
+        const change = lastCandle.close - firstCandle.close;
+        const changePercent = (change / firstCandle.close) * 100;
+        setPriceChange(change);
+        setPriceChangePercent(changePercent);
 
-            chartRef.current?.timeScale().fitContent();
-            console.log(
-              `Loaded ${processedData.length} historical data points`
-            );
-          } catch (error) {
-            console.error("[Chart] Failed to set data:", error);
+        try {
+          if (chartType === "candle") {
+            seriesRef.current?.setData(candleData);
+          } else {
+            // Line/Area 차트는 close 값만 사용
+            const lineData = candleData.map((item) => ({
+              time: item.time as import("lightweight-charts").Time,
+              value: item.close,
+            }));
+            seriesRef.current?.setData(lineData);
           }
+
+          chartRef.current?.timeScale().fitContent();
+          console.log(
+            `[Chart] Successfully loaded ${candleData.length} data points`
+          );
+        } catch (error) {
+          console.error("[Chart] Failed to set data:", error);
         }
+      } else {
+        console.warn("[Chart] No data returned from API");
       }
     } catch (error) {
-      console.error("Failed to load historical data:", error);
+      console.error("[Chart] Failed to load historical data:", error);
     } finally {
       setIsLoading(false);
     }
@@ -299,6 +289,21 @@ export function RealtimeStockChart({
               ? `O:$${candle.open.toFixed(2)} H:$${candle.high.toFixed(2)} L:$${candle.low.toFixed(2)} C:$${candle.close.toFixed(2)}`
               : `$${candle.close.toFixed(2)}`
           });
+
+          // 실시간 가격 정보 업데이트
+          setCurrentPrice(candle.close);
+          if (previousClose !== null) {
+            const change = candle.close - previousClose;
+            const changePercent = (change / previousClose) * 100;
+            setPriceChange(change);
+            setPriceChangePercent(changePercent);
+          } else {
+            // 이전 종가가 없으면 첫 캔들의 open을 기준으로
+            const change = candle.close - candle.open;
+            const changePercent = (change / candle.open) * 100;
+            setPriceChange(change);
+            setPriceChangePercent(changePercent);
+          }
 
           try {
             if (chartType === "candle") {
@@ -403,8 +408,11 @@ export function RealtimeStockChart({
 
   const handleRangeChange = (range: TimeRange) => {
     setTimeRange(range);
-    // 1D가 아니면 interval을 1d로 리셋
-    if (range !== "1D") {
+    // 1D 선택 시 자동으로 1m으로 설정 (Intraday API 사용)
+    if (range === "1D") {
+      setInterval("1m");
+    } else {
+      // 1D가 아니면 interval을 1d로 리셋
       setInterval("1d");
     }
   };
@@ -413,16 +421,41 @@ export function RealtimeStockChart({
     <Card>
       <CardHeader>
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <CardTitle>실시간 차트 - {symbol}</CardTitle>
-            {isRealtime && (
-              <span className="flex items-center gap-1 text-xs text-green-600">
-                <span className="inline-block w-2 h-2 bg-green-600 rounded-full animate-pulse"></span>
-                LIVE
-              </span>
-            )}
-            {isLoading && (
-              <span className="text-xs text-muted-foreground">로딩 중...</span>
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-2">
+              <CardTitle>실시간 차트 - {symbol}</CardTitle>
+              {isRealtime && (
+                <span className="flex items-center gap-1 text-xs text-green-600">
+                  <span className="inline-block w-2 h-2 bg-green-600 rounded-full animate-pulse"></span>
+                  LIVE
+                </span>
+              )}
+              {isLoading && (
+                <span className="text-xs text-muted-foreground">로딩 중...</span>
+              )}
+            </div>
+
+            {/* 실시간 가격 정보 */}
+            {currentPrice !== null ? (
+              <div className="flex items-center gap-4">
+                <span className="text-2xl font-bold">${currentPrice.toFixed(2)}</span>
+                <span
+                  className={`flex items-center gap-1 text-sm font-medium ${
+                    priceChange >= 0 ? 'text-green-600' : 'text-red-600'
+                  }`}
+                >
+                  {priceChange >= 0 ? (
+                    <TrendingUp className="h-4 w-4" />
+                  ) : (
+                    <TrendingDown className="h-4 w-4" />
+                  )}
+                  {priceChange >= 0 ? '+' : ''}
+                  {priceChange.toFixed(2)} ({priceChange >= 0 ? '+' : ''}
+                  {priceChangePercent.toFixed(2)}%)
+                </span>
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground animate-pulse">가격 로딩 중...</div>
             )}
           </div>
 

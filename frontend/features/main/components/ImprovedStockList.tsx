@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
-import { ChevronUp, ChevronDown, Star, Search } from 'lucide-react';
+import { Star, Search, TrendingUp, TrendingDown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,14 +14,14 @@ import { getFMPWebSocketClient } from '@/lib/fmp-websocket-client';
 interface StockItem {
   symbol: string;
   name: string;
-  price: number;
+  price: number | null;
   change: number;
   changePercent: number;
+  isLoading: boolean;
 }
 
-// 인기 종목 리스트 (FMP 100개 종목)
+// 인기 종목 리스트 (Tech 20개)
 const popularStocks: { symbol: string; name: string }[] = [
-  // Tech (20)
   { symbol: 'AAPL', name: 'Apple Inc.' },
   { symbol: 'MSFT', name: 'Microsoft Corp.' },
   { symbol: 'GOOGL', name: 'Alphabet Inc.' },
@@ -42,42 +42,6 @@ const popularStocks: { symbol: string; name: string }[] = [
   { symbol: 'CSCO', name: 'Cisco Systems' },
   { symbol: 'HPQ', name: 'HP Inc.' },
   { symbol: 'AVGO', name: 'Broadcom Inc.' },
-
-  // Finance (10)
-  { symbol: 'JPM', name: 'JPMorgan Chase' },
-  { symbol: 'BAC', name: 'Bank of America' },
-  { symbol: 'WFC', name: 'Wells Fargo' },
-  { symbol: 'GS', name: 'Goldman Sachs' },
-  { symbol: 'MS', name: 'Morgan Stanley' },
-  { symbol: 'C', name: 'Citigroup Inc.' },
-  { symbol: 'BLK', name: 'BlackRock Inc.' },
-  { symbol: 'SCHW', name: 'Charles Schwab' },
-  { symbol: 'AXP', name: 'American Express' },
-  { symbol: 'CB', name: 'Chubb Limited' },
-
-  // Healthcare (10)
-  { symbol: 'JNJ', name: 'Johnson & Johnson' },
-  { symbol: 'UNH', name: 'UnitedHealth Group' },
-  { symbol: 'PFE', name: 'Pfizer Inc.' },
-  { symbol: 'ABBV', name: 'AbbVie Inc.' },
-  { symbol: 'MRK', name: 'Merck & Co.' },
-  { symbol: 'TMO', name: 'Thermo Fisher' },
-  { symbol: 'LLY', name: 'Eli Lilly' },
-  { symbol: 'ABT', name: 'Abbott Labs' },
-  { symbol: 'AMGN', name: 'Amgen Inc.' },
-  { symbol: 'GILD', name: 'Gilead Sciences' },
-
-  // Retail/Consumer (10)
-  { symbol: 'WMT', name: 'Walmart Inc.' },
-  { symbol: 'TGT', name: 'Target Corp.' },
-  { symbol: 'HD', name: 'Home Depot' },
-  { symbol: 'LOW', name: "Lowe's Companies" },
-  { symbol: 'MCD', name: "McDonald's Corp." },
-  { symbol: 'SBUX', name: 'Starbucks Corp.' },
-  { symbol: 'KO', name: 'Coca-Cola Co.' },
-  { symbol: 'PEP', name: 'PepsiCo Inc.' },
-  { symbol: 'NKE', name: 'Nike Inc.' },
-  { symbol: 'COST', name: 'Costco Wholesale' },
 ];
 
 interface StockListProps {
@@ -92,79 +56,139 @@ export function ImprovedStockList({ onSelectStock, selectedSymbol }: StockListPr
   const [stockPrices, setStockPrices] = useState<Record<string, { price: number; change: number; changePercent: number }>>({});
 
   const { watchlist, addToWatchlist, removeFromWatchlist } = useStockStore();
+  const fmpWsClient = useRef(getFMPWebSocketClient());
 
-  const wsClient = useMemo(() => getFMPWebSocketClient(), []);
-
-  // WebSocket 연결 및 가격 데이터 구독
+  // REST API로 초기 가격 로드
   useEffect(() => {
-    let mounted = true;
+    const loadInitialPrices = async () => {
+      const symbols = popularStocks.map(s => s.symbol);
 
-    const setupWebSocket = async () => {
-      try {
-        // WebSocket 연결
-        const status = wsClient.getConnectionStatus();
+      console.log('[ImprovedStockList] Loading initial prices from REST API...');
 
-        if (!status.isConnected) {
-          console.log('[StockList] Connecting to WebSocket...');
-          await wsClient.connect();
+      // 각 종목의 Quote 데이터 로드 (병렬 처리)
+      const pricePromises = symbols.map(async (symbol) => {
+        try {
+          const response = await fetch(
+            `https://financialmodelingprep.com/api/v3/quote/${symbol}?apikey=${process.env.NEXT_PUBLIC_FMP_API_KEY}`
+          );
+          const data = await response.json();
+
+          if (data && data.length > 0) {
+            const quote = data[0];
+            return {
+              symbol,
+              price: quote.price,
+              change: quote.change,
+              changePercent: quote.changesPercentage,
+            };
+          }
+          return null;
+        } catch (error) {
+          console.error(`[ImprovedStockList] Failed to load price for ${symbol}:`, error);
+          return null;
         }
+      });
 
-        if (!mounted) return;
+      const results = await Promise.all(pricePromises);
 
-        // 인기 종목 구독 (처음 20개만)
-        const symbols = popularStocks.slice(0, 20).map(s => s.symbol);
+      // 결과를 state에 저장
+      const pricesMap: Record<string, any> = {};
+      results.forEach((result) => {
+        if (result) {
+          pricesMap[result.symbol] = {
+            price: result.price,
+            change: result.change,
+            changePercent: result.changePercent,
+          };
+          console.log(`[ImprovedStockList] ✅ Loaded ${result.symbol}: $${result.price}`);
+        }
+      });
 
-        await wsClient.subscribe(symbols, 60000); // 1분 간격
+      setStockPrices(pricesMap);
+      console.log(`[ImprovedStockList] Loaded ${Object.keys(pricesMap).length} prices from REST API`);
+    };
 
-        // 실시간 가격 콜백
+    loadInitialPrices();
+  }, []);
+
+  // WebSocket 연결 및 구독 (실시간 업데이트용)
+  useEffect(() => {
+    const connectAndSubscribe = async () => {
+      try {
+        const wsClient = fmpWsClient.current;
+
+        console.log('[ImprovedStockList] Starting WebSocket connection for real-time updates...');
+
+        // WebSocket 연결
+        await wsClient.connect();
+
+        // 인기 종목 구독
+        const symbols = popularStocks.map(s => s.symbol);
+
+        // 구독 전에 캔들 콜백 먼저 등록
         symbols.forEach(symbol => {
-          wsClient.onMessage(symbol, (message) => {
-            if (!mounted) return;
+          const callback = (candle: any) => {
+            console.log(`[ImprovedStockList] 📊 WebSocket update for ${symbol}: $${candle.close}`);
 
-            const price = message.lp || message.ap || message.bp;
-            if (!price) return;
+            setStockPrices(prev => ({
+              ...prev,
+              [symbol]: {
+                price: candle.close,
+                change: candle.close - candle.open,
+                changePercent: ((candle.close - candle.open) / candle.open) * 100,
+              }
+            }));
+          };
 
-            setStockPrices(prev => {
-              const oldPrice = prev[symbol]?.price || price;
-              const change = price - oldPrice;
-              const changePercent = (change / oldPrice) * 100;
-
-              return {
-                ...prev,
-                [symbol]: {
-                  price,
-                  change,
-                  changePercent
-                }
-              };
-            });
-          });
+          wsClient.onCandle(symbol, callback);
         });
 
-        console.log('[StockList] WebSocket setup complete');
+        // 구독
+        await wsClient.subscribe(symbols, 60000); // 1분 간격
+        console.log(`[ImprovedStockList] ✅ WebSocket subscribed to ${symbols.length} symbols (for real-time updates)`);
       } catch (error) {
-        console.error('[StockList] WebSocket setup failed:', error);
+        console.error('[ImprovedStockList] ❌ WebSocket connection failed:', error);
       }
     };
 
-    setupWebSocket();
+    connectAndSubscribe();
 
     return () => {
-      mounted = false;
-    };
-  }, [wsClient]);
+      // Cleanup: 구독 해제
+      const wsClient = fmpWsClient.current;
+      const symbols = popularStocks.map(s => s.symbol);
 
-  // 종목 데이터 생성
+      symbols.forEach(symbol => {
+        wsClient.offCandle(symbol, () => {});
+      });
+      wsClient.unsubscribe(symbols);
+    };
+  }, []);
+
+  // 종목 데이터 생성 - REST API 또는 WebSocket 데이터 기반
   const stocks = useMemo((): StockItem[] => {
     return popularStocks.map(stock => {
       const priceData = stockPrices[stock.symbol];
 
+      if (priceData && priceData.price) {
+        return {
+          symbol: stock.symbol,
+          name: stock.name,
+          price: priceData.price,
+          change: priceData.change || 0,
+          changePercent: priceData.changePercent || 0,
+          isLoading: false,
+        };
+      }
+
+      // 가격 데이터가 없으면 로딩 중
       return {
         symbol: stock.symbol,
         name: stock.name,
-        price: priceData?.price || 0,
-        change: priceData?.change || 0,
-        changePercent: priceData?.changePercent || 0,
+        price: null,
+        change: 0,
+        changePercent: 0,
+        isLoading: true,
       };
     });
   }, [stockPrices]);
@@ -296,24 +320,24 @@ function StockListContent({
                 <span className="text-xs text-muted-foreground truncate max-w-[200px]">{stock.name}</span>
               </div>
               <div className="mt-1 flex items-center gap-2">
-                {stock.price > 0 ? (
+                {stock.isLoading || stock.price === null ? (
+                  <span className="text-sm text-muted-foreground animate-pulse">가격 로딩 중...</span>
+                ) : (
                   <>
                     <span className="text-sm font-medium">${stock.price.toFixed(2)}</span>
                     <span
-                      className={`flex items-center text-xs ${
+                      className={`flex items-center text-xs gap-2 ${
                         stock.change >= 0 ? 'text-green-600' : 'text-red-600'
                       }`}
                     >
                       {stock.change >= 0 ? (
-                        <ChevronUp className="h-3 w-3" />
+                        <TrendingUp className="h-3 w-3" />
                       ) : (
-                        <ChevronDown className="h-3 w-3" />
+                        <TrendingDown className="h-3 w-3" />
                       )}
                       {Math.abs(stock.change).toFixed(2)} ({Math.abs(stock.changePercent).toFixed(2)}%)
                     </span>
                   </>
-                ) : (
-                  <span className="text-xs text-muted-foreground">가격 로딩 중...</span>
                 )}
               </div>
             </div>

@@ -157,6 +157,13 @@ class ApiClient {
     return response.data;
   }
 
+  async getIntradayData(symbol: string, interval: string, fromDate?: string, toDate?: string) {
+    const response = await this.client.get(`/api/v1/stocks/${symbol}/intraday`, {
+      params: { interval, from_date: fromDate, to_date: toDate },
+    });
+    return response.data;
+  }
+
   // News methods
   async getLatestNews(limit: number = 10) {
     const response = await this.client.get('/api/v2/news/latest', {
