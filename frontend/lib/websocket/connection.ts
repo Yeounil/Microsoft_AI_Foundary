@@ -224,12 +224,13 @@ export class WebSocketConnection {
       return;
     }
 
-    const success =
+    const success: boolean =
       ("status" in message &&
         (message.status === 200 || message.status === "success")) ||
       ("statusCode" in message && message.statusCode === 200) ||
       ("message" in message &&
-        message.message?.toLowerCase().includes("authenticated"));
+        message.message?.toLowerCase().includes("authenticated")) ||
+      false;
 
     this.logger.info(
       `Login response: ${success ? "success" : "failed"}`,
@@ -237,8 +238,10 @@ export class WebSocketConnection {
     );
 
     // loginResolver 실행 및 정리
-    this.loginResolver(success);
-    this.loginResolver = null;
+    if (this.loginResolver) {
+      this.loginResolver(success);
+      this.loginResolver = null;
+    }
 
     if (!success) {
       this.logger.error("Login failed. Check your API key:", message);

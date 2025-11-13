@@ -40,7 +40,7 @@ function applyDiversityAlgorithm(
 
     // 각 종목별 아티클 개수 확인
     const stocks = article.related_stocks || [];
-    let primaryStock = stocks[0];
+    const primaryStock = stocks[0];
 
     // 주 종목 초기화
     if (!stockCounts[primaryStock]) {

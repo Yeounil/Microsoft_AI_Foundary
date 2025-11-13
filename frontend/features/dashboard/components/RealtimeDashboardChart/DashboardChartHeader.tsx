@@ -1,8 +1,6 @@
 import { Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CardTitle } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChartMode } from "../../services/dashboardChartService";
 
 interface DashboardChartHeaderProps {
   symbol: string;
@@ -12,8 +10,6 @@ interface DashboardChartHeaderProps {
   priceChangePercent?: number;
   isRealtime: boolean;
   isLoading: boolean;
-  chartMode: ChartMode;
-  onChartModeChange: (mode: ChartMode) => void;
   isInWatchlist: boolean;
   onToggleWatchlist: () => void;
 }
@@ -30,8 +26,6 @@ export function DashboardChartHeader({
   priceChangePercent,
   isRealtime,
   isLoading,
-  chartMode,
-  onChartModeChange,
   isInWatchlist,
   onToggleWatchlist,
 }: DashboardChartHeaderProps) {
@@ -72,21 +66,6 @@ export function DashboardChartHeader({
         </div>
       </div>
       <div className="flex items-center gap-4">
-        {/* Chart Mode Selector */}
-        <Tabs
-          value={chartMode}
-          onValueChange={(v) => onChartModeChange(v as ChartMode)}
-        >
-          <TabsList className="h-9">
-            <TabsTrigger value="enhanced" className="text-xs">
-              Enhanced
-            </TabsTrigger>
-            <TabsTrigger value="basic" className="text-xs">
-              Basic
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-
         <Button
           variant="ghost"
           size="sm"

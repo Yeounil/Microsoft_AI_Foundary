@@ -9,8 +9,8 @@ interface SearchBarProps {
   highlightedIndex: number;
   filteredStocks: string[];
   isLoadingStocks: boolean;
-  dropdownRef: RefObject<HTMLDivElement>;
-  inputRef: RefObject<HTMLInputElement>;
+  dropdownRef: RefObject<HTMLDivElement | null>;
+  inputRef: RefObject<HTMLInputElement | null>;
   onInputChange: (value: string) => void;
   onInputFocus: () => void;
   onSelectStock: (stock: string) => void;

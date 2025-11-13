@@ -24,8 +24,9 @@ interface StockState {
   // Actions
   selectStock: (symbol: string) => Promise<void>;
   loadChartData: (symbol: string, period?: string, interval?: string) => Promise<void>;
-  addToWatchlist: (symbol: string) => void;
-  removeFromWatchlist: (symbol: string) => void;
+  loadWatchlist: () => Promise<void>;
+  addToWatchlist: (symbol: string, companyName?: string) => Promise<void>;
+  removeFromWatchlist: (symbol: string) => Promise<void>;
   subscribeToRealtime: (symbols: string[]) => void;
   unsubscribeFromRealtime: (symbols: string[]) => void;
   updateRealtimePrice: (priceUpdate: PriceUpdate) => void;
@@ -91,22 +92,67 @@ export const useStockStore = create<StockState>((set, get) => ({
     }
   },
 
-  addToWatchlist: (symbol) => {
-    set((state) => ({
-      watchlist: [...new Set([...state.watchlist, symbol.toUpperCase()])],
-    }));
+  loadWatchlist: async () => {
+    try {
+      const favorites = await apiClient.getFavorites();
+      // favorites는 배열 형태: [{ symbol: "AAPL", company_name: "Apple Inc.", ... }]
+      const symbols = favorites.map((fav: { symbol: string }) => fav.symbol.toUpperCase());
+      set({ watchlist: symbols });
 
-    // Subscribe to real-time updates
-    get().subscribeToRealtime([symbol]);
+      // Subscribe to real-time updates
+      if (symbols.length > 0) {
+        get().subscribeToRealtime(symbols);
+      }
+    } catch (error) {
+      console.error('Failed to load watchlist:', error);
+      // 로그인 안되어있으면 빈 배열로 설정
+      set({ watchlist: [] });
+    }
   },
 
-  removeFromWatchlist: (symbol) => {
+  addToWatchlist: async (symbol, companyName) => {
+    const upperSymbol = symbol.toUpperCase();
+
+    // 낙관적 업데이트 (UI 먼저 업데이트)
     set((state) => ({
-      watchlist: state.watchlist.filter((s) => s !== symbol.toUpperCase()),
+      watchlist: [...new Set([...state.watchlist, upperSymbol])],
     }));
 
-    // Unsubscribe from real-time updates
-    get().unsubscribeFromRealtime([symbol]);
+    try {
+      await apiClient.addFavorite(upperSymbol, companyName);
+      // Subscribe to real-time updates
+      get().subscribeToRealtime([upperSymbol]);
+    } catch (error) {
+      // 실패하면 롤백
+      set((state) => ({
+        watchlist: state.watchlist.filter((s) => s !== upperSymbol),
+      }));
+      const errorMessage = extractErrorMessage(error);
+      set({ error: errorMessage });
+      throw error;
+    }
+  },
+
+  removeFromWatchlist: async (symbol) => {
+    const upperSymbol = symbol.toUpperCase();
+
+    // 낙관적 업데이트 (UI 먼저 업데이트)
+    const previousWatchlist = get().watchlist;
+    set((state) => ({
+      watchlist: state.watchlist.filter((s) => s !== upperSymbol),
+    }));
+
+    try {
+      await apiClient.removeFavorite(upperSymbol);
+      // Unsubscribe from real-time updates
+      get().unsubscribeFromRealtime([upperSymbol]);
+    } catch (error) {
+      // 실패하면 롤백
+      set({ watchlist: previousWatchlist });
+      const errorMessage = extractErrorMessage(error);
+      set({ error: errorMessage });
+      throw error;
+    }
   },
 
   subscribeToRealtime: (symbols) => {

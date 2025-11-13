@@ -293,6 +293,25 @@ class ApiClient {
     return response.data;
   }
 
+  // Favorites (Watchlist)
+  async getFavorites() {
+    const response = await this.client.get('/api/v2/analysis/favorites');
+    return response.data;
+  }
+
+  async addFavorite(symbol: string, companyName?: string) {
+    const params = companyName ? { company_name: companyName } : {};
+    const response = await this.client.post(`/api/v2/analysis/favorites/${symbol}`, null, {
+      params,
+    });
+    return response.data;
+  }
+
+  async removeFavorite(symbol: string) {
+    const response = await this.client.delete(`/api/v2/analysis/favorites/${symbol}`);
+    return response.data;
+  }
+
   // Generic request method
   async request<T = unknown>(config: AxiosRequestConfig): Promise<T> {
     const response = await this.client.request<T>(config);
