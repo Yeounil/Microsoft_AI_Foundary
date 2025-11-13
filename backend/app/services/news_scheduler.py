@@ -11,19 +11,25 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.date import DateTrigger
 
-from app.services.background_news_collector import BackgroundNewsCollector
+from app.services.news_service import NewsService
 from app.services.fmp_stock_data_service import FMPStockDataService
 from app.services.financial_embedding_service import FinancialEmbeddingService
 from app.db.supabase_client import get_supabase
 
 logger = logging.getLogger(__name__)
 
+# 뉴스 수집 대상 종목 (news_service.py의 concept_uri_mapping과 동일)
+POPULAR_SYMBOLS = [
+    "AAPL", "GOOGL", "GOOG", "MSFT", "TSLA", "NVDA", "AMZN", "META", "NFLX",
+    "JPM", "JNJ", "WMT", "XOM", "VZ", "PFE",
+    "005930.KS", "000660.KS", "035420.KS", "035720.KS"
+]
+
 class NewsScheduler:
     """뉴스 크롤링 스케줄러"""
 
     def __init__(self):
         self.scheduler = AsyncIOScheduler()
-        self.collector = BackgroundNewsCollector()
         self.stock_data_service = FMPStockDataService.get_instance()
         self.embedding_service = FinancialEmbeddingService()
         self.is_running = False
@@ -123,11 +129,8 @@ class NewsScheduler:
         logger.info("[INFO] Stopping news crawling scheduler")
         self.scheduler.shutdown()
 
-        # 백그라운드 수집기의 스레드 풀 정리
-        self.collector.shutdown()
-
         self.is_running = False
-        logger.info("[OK] Scheduler and thread pool cleanup completed")
+        logger.info("[OK] Scheduler shutdown completed")
 
     async def _scheduled_crawl(self):
         """정기 크롤링 작업 (2시간마다 실행)"""
@@ -135,11 +138,33 @@ class NewsScheduler:
             logger.info("========== [SCHEDULED_CRAWL] News crawling started ==========")
 
             # 인기 종목 뉴스 수집
-            result = await self.collector.collect_popular_symbols_news(limit_per_symbol=100)
+            total_collected = 0
+            successful_symbols = []
+            failed_symbols = []
 
-            logger.info(f"[CRAWL_RESULT] Total collected: {result.get('total_collected', 0)} articles")
-            logger.info(f"[CRAWL_RESULT] Successful symbols: {len(result.get('successful_symbols', []))}")
-            logger.info(f"[CRAWL_RESULT] Failed symbols: {len(result.get('failed_symbols', []))}")
+            for symbol in POPULAR_SYMBOLS:
+                try:
+                    logger.info(f"[CRAWL] Collecting news for {symbol}...")
+                    articles = await NewsService.crawl_and_save_stock_news(symbol, limit=100)
+
+                    if articles:
+                        total_collected += len(articles)
+                        successful_symbols.append(symbol)
+                        logger.info(f"[CRAWL] ✓ {symbol}: {len(articles)} articles collected")
+                    else:
+                        logger.warning(f"[CRAWL] ✗ {symbol}: No articles found")
+                        failed_symbols.append(symbol)
+
+                    # API 레이트 제한 고려하여 딜레이
+                    await asyncio.sleep(1)
+
+                except Exception as e:
+                    logger.error(f"[CRAWL] ✗ {symbol}: Error - {str(e)}")
+                    failed_symbols.append(symbol)
+
+            logger.info(f"[CRAWL_RESULT] Total collected: {total_collected} articles")
+            logger.info(f"[CRAWL_RESULT] Successful symbols: {len(successful_symbols)}")
+            logger.info(f"[CRAWL_RESULT] Failed symbols: {len(failed_symbols)}")
             logger.info("========== [SCHEDULED_CRAWL] Crawling completed ==========")
 
         except Exception as e:
@@ -262,51 +287,47 @@ class NewsScheduler:
             logger.error(f"[ERROR] Error during price history collection: {str(e)}")
 
     async def trigger_manual_crawl(self, symbols: List[str] = None) -> Dict:
-        """수동 크롤링 트리거 (API로 호출 가능, 멀티스레드 지원)"""
+        """수동 크롤링 트리거 (API로 호출 가능)"""
         try:
-            logger.info(f"[MANUAL_CRAWL] Starting manual crawl (multithreaded): {symbols if symbols else 'all symbols'}")
+            target_symbols = symbols if symbols else POPULAR_SYMBOLS
+            logger.info(f"[MANUAL_CRAWL] Starting manual crawl: {len(target_symbols)} symbols")
 
-            if symbols:
-                # 특정 종목만 크롤링 (멀티스레드로 병렬 처리)
-                loop = asyncio.get_event_loop()
-                futures = []
+            total_collected = 0
+            results = []
 
-                for symbol in symbols:
-                    # 각 종목을 별도 스레드에서 수집
-                    future = loop.run_in_executor(
-                        self.collector.collection_executor,
-                        self.collector._collect_and_analyze_symbol_news_sync,
-                        symbol,
-                        20
-                    )
-                    futures.append((symbol, future))
+            for symbol in target_symbols:
+                try:
+                    logger.info(f"[MANUAL_CRAWL] Collecting news for {symbol}...")
+                    articles = await NewsService.crawl_and_save_stock_news(symbol, limit=20 if symbols else 100)
 
-                # 모든 스레드 작업 완료 대기
-                total_collected = 0
-                results = []
+                    collected_count = len(articles) if articles else 0
+                    total_collected += collected_count
 
-                for symbol, future in futures:
-                    try:
-                        result = await future
-                        total_collected += result.get('collected_count', 0)
-                        results.append(result)
-                        logger.info(f"[MANUAL_CRAWL] Symbol {symbol}: {result.get('collected_count', 0)} collected")
-                    except Exception as e:
-                        logger.error(f"[ERROR] Symbol {symbol} crawl failed: {str(e)}")
-                        results.append({
-                            "symbol": symbol,
-                            "collected_count": 0,
-                            "error": str(e)
-                        })
+                    results.append({
+                        "symbol": symbol,
+                        "collected_count": collected_count,
+                        "status": "success"
+                    })
 
-                return {
-                    "status": "completed",
-                    "total_collected": total_collected,
-                    "results": results
-                }
-            else:
-                # 전체 인기 종목 크롤링 (멀티스레드 버전)
-                return await self.collector.collect_popular_symbols_news(limit_per_symbol=100)
+                    logger.info(f"[MANUAL_CRAWL] Symbol {symbol}: {collected_count} articles collected")
+
+                    # API 레이트 제한 고려하여 딜레이
+                    await asyncio.sleep(1)
+
+                except Exception as e:
+                    logger.error(f"[ERROR] Symbol {symbol} crawl failed: {str(e)}")
+                    results.append({
+                        "symbol": symbol,
+                        "collected_count": 0,
+                        "status": "error",
+                        "error": str(e)
+                    })
+
+            return {
+                "status": "completed",
+                "total_collected": total_collected,
+                "results": results
+            }
 
         except Exception as e:
             logger.error(f"[ERROR] Error during manual crawl: {str(e)}")

@@ -1,6 +1,6 @@
 """
 OpenAI GPT-5 서비스
-뉴스 분석, 종목 평가, AI Score 생성 등의 AI 기반 분석 기능 제공
+뉴스 AI Score 평가 및 임베딩 생성
 """
 
 import os
@@ -19,11 +19,8 @@ class OpenAIService:
     OpenAI GPT-5 서비스
 
     주요 기능:
-    1. 뉴스 AI Score 평가 (주가 영향도 0~1)
-    2. 뉴스 관련성 분석
-    3. 종목별 감정 분석
-    4. 개인화 요약 생성
-    5. 임베딩 생성
+    1. 뉴스 AI Score 평가 (주가 영향도 0~1, 긍정/부정 방향)
+    2. 임베딩 생성 (Pinecone Vector DB용)
 
     GPT-5 특징:
     - 최대 400,000 토큰 컨텍스트 (272k input + 128k output)
@@ -415,218 +412,9 @@ GPT-5 강점 활용:
             logger.error(f"[TEXT_GEN] 분석 텍스트 생성 오류: {str(e)}")
             return "AI 분석 결과를 생성할 수 없습니다."
 
-    # ============================================================================
-    # 핵심 기능 2: 뉴스 관련성 분석
-    # ============================================================================
-
-    async def analyze_news_relevance(
-        self,
-        news_article: Dict,
-        user_interests: List[str],
-        user_context: Optional[Dict] = None
-    ) -> Dict:
-        """
-        뉴스와 사용자 관심사의 관련성 분석
-
-        Returns:
-            {
-                "relevance_score": 0.0~1.0,
-                "reasoning": "분석 근거",
-                "key_topics": ["토픽1", "토픽2"],
-                "impact_level": "low|medium|high",
-                "recommendation": "추천 사유"
-            }
-        """
-        try:
-            if not self.client:
-                logger.warning("[RELEVANCE] OpenAI 클라이언트 없음")
-                return self._fallback_relevance_analysis(news_article, user_interests)
-
-            prompt = self._build_relevance_prompt(news_article, user_interests, user_context)
-
-            response = await self._call_gpt5(
-                system_prompt="You are a financial news analyst specializing in personalized content recommendation. Always respond with valid JSON.",
-                user_prompt=prompt,
-                temperature=0.3,
-                max_tokens=300
-            )
-
-            if not response:
-                return self._fallback_relevance_analysis(news_article, user_interests)
-
-            result = self._parse_relevance_result(response)
-            return result
-
-        except Exception as e:
-            logger.error(f"[RELEVANCE] 분석 오류: {str(e)}")
-            return self._fallback_relevance_analysis(news_article, user_interests)
-
-    def _build_relevance_prompt(
-        self,
-        news_article: Dict,
-        user_interests: List[str],
-        user_context: Optional[Dict] = None
-    ) -> str:
-        """관련성 분석 프롬프트"""
-        title = news_article.get('title', '')
-        description = news_article.get('description', '')
-        symbol = news_article.get('symbol', '')
-
-        context_info = ""
-        if user_context:
-            context_info = f"User experience: {user_context.get('experience_level', 'intermediate')}, Risk tolerance: {user_context.get('risk_tolerance', 'moderate')}"
-
-        return f"""Analyze the relevance of this financial news to the user's interests:
-
-News Title: {title}
-News Description: {description}
-Related Symbol: {symbol}
-
-User Interests: {', '.join(user_interests)}
-{context_info}
-
-Provide analysis in JSON format:
-{{
-    "relevance_score": <0.0 to 1.0>,
-    "reasoning": "<brief explanation>",
-    "key_topics": ["<topic1>", "<topic2>"],
-    "impact_level": "<low/medium/high>",
-    "recommendation": "<why this is relevant to user>"
-}}"""
-
-    def _parse_relevance_result(self, response: str) -> Dict:
-        """관련성 분석 결과 파싱"""
-        try:
-            json_str = self._extract_json(response)
-            parsed = json.loads(json_str)
-
-            # 필수 필드 검증
-            if all(key in parsed for key in ["relevance_score", "reasoning", "key_topics", "impact_level", "recommendation"]):
-                return parsed
-
-        except (json.JSONDecodeError, ValueError) as e:
-            logger.warning(f"[PARSE] 관련성 파싱 실패: {str(e)}")
-
-        return {
-            "relevance_score": 0.5,
-            "reasoning": "AI 분석 결과를 파싱할 수 없음",
-            "key_topics": ["general"],
-            "impact_level": "medium",
-            "recommendation": "일반적인 관련성"
-        }
-
-    def _fallback_relevance_analysis(self, news_article: Dict, user_interests: List[str]) -> Dict:
-        """관련성 분석 폴백 (키워드 매칭)"""
-        title = news_article.get('title', '').lower()
-        description = news_article.get('description', '').lower()
-
-        relevance_score = 0.0
-        matched_interests = []
-
-        for interest in user_interests:
-            if interest.lower() in title or interest.lower() in description:
-                relevance_score += 0.3
-                matched_interests.append(interest)
-
-        relevance_score = min(1.0, relevance_score)
-
-        return {
-            "relevance_score": relevance_score,
-            "reasoning": f"키워드 매칭: {', '.join(matched_interests) if matched_interests else '직접 매치 없음'}",
-            "key_topics": matched_interests or ["general"],
-            "impact_level": "medium" if relevance_score > 0.5 else "low",
-            "recommendation": "기본 관련성 분석"
-        }
 
     # ============================================================================
-    # 핵심 기능 3: 시장 감정 분석
-    # ============================================================================
-
-    async def analyze_market_sentiment(
-        self,
-        news_articles: List[Dict],
-        symbol: str
-    ) -> Dict:
-        """
-        특정 종목에 대한 시장 감정 분석
-
-        Returns:
-            {
-                "sentiment": "positive|negative|neutral",
-                "score": -1.0~1.0,
-                "confidence": 0.0~1.0,
-                "reasoning": "분석 근거",
-                "key_factors": ["요인1", "요인2"]
-            }
-        """
-        try:
-            if not self.client or not news_articles:
-                return self._fallback_sentiment()
-
-            prompt = self._build_sentiment_prompt(news_articles, symbol)
-
-            response = await self._call_gpt5(
-                system_prompt="You are a financial sentiment analyst. Analyze news sentiment for stock investments.",
-                user_prompt=prompt,
-                temperature=0.2,
-                max_tokens=200
-            )
-
-            if not response:
-                return self._fallback_sentiment()
-
-            result = self._parse_sentiment_result(response)
-            return result
-
-        except Exception as e:
-            logger.error(f"[SENTIMENT] 분석 오류: {str(e)}")
-            return self._fallback_sentiment()
-
-    def _build_sentiment_prompt(self, news_articles: List[Dict], symbol: str) -> str:
-        """감정 분석 프롬프트"""
-        articles_text = ""
-        for article in news_articles[:10]:  # 최대 10개
-            articles_text += f"- {article.get('title', '')} | {article.get('description', '')[:150]}\n"
-
-        return f"""Analyze the overall market sentiment for {symbol} based on these news articles:
-
-{articles_text}
-
-Provide sentiment analysis in JSON format:
-{{
-    "sentiment": "<positive/negative/neutral>",
-    "score": <-1.0 to 1.0>,
-    "confidence": <0.0 to 1.0>,
-    "reasoning": "<brief explanation>",
-    "key_factors": ["<factor1>", "<factor2>"]
-}}"""
-
-    def _parse_sentiment_result(self, response: str) -> Dict:
-        """감정 분석 결과 파싱"""
-        try:
-            json_str = self._extract_json(response)
-            parsed = json.loads(json_str)
-
-            if all(key in parsed for key in ["sentiment", "score", "confidence", "reasoning", "key_factors"]):
-                return parsed
-
-        except (json.JSONDecodeError, ValueError) as e:
-            logger.warning(f"[PARSE] 감정 파싱 실패: {str(e)}")
-
-        return self._fallback_sentiment()
-
-    def _fallback_sentiment(self) -> Dict:
-        """감정 분석 폴백"""
-        return {
-            "sentiment": "neutral",
-            "score": 0.0,
-            "confidence": 0.5,
-            "reasoning": "분석 데이터 부족",
-            "key_factors": ["분석 불가"]
-        }
-
-    # ============================================================================
-    # 핵심 기능 4: 임베딩 생성
+    # 핵심 기능 2: 임베딩 생성
     # ============================================================================
 
     async def generate_embedding(self, text: str) -> Optional[List[float]]:
@@ -699,32 +487,6 @@ Provide sentiment analysis in JSON format:
             logger.error(f"[GPT5] 상세 오류:\n{traceback.format_exc()}")
             return None
 
-    async def async_chat_completion(
-        self,
-        messages: List[Dict],
-        temperature: float = 0.7,
-        max_tokens: int = 2000
-    ) -> Optional[str]:
-        """비동기 채팅 완성 (외부에서 사용)"""
-        try:
-            if not self.client:
-                return None
-
-            # GPT-5는 temperature 0.0-2.0 지원
-            params = {
-                "model": self.model_name,
-                "messages": messages,
-                "max_completion_tokens": max_tokens,
-                "temperature": temperature
-            }
-
-            response = self.client.chat.completions.create(**params)
-
-            return response.choices[0].message.content
-
-        except Exception as e:
-            logger.error(f"[CHAT] 호출 실패: {str(e)}")
-            return None
 
     def _extract_json(self, text: str) -> str:
         """텍스트에서 JSON 추출"""
