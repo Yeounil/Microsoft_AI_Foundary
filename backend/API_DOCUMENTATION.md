@@ -2,6 +2,41 @@
 
 **Version:** 2.0.0
 **Base URL:** `http://localhost:8000`
+**Last Updated:** 2025-11-13 (Legacy Code Cleanup)
+
+---
+
+## 📋 변경 이력 (Changelog)
+
+### 2025-11-13 - 레거시 코드 정리
+**삭제된 API 및 서비스:**
+- ❌ **RAG APIs** (`/api/v2/rag/*`) - GPT-5 사용 최소화 정책에 따라 완전히 제거
+  - `/api/v2/rag/search/similar-stocks`
+  - `/api/v2/rag/context/generate`
+  - `/api/v2/rag/query`
+  - `/api/v2/rag/compare/{symbol_1}/vs/{symbol_2}`
+  - `/api/v2/rag/health`
+- ❌ **yfinance 기반 뉴스 수집** - Yahoo Finance 뉴스 스크래핑 제거
+- ❌ **Naver API 뉴스 수집** - 한국 뉴스 API 제거
+- ❌ **Background News Collector** - 멀티스레드 뉴스 수집기 제거
+- ❌ **AI News Recommendation Service** - 레거시 추천 시스템 제거
+- ❌ **Fast Recommendation Service** - 중복 추천 서비스 제거
+
+**변경된 서비스:**
+- ✏️ **OpenAI Service** - 2개 핵심 함수만 유지:
+  - `evaluate_news_stock_impact()` - 뉴스 AI Score 평가 (GPT-5)
+  - `generate_embedding()` - 1536차원 임베딩 생성
+  - 삭제된 함수: `analyze_news_relevance()`, `analyze_market_sentiment()`, `async_chat_completion()`
+- ✏️ **News Scheduler** - `trigger_manual_crawl()` 단순화 (asyncio 기반 순차 처리)
+
+**뉴스 수집 소스:**
+- ✅ **Event Registry (newsapi.ai)** - 유일한 뉴스 소스
+  - Reuters, Bloomberg, Wall Street Journal, CNBC, MarketWatch, Benzinga
+  - 지원 종목: AAPL, GOOGL, GOOG, MSFT, TSLA, NVDA, AMZN, META, NFLX, JPM, JNJ, WMT, XOM, VZ, PFE, 005930.KS, 000660.KS, 035420.KS, 035720.KS
+
+**GPT-5 사용 정책:**
+- GPT-5는 **오직 뉴스 AI Score 평가**에만 사용 (`ai_score`, `positive_score`)
+- RAG, 감정 분석, 관련성 분석 등 기타 GPT-5 기능 모두 제거
 
 ---
 
@@ -13,7 +48,7 @@
 4. [News APIs](#4-news-apis)
 5. [Recommendations APIs](#5-recommendations-apis)
 6. [Embeddings APIs](#6-embeddings-apis)
-7. [RAG APIs](#7-rag-apis)
+7. ~~[RAG APIs](#7-rag-apis)~~ ❌ **제거됨 (2025-11-13)**
 8. [News AI Score APIs](#8-news-ai-score-apis)
 9. [News Translation APIs](#9-news-translation-apis)
 10. [Stock Data Collection APIs](#10-stock-data-collection-apis)
@@ -392,6 +427,9 @@ Supabase 연결 테스트
 
 #### `POST /stock/{symbol}/crawl`
 특정 주식 뉴스 크롤링
+- **뉴스 소스:** Event Registry (newsapi.ai)
+  - Reuters, Bloomberg, WSJ, CNBC, MarketWatch, Benzinga
+- **지원 종목:** AAPL, GOOGL, GOOG, MSFT, TSLA, NVDA, AMZN, META, NFLX, JPM, JNJ, WMT, XOM, VZ, PFE, 005930.KS, 000660.KS, 035420.KS, 035720.KS
 
 #### `POST /stock/{symbol}/analyze`
 뉴스 기반 주식 분석
@@ -529,42 +567,29 @@ Pinecone 인덱스 통계
 
 ---
 
-## 7. RAG APIs
+## ~~7. RAG APIs~~ ❌ **완전 제거됨 (2025-11-13)**
 
-**Base Path:** `/api/v2/rag`
+**Base Path:** ~~`/api/v2/rag`~~ ❌ **삭제됨**
 
-### Vector Search
+**제거 사유:** GPT-5 사용 최소화 정책에 따라 RAG 기능 전체 제거
 
-#### `POST /search/similar-stocks`
-유사한 주식 검색 (Pinecone)
-- **Query Params:**
-  - `query`: 검색 쿼리 (예: "AI 기업")
-  - `top_k`: 결과 개수 (기본: 5)
-  - `sector`: 산업군 필터 (선택)
+### ~~Vector Search~~ ❌ 제거됨
 
-#### `POST /context/generate`
-RAG용 컨텍스트 생성
-- **Query Params:**
-  - `query`: 사용자 쿼리
-  - `top_k`: 검색 결과 개수
+- ~~`POST /search/similar-stocks`~~ - 유사한 주식 검색 (Pinecone)
+- ~~`POST /context/generate`~~ - RAG용 컨텍스트 생성
+- ~~`POST /query`~~ - RAG를 활용한 GPT-5 쿼리
 
-#### `POST /query`
-RAG를 활용한 GPT-5 쿼리
-- **Query Params:**
-  - `query`: 사용자 질문
-  - `top_k`: 검색 결과 개수
-  - `system_prompt`: 커스텀 프롬프트 (선택)
+### ~~Stock Comparison~~ ❌ 제거됨
 
-### Stock Comparison
+- ~~`GET /compare/{symbol_1}/vs/{symbol_2}`~~ - 두 종목 비교 분석
 
-#### `GET /compare/{symbol_1}/vs/{symbol_2}`
-두 종목 비교 분석
-- **Query Params:** `analysis_type` (comprehensive, valuation, profitability)
+### ~~Health~~ ❌ 제거됨
 
-### Health
+- ~~`GET /health`~~ - RAG 서비스 상태 확인
 
-#### `GET /health`
-RAG 서비스 상태 확인
+**대체 방안:**
+- 유사 종목 검색은 Embeddings API (`/api/v2/embeddings/search/similar-stocks`)를 통해 향후 구현 예정
+- 주식 비교는 프론트엔드에서 두 종목의 지표를 개별 조회 후 클라이언트 측에서 비교
 
 ---
 
@@ -572,21 +597,32 @@ RAG 서비스 상태 확인
 
 **Base Path:** `/api/v2/news-ai-score`
 
+**✅ GPT-5 사용:** 이 API만이 GPT-5를 사용합니다 (뉴스 영향도 평가)
+
 ### Score Evaluation
 
 #### `POST /news/{news_id}/evaluate-score`
 특정 뉴스의 AI Score 평가 (0.0~1.0)
+- **GPT-5 사용:** ✅ Yes (유일한 GPT-5 사용처)
 - **Response:**
   ```json
   {
     "status": "success",
     "news_id": 123,
     "ai_score": 0.65,
+    "positive_score": 0.75,
     "impact_direction": "positive",
+    "confidence": "high",
     "reasoning": "...",
     "updated": true
   }
   ```
+- **평가 항목:**
+  - `ai_score`: 뉴스의 영향 크기 (0.0 = 영향 없음, 1.0 = 매우 큰 영향)
+  - `positive_score`: 뉴스의 방향성 (0.0 = 매우 부정적, 0.5 = 중립, 1.0 = 매우 긍정적)
+  - `impact_direction`: positive, negative, neutral
+  - `confidence`: high, medium, low
+  - `reasoning`: AI의 평가 근거 설명
 
 #### `POST /news/batch-evaluate`
 여러 뉴스 배치 평가
@@ -619,6 +655,8 @@ AI Score 서비스 상태 확인
 ## 9. News Translation APIs
 
 **Base Path:** `/api/v2/news-translation`
+
+**Translation Engine:** Claude Sonnet API (Anthropic)
 
 ### Translation
 
@@ -741,6 +779,7 @@ AI Score 서비스 상태 확인
     "api_keys": {
       "openai": "✅ Configured",
       "fmp": "✅ Configured",
+      "anthropic": "⚠️ Missing",
       ...
     }
   }
@@ -813,15 +852,79 @@ curl -X GET http://localhost:8000/api/v2/recommendations/news/recommended?limit=
   -H "Authorization: Bearer <token>"
 ```
 
+### 5. 뉴스 AI Score 평가 (GPT-5 사용)
+```bash
+curl -X POST http://localhost:8000/api/v2/news-ai-score/news/2151/evaluate-score
+```
+
+---
+
+## 🏗️ 시스템 아키텍처
+
+### 데이터 소스
+- **News:** Event Registry (newsapi.ai)
+  - Reuters, Bloomberg, WSJ, CNBC, MarketWatch, Benzinga
+- **Stock Data:** Financial Modeling Prep (FMP)
+- **AI Evaluation:** GPT-5 (OpenAI) - 뉴스 영향도 평가만
+- **Translation:** Claude Sonnet (Anthropic)
+- **Vector DB:** Pinecone (1536차원 임베딩)
+- **Database:** Supabase Cloud (PostgreSQL)
+
+### 자동화 스케줄러
+- **2시간마다:** 인기 종목 뉴스 자동 크롤링
+- **매일 자정:** 1년 이상 된 뉴스 자동 삭제
+- **매일 새벽 2시:** 주식 지표 수집 (100개 종목)
+- **매일 새벽 3시:** 주가 이력 수집 (5년치)
+- **매일 새벽 4시:** 주식 지표 임베딩 (Pinecone)
+- **매일 새벽 5시:** 주가 이력 임베딩 (Pinecone)
+
+### 지원 종목 (19개)
+**미국 주식 (15개):**
+- Tech: AAPL, GOOGL, GOOG, MSFT, NVDA, TSLA, AMZN, META, NFLX
+- Finance: JPM
+- Healthcare: JNJ, PFE
+- Retail: WMT
+- Energy: XOM
+- Telecom: VZ
+
+**한국 주식 (4개):**
+- 005930.KS (삼성전자)
+- 000660.KS (SK하이닉스)
+- 035420.KS (네이버)
+- 035720.KS (카카오)
+
 ---
 
 ## 📝 Notes
 
 - **DB 우선 조회**: 차트 및 지표 API는 DB에서 먼저 조회하여 속도를 최적화했습니다
 - **페이지네이션**: 뉴스 API는 `limit`, `offset` 파라미터로 페이지네이션을 지원합니다
-- **AI 기능**: GPT-5 및 Claude Sonnet을 활용한 분석, 요약, 번역 기능을 제공합니다
-- **Vector DB**: Pinecone을 통한 임베딩 및 RAG 기능을 지원합니다
+- **AI 기능**:
+  - GPT-5: 뉴스 AI Score 평가만 사용 (`ai_score`, `positive_score`)
+  - Claude Sonnet: 뉴스 번역
+  - ❌ RAG, 감정 분석, 관련성 분석 등 기타 GPT-5 기능 제거됨
+- **Vector DB**: Pinecone을 통한 임베딩 저장 (RAG 기능은 제거)
+- **뉴스 소스**: Event Registry (newsapi.ai) 단일 소스 사용
+  - ❌ yfinance, Yahoo Finance, Naver API 제거됨
 
 ---
 
-**마지막 업데이트:** 2025-11-13
+## 🔧 기술 스택
+
+- **Backend:** FastAPI (Python 3.13.4)
+- **Frontend:** Next.js 16.0.1 (React 19)
+- **Database:** Supabase Cloud (PostgreSQL)
+- **Vector DB:** Pinecone (financial-embedding index, 1536 dimensions)
+- **AI Services:**
+  - OpenAI GPT-5 (뉴스 영향도 평가)
+  - OpenAI text-embedding-3-small (1536차원 임베딩)
+  - Anthropic Claude Sonnet (번역)
+- **Data APIs:**
+  - Event Registry (newsapi.ai) - 뉴스
+  - Financial Modeling Prep (FMP) - 주식 데이터
+- **Scheduler:** APScheduler (AsyncIO)
+- **Authentication:** JWT (Supabase Auth)
+
+---
+
+**마지막 업데이트:** 2025-11-13 (Legacy Code Cleanup - RAG 제거, GPT-5 사용 최소화)

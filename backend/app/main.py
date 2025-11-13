@@ -7,7 +7,7 @@ from typing import Dict, Any
 
 from app.core.config import settings
 from app.api import stocks, stock_data
-from app.api import auth_supabase, analysis_supabase, news_supabase, recommendations_supabase, news_v1, analysis_v1, embeddings, rag, websocket_realtime, news_ai_score, news_translation
+from app.api import auth_supabase, analysis_supabase, news_supabase, recommendations_supabase, news_v1, analysis_v1, embeddings, websocket_realtime, news_ai_score, news_translation
 from app.services.news_scheduler import get_scheduler
 from app.db.supabase_client import get_supabase
 
@@ -82,8 +82,8 @@ app.include_router(recommendations_supabase.router, prefix="/api/v2/recommendati
 # Financial Embeddings API (Pinecone)
 app.include_router(embeddings.router, prefix="/api/v2/embeddings", tags=["embeddings"])
 
-# RAG (Retrieval Augmented Generation) API
-app.include_router(rag.router, prefix="/api/v2/rag", tags=["rag"])
+# RAG (Retrieval Augmented Generation) API - 제거됨: GPT-5 사용 최소화
+# app.include_router(rag.router, prefix="/api/v2/rag", tags=["rag"])
 
 # Real-time WebSocket API (FMP) - 비활성화: 프론트엔드에서 직접 FMP WebSocket 사용
 # app.include_router(websocket_realtime.router, prefix="/api/v2/realtime", tags=["realtime"])

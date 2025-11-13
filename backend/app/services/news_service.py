@@ -46,71 +46,6 @@ class NewsService:
             return []
     
     @staticmethod
-    async def get_yahoo_finance_news(symbol: str, limit: int = 5) -> List[Dict]:
-        """Yahoo Finance에서 특정 종목 뉴스 가져오기"""
-        try:
-            import asyncio
-            import aiohttp
-            
-            # Yahoo Finance 뉴스 URL
-            base_symbol = symbol.replace('.KS', '').replace('.KQ', '')
-            yahoo_url = f"https://finance.yahoo.com/quote/{base_symbol}/news"
-            
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-            }
-            
-            async with aiohttp.ClientSession() as session:
-                try:
-                    async with session.get(yahoo_url, headers=headers, timeout=10) as response:
-                        if response.status == 200:
-                            html = await response.text()
-                            soup = BeautifulSoup(html, 'html.parser')
-                            
-                            articles = []
-                            # Yahoo Finance 뉴스 아티클 선택자
-                            news_items = soup.find_all(['h3', 'h2'], limit=limit*2)
-                            
-                            for item in news_items[:limit]:
-                                try:
-                                    # 제목과 링크 추출
-                                    link_elem = item.find('a')
-                                    if link_elem and link_elem.get('href'):
-                                        title = link_elem.get_text(strip=True)
-                                        href = link_elem.get('href')
-                                        
-                                        # 상대 URL을 절대 URL로 변환
-                                        if href.startswith('/'):
-                                            full_url = f"https://finance.yahoo.com{href}"
-                                        else:
-                                            full_url = href
-                                        
-                                        if title and full_url:
-                                            articles.append({
-                                                "title": title,
-                                                "description": title[:100] + "...",
-                                                "url": full_url,
-                                                "source": "Yahoo Finance",
-                                                "published_at": datetime.now().isoformat(),
-                                                "symbol": symbol
-                                            })
-                                except Exception as item_error:
-                                    continue
-                            
-                            logger.info(f"Yahoo Finance: {symbol}에 대한 {len(articles)}개 뉴스 수집")
-                            return articles[:limit]
-                            
-                except asyncio.TimeoutError:
-                    logger.warning(f"Yahoo Finance 요청 타임아웃: {symbol}")
-                except Exception as req_error:
-                    logger.error(f"Yahoo Finance 요청 오류: {req_error}")
-                    
-        except Exception as e:
-            logger.error(f"Yahoo Finance 뉴스 수집 오류 ({symbol}): {str(e)}")
-        
-        return []
-    
-    @staticmethod
     async def get_stock_news_from_api(symbol: str, limit: int = 100) -> List[Dict]:
         """Reuters API에서 특정 종목 뉴스 가져오기 (유일한 소스)"""
         try:
@@ -281,72 +216,6 @@ class NewsService:
             return []
     
     @staticmethod
-    async def get_naver_stock_news(symbol: str, limit: int = 10) -> List[Dict]:
-        """Naver API에서 한국 종목 뉴스 가져오기"""
-        try:
-            if not settings.naver_client_id or not settings.naver_client_secret:
-                return []
-            
-            # 종목 코드에서 회사명 추출
-            company_names = {
-                "005930.KS": "삼성전자",
-                "000660.KS": "SK하이닉스",
-                "035420.KS": "네이버",
-                "035720.KS": "카카오",
-                "207940.KS": "삼성바이오로직스",
-                "006400.KS": "삼성SDI",
-                "051910.KS": "LG화학",
-                "068270.KS": "셀트리온",
-                "028260.KS": "삼성물산"
-            }
-            
-            query = company_names.get(symbol, symbol.split('.')[0])
-            
-            url = "https://openapi.naver.com/v1/search/news.json"
-            headers = {
-                "X-Naver-Client-Id": settings.naver_client_id,
-                "X-Naver-Client-Secret": settings.naver_client_secret,
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-            }
-            params = {
-                "query": query,
-                "display": limit,
-                "start": 1,
-                "sort": "date"
-            }
-            
-            response = requests.get(url, headers=headers, params=params, timeout=10)
-            response.raise_for_status()
-            
-            data = response.json()
-            articles = []
-            
-            for item in data.get("items", []):
-                # HTML 태그 제거
-                title = BeautifulSoup(item.get("title", ""), "html.parser").get_text()
-                description = BeautifulSoup(item.get("description", ""), "html.parser").get_text()
-                
-                articles.append({
-                    "symbol": symbol,
-                    "title": title,
-                    "description": description,
-                    "url": item.get("link", ""),
-                    "source": "네이버뉴스",
-                    "author": "",
-                    "published_at": item.get("pubDate", ""),
-                    "image_url": "",
-                    "language": "ko",
-                    "category": "stock",
-                    "api_source": "naver"
-                })
-            
-            return articles
-            
-        except Exception as e:
-            logger.error(f"Naver API 오류 ({symbol}): {str(e)}")
-            return []
-    
-    @staticmethod
     def get_financial_news(query: str = "finance", limit: int = 10) -> List[Dict]:
         """금융 뉴스 가져오기 (Apify Reuters API 사용, 동기 버전)"""
         try:
@@ -427,23 +296,6 @@ class NewsService:
         except Exception as e:
             logger.error(f"Apify Reuters API 오류: {str(e)}")
             return NewsService._get_dummy_news()
-    
-    @staticmethod
-    def get_korean_financial_news(limit: int = 10) -> List[Dict]:
-        """한국 금융 뉴스 크롤링"""
-        try:
-            # 네이버 금융 뉴스 크롤링 (예시)
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-            }
-            
-            # 실제 크롤링 대신 더미 데이터 반환
-            # 실제 구현에서는 robots.txt를 확인하고 적절한 크롤링을 수행해야 함
-            return NewsService._get_dummy_korean_news()
-            
-        except Exception as e:
-            print(f"한국 뉴스 크롤링 오류: {str(e)}")
-            return NewsService._get_dummy_korean_news()
     
     @staticmethod
     def get_stock_related_news(symbol: str, limit: int = 5) -> List[Dict]:
@@ -616,28 +468,6 @@ class NewsService:
         ]
         
         return news_items[:8]  # 8개 뉴스 반환
-    
-    @staticmethod
-    def _get_dummy_korean_news() -> List[Dict]:
-        """더미 한국 금융 뉴스 데이터"""
-        return [
-            {
-                "title": "코스피, 연초 강세 지속...2,600선 회복",
-                "description": "국내 증시가 외국인 순매수와 기관 매수세에 힘입어 상승세를 이어가고 있습니다.",
-                "url": "https://example.com/korean-news1",
-                "source": "연합뉴스",
-                "published_at": "2024-01-01T10:00:00Z",
-                "image_url": "https://example.com/korean-image1.jpg"
-            },
-            {
-                "title": "삼성전자, 반도체 업황 개선 기대감에 상승",
-                "description": "메모리 반도체 가격 상승과 AI 수요 증가로 삼성전자 주가가 강세를 보이고 있습니다.",
-                "url": "https://example.com/korean-news2",
-                "source": "매일경제",
-                "published_at": "2024-01-01T09:30:00Z",
-                "image_url": "https://example.com/korean-image2.jpg"
-            }
-        ]
     
     @staticmethod
     def _get_dummy_stock_news(symbol: str) -> List[Dict]:
