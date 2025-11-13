@@ -226,6 +226,11 @@ class ApiClient {
     return response.data;
   }
 
+  async getNewsById(newsId: number) {
+    const response = await this.client.get(`/api/v1/news/${newsId}`);
+    return response.data;
+  }
+
   async summarizeNews(query: string = 'finance', limit: number = 5, lang: string = 'en') {
     const response = await this.client.post('/api/v2/news/summarize', null, {
       params: { query, limit, lang },

@@ -6,7 +6,7 @@
 import apiClient from "../api-client";
 import { CandleData } from "../websocket/types";
 
-export type ChartPeriod = "1d" | "1w" | "1mo" | "3mo" | "1y" | "5y" | "all";
+export type ChartPeriod = "1d" | "7d" | "1w" | "1mo" | "3mo" | "6mo" | "1y" | "5y" | "max" | "all";
 export type ChartInterval =
   | "1m"
   | "5m"
@@ -29,11 +29,12 @@ export interface ChartDataResponse {
  */
 export class ChartDataLoader {
   /**
-   * 분단위 Intraday 데이터 로드 (1D 기간 전용)
+   * 분단위 Intraday 데이터 로드
    */
   static async loadIntradayData(
     symbol: string,
-    interval: ChartInterval = "1m"
+    interval: ChartInterval = "1m",
+    period: ChartPeriod = "1d"
   ): Promise<CandleData[]> {
     try {
       // interval 변환: 명시적 매핑 (1m → 1min, 5m → 5min, 1h → 1hour)
@@ -51,15 +52,50 @@ export class ChartDataLoader {
         return [];
       }
 
-      console.log(`Loading intraday data: ${symbol}, interval: ${interval} → ${fmpInterval}`);
+      // period에 따른 날짜 범위 설정
+      const now = new Date();
+      let daysAgo = 1;
 
-      const response = await apiClient.getIntradayData(symbol, fmpInterval);
+      switch (period) {
+        case "1d":
+          daysAgo = 1;
+          break;
+        case "7d":
+        case "1w":
+          daysAgo = 7;
+          break;
+        case "1mo":
+          daysAgo = 30;
+          break;
+        default:
+          daysAgo = 1;
+      }
+
+      const fromDateObj = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
+      const toDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
+      const fromDate = fromDateObj.toISOString().split('T')[0]; // YYYY-MM-DD
+
+      console.log(`Loading intraday data: ${symbol}, period: ${period}, interval: ${interval} → ${fmpInterval}, from: ${fromDate}, to: ${toDate}`);
+
+      const response = await apiClient.getIntradayData(symbol, fmpInterval, fromDate, toDate);
 
       // API 응답 형식 정규화
       if (response.data && Array.isArray(response.data)) {
         // Intraday API는 이미 정규화된 형식으로 반환됨
         console.log(`Loaded ${response.data.length} intraday candles for ${symbol}`);
-        return response.data;
+
+        // 백엔드가 날짜 범위를 무시할 수 있으므로 프론트에서 필터링
+        const fromTimestamp = fromDateObj.getTime() / 1000;
+        const toTimestamp = now.getTime() / 1000;
+
+        const filtered = response.data.filter((candle: any) => {
+          const candleTime = typeof candle.time === 'number' ? candle.time :
+                             new Date(candle.time || candle.date || candle.timestamp).getTime() / 1000;
+          return candleTime >= fromTimestamp && candleTime <= toTimestamp;
+        });
+
+        console.log(`Filtered to ${filtered.length} candles within date range`);
+        return filtered;
       } else {
         console.error("Unexpected intraday data format:", response);
         return [];
@@ -79,10 +115,13 @@ export class ChartDataLoader {
     interval: ChartInterval = "1d"
   ): Promise<CandleData[]> {
     try {
-      // 1D 기간 + 분단위 인터벌 → Intraday API 사용
-      if (period === "1d" && ["1m", "5m", "15m", "30m", "1h"].includes(interval)) {
+      // 1D, 1W, 1M 기간 + 분/시간 단위 인터벌 → Intraday API 사용
+      if (
+        (period === "1d" || period === "7d" || period === "1w" || period === "1mo") &&
+        ["1m", "5m", "15m", "30m", "1h"].includes(interval)
+      ) {
         console.log(`Using Intraday API for ${symbol} (period: ${period}, interval: ${interval})`);
-        return await this.loadIntradayData(symbol, interval);
+        return await this.loadIntradayData(symbol, interval, period);
       }
 
       // 기존 로직 (일/주/월봉)

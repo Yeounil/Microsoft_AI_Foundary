@@ -1,25 +1,46 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { DashboardChart } from '@/features/dashboard/components/DashboardChart';
-import { AnalysisSection } from '@/features/dashboard/components/AnalysisSection';
-import { NewsSection } from '@/features/main/components/NewsSection';
+import { DashboardChartContainer } from '@/features/dashboard/containers/DashboardChartContainer';
+import { AnalysisSectionContainer } from '@/features/dashboard/containers/AnalysisSectionContainer';
+import { NewsSectionContainer } from '@/features/main/containers/NewsSectionContainer';
 import { useStockStore } from '@/store/stock-store';
+import apiClient from '@/lib/api-client';
 
 export default function DashboardPage() {
   const params = useParams();
   const router = useRouter();
   const symbol = params.symbol as string;
   const { selectStock } = useStockStore();
+  const [supportedStocks, setSupportedStocks] = useState<string[]>([]);
+  const [isLoadingStocks, setIsLoadingStocks] = useState(true);
 
   useEffect(() => {
     if (symbol) {
       selectStock(symbol.toUpperCase());
     }
   }, [symbol, selectStock]);
+
+  // Fetch supported stocks
+  useEffect(() => {
+    const loadSupportedStocks = async () => {
+      try {
+        const response = await apiClient.getSupportedStocks();
+        if (response.all_symbols && Array.isArray(response.all_symbols)) {
+          setSupportedStocks(response.all_symbols);
+        }
+        setIsLoadingStocks(false);
+      } catch (error) {
+        console.error('Failed to load stocks:', error);
+        setIsLoadingStocks(false);
+      }
+    };
+
+    loadSupportedStocks();
+  }, []);
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -38,18 +59,21 @@ export default function DashboardPage() {
 
       <div className="space-y-6">
         {/* Chart at top - full width */}
-        <DashboardChart symbol={symbol.toUpperCase()} />
+        <DashboardChartContainer symbol={symbol.toUpperCase()} />
 
         {/* Analysis and News side by side - 5:5 (50:50) */}
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Left Side - Analysis (50%) */}
           <div>
-            <AnalysisSection symbol={symbol.toUpperCase()} />
+            <AnalysisSectionContainer symbol={symbol.toUpperCase()} />
           </div>
 
           {/* Right Side - News (50%) */}
           <div>
-            <NewsSection />
+            <NewsSectionContainer
+              availableStocks={supportedStocks}
+              isLoadingStocks={isLoadingStocks}
+            />
           </div>
         </div>
       </div>

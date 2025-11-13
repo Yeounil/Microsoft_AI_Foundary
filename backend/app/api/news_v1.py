@@ -72,6 +72,30 @@ async def get_financial_news_v1(
         logger.error(f"금융 뉴스 조회 오류: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/{news_id}")
+async def get_news_by_id(news_id: int):
+    """뉴스 ID로 특정 뉴스 상세 정보 조회"""
+    try:
+        from app.db.supabase_client import get_supabase
+
+        supabase = get_supabase()
+
+        # 뉴스 ID로 조회
+        result = supabase.table("news_articles").select("*").eq("id", news_id).execute()
+
+        if not result.data or len(result.data) == 0:
+            raise HTTPException(status_code=404, detail=f"뉴스를 찾을 수 없습니다 (ID: {news_id})")
+
+        news = result.data[0]
+
+        return news
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"뉴스 조회 오류 (ID: {news_id}): {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/stock/{symbol}")
 async def get_stock_news_v1(
     symbol: str,

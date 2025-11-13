@@ -1,0 +1,130 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  NewsData,
+  parseKoreanTranslation,
+  getSentiment,
+  getImpactMessage,
+} from "../services/newsAnalysisService";
+import { useRelatedNews } from "../hooks/useRelatedNews";
+import { NewsAnalysisHeader } from "../components/NewsAnalysis/NewsAnalysisHeader";
+import { ArticleHeader } from "../components/NewsAnalysis/ArticleHeader";
+import { ImpactAnalysis } from "../components/NewsAnalysis/ImpactAnalysis";
+import { ContentTabs } from "../components/NewsAnalysis/ContentTabs";
+import { RelatedNewsList } from "../components/NewsAnalysis/RelatedNewsList";
+
+interface NewsAnalysisContainerProps {
+  newsData: NewsData;
+  isLoading: boolean;
+  error: Error | null;
+}
+
+/**
+ * NewsAnalysisContainer
+ * 뉴스 분석 페이지의 모든 로직과 상태를 관리하는 Container 컴포넌트입니다.
+ */
+export function NewsAnalysisContainer({
+  newsData,
+  isLoading,
+  error,
+}: NewsAnalysisContainerProps) {
+  const router = useRouter();
+
+  // 관련 뉴스 hook
+  const { relatedNews, page, setPage, hasNextPage } = useRelatedNews({
+    symbol: newsData?.symbol,
+    currentNewsId: newsData?.id || 0,
+    isEnabled: !isLoading && !error,
+  });
+
+  // Early returns
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex h-[600px] items-center justify-center">
+          <div className="text-sm text-muted-foreground">
+            뉴스를 불러오는 중...
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !newsData) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex h-[600px] items-center justify-center">
+          <div className="text-center space-y-2">
+            <div className="text-sm text-muted-foreground">
+              뉴스를 찾을 수 없습니다.
+            </div>
+            <Button onClick={() => router.back()}>뒤로가기</Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 한국어 번역 파싱
+  const { aiSummary, translatedContent } = newsData.kr_translate
+    ? parseKoreanTranslation(newsData.kr_translate)
+    : { aiSummary: "", translatedContent: "" };
+
+  // 감정 분석
+  const sentiment = getSentiment(newsData.positive_score);
+  const impact = getImpactMessage(sentiment);
+
+  // 관련 종목 (symbol만 있으면 배열로 변환)
+  const relatedStocks = newsData.symbol ? [newsData.symbol] : [];
+
+  return (
+    <div className="container mx-auto px-4 py-6">
+      {/* Header */}
+      <NewsAnalysisHeader
+        onBack={() => router.back()}
+        onViewReport={() => router.push(`/news-report/${newsData.id}`)}
+      />
+
+      <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
+        {/* Left Side - Main Content */}
+        <div className="space-y-6">
+          {/* Article Header */}
+          <ArticleHeader
+            title={newsData.title}
+            source={newsData.source}
+            publishedAt={newsData.published_at}
+            sentiment={sentiment}
+          />
+
+          {/* Impact Analysis */}
+          <ImpactAnalysis
+            sentiment={sentiment}
+            impact={impact}
+            aiScore={newsData.ai_score}
+            relatedStocks={relatedStocks}
+          />
+
+          {/* Content Tabs */}
+          <ContentTabs
+            body={newsData.body}
+            aiSummary={aiSummary}
+            translatedContent={translatedContent}
+          />
+        </div>
+
+        {/* Right Side - Related News */}
+        <div>
+          <RelatedNewsList
+            symbol={newsData.symbol}
+            relatedNews={relatedNews}
+            currentPage={page}
+            onPageChange={setPage}
+            hasNextPage={hasNextPage}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}

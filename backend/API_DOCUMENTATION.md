@@ -356,6 +356,34 @@ Supabase 연결 테스트
   GET /api/v1/news/financial?symbol=AAPL&limit=5&page=1
   ```
 
+#### `GET /{news_id}`
+뉴스 ID로 특정 뉴스 상세 정보 조회
+- **Path Params:**
+  - `news_id`: 뉴스 ID (정수)
+- **Response:**
+  ```json
+  {
+    "id": 2151,
+    "symbol": "NVDA",
+    "title": "...",
+    "description": "...",
+    "content": "...",
+    "body": "...",
+    "url": "...",
+    "source": "CNBC",
+    "published_at": "2025-11-12T14:16:41+00:00",
+    "kr_translate": "...",
+    "ai_score": 0.7,
+    "positive_score": 0.65
+  }
+  ```
+- **Error Response:**
+  - `404`: 뉴스를 찾을 수 없습니다
+- **사용 예시:**
+  ```bash
+  GET /api/v1/news/2151
+  ```
+
 #### `GET /stock/{symbol}`
 특정 주식 뉴스 (DB 기반)
 - **Query Params:**

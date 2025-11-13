@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { RealtimeStockChart } from "@/features/main/components/RealtimeStockChart";
-import { ImprovedStockList } from "@/features/main/components/ImprovedStockList";
+import { RealtimeStockChart } from "@/features/main/components/Chart";
+import { ImprovedStockList } from "@/features/main/components/StockList";
 import { NewsSection } from "@/features/main/components/NewsSection";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import apiClient from "@/lib/api-client";
