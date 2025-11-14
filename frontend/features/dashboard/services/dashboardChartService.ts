@@ -4,7 +4,7 @@
  */
 
 export type TimeRange = "1D" | "1W" | "1M" | "3M" | "6M" | "1Y" | "5Y" | "ALL";
-export type ChartInterval = "1m" | "5m" | "15m" | "30m" | "1h" | "1d";
+export type ChartInterval = "1m" | "5m" | "15m" | "30m" | "1h" | "1d" | "1wk" | "1mo" | "1y";
 export type ChartMode = "basic" | "enhanced";
 
 export function getPeriodFromRange(range: TimeRange): string {
@@ -44,6 +44,12 @@ export function getIntervalMs(interval: ChartInterval): number {
       return 60 * 60 * 1000;
     case "1d":
       return 24 * 60 * 60 * 1000;
+    case "1wk":
+      return 7 * 24 * 60 * 60 * 1000;
+    case "1mo":
+      return 30 * 24 * 60 * 60 * 1000;
+    case "1y":
+      return 365 * 24 * 60 * 60 * 1000;
     default:
       return 60 * 1000;
   }

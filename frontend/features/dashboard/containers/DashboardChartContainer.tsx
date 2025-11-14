@@ -16,8 +16,13 @@ import {
   getBasicModeInterval,
 } from "../services/dashboardChartService";
 import { DashboardChartHeader } from "../components/RealtimeDashboardChart/DashboardChartHeader";
+import { ChartModeSelector } from "../components/RealtimeDashboardChart/ChartModeSelector";
+import { ChartTypeSelector, type ChartType } from "../components/RealtimeDashboardChart/ChartTypeSelector";
 import { TimeRangeSelector } from "../components/RealtimeDashboardChart/TimeRangeSelector";
-import { EnhancedChartSelector, type EnhancedChartType } from "../components/RealtimeDashboardChart/EnhancedChartSelector";
+import {
+  EnhancedChartSelector,
+  type EnhancedChartType,
+} from "../components/RealtimeDashboardChart/EnhancedChartSelector";
 import { ChartCanvas } from "../components/RealtimeDashboardChart/ChartCanvas";
 
 interface DashboardChartContainerProps {
@@ -32,14 +37,18 @@ interface DashboardChartContainerProps {
 export function DashboardChartContainer({
   symbol,
 }: DashboardChartContainerProps) {
+  // UI 상태
+  const [chartType, setChartType] = useState<ChartType>("candle");
   const [chartMode, setChartMode] = useState<ChartMode>("enhanced");
 
   // Basic 모드 상태
   const [basicTimeRange, setBasicTimeRange] = useState<TimeRange>("1D");
 
   // Enhanced 모드 상태
-  const [enhancedChartType, setEnhancedChartType] = useState<EnhancedChartType>("day");
-  const [enhancedMinuteInterval, setEnhancedMinuteInterval] = useState<ChartInterval>("5m");
+  const [enhancedChartType, setEnhancedChartType] =
+    useState<EnhancedChartType>("day");
+  const [enhancedMinuteInterval, setEnhancedMinuteInterval] =
+    useState<ChartInterval>("5m");
 
   const { selectedStock, watchlist, addToWatchlist, removeFromWatchlist } =
     useStockStore();
@@ -64,17 +73,17 @@ export function DashboardChartContainer({
       timeRange = "ALL";
       interval = "1d";
     } else if (enhancedChartType === "week") {
-      // 주봉: 전체 데이터를 주 단위로
+      // 주봉: 일봉 데이터를 가져와서 프론트에서 주봉으로 집계
       timeRange = "ALL";
-      interval = "1d";
+      interval = "1wk"; // useHistoricalData에서 집계 시 사용
     } else if (enhancedChartType === "month") {
-      // 월봉
+      // 월봉: 일봉 데이터를 가져와서 프론트에서 월봉으로 집계
       timeRange = "ALL";
-      interval = "1d";
+      interval = "1mo"; // useHistoricalData에서 집계 시 사용
     } else {
-      // 연봉
+      // 연봉: 일봉 데이터를 가져와서 프론트에서 연봉으로 집계
       timeRange = "ALL";
-      interval = "1d";
+      interval = "1y"; // useHistoricalData에서 집계 시 사용
     }
   }
 
@@ -82,8 +91,8 @@ export function DashboardChartContainer({
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useChartInitialization(chartContainerRef);
 
-  // 차트 시리즈 생성 (Candlestick 고정)
-  const seriesRef = useChartSeries(chartRef, "candle");
+  // 차트 시리즈 생성
+  const seriesRef = useChartSeries(chartRef, chartType);
 
   // Historical 데이터 로드
   const { isLoading, priceInfo, setPriceInfo } = useHistoricalData(
@@ -92,8 +101,9 @@ export function DashboardChartContainer({
     symbol,
     timeRange,
     interval,
-    "candle",
-    chartMode
+    chartType,
+    chartMode,
+    enhancedChartType // Enhanced 차트 타입도 전달
   );
 
   // 실시간 WebSocket 연결 (1D일 때만)
@@ -103,19 +113,23 @@ export function DashboardChartContainer({
     symbol,
     timeRange,
     interval,
-    "candle",
+    chartType,
     priceInfo,
     setPriceInfo
   );
 
   // 관심 종목 토글
-  const toggleWatchlist = useCallback(() => {
-    if (isInWatchlist) {
-      removeFromWatchlist(symbol);
-    } else {
-      addToWatchlist(symbol);
+  const toggleWatchlist = useCallback(async () => {
+    try {
+      if (isInWatchlist) {
+        await removeFromWatchlist(symbol);
+      } else {
+        await addToWatchlist(symbol, selectedStock?.company_name);
+      }
+    } catch (error) {
+      console.error('Failed to toggle watchlist:', error);
     }
-  }, [isInWatchlist, symbol, addToWatchlist, removeFromWatchlist]);
+  }, [isInWatchlist, symbol, selectedStock, addToWatchlist, removeFromWatchlist]);
 
   // Basic 모드 시간 범위 변경
   const handleBasicTimeRangeChange = useCallback((range: TimeRange) => {
@@ -123,9 +137,12 @@ export function DashboardChartContainer({
   }, []);
 
   // Enhanced 모드 차트 타입 변경
-  const handleEnhancedChartTypeChange = useCallback((type: EnhancedChartType) => {
-    setEnhancedChartType(type);
-  }, []);
+  const handleEnhancedChartTypeChange = useCallback(
+    (type: EnhancedChartType) => {
+      setEnhancedChartType(type);
+    },
+    []
+  );
 
   // Enhanced 모드 분단위 간격 변경
   const handleEnhancedMinuteIntervalChange = useCallback(
@@ -148,6 +165,7 @@ export function DashboardChartContainer({
   return (
     <Card>
       <CardHeader>
+        {/* 헤더: 가격 정보 */}
         <DashboardChartHeader
           symbol={symbol}
           companyName={selectedStock?.company_name}
@@ -156,14 +174,24 @@ export function DashboardChartContainer({
           priceChangePercent={priceInfo.priceChangePercent}
           isRealtime={isRealtime}
           isLoading={isLoading}
-          chartMode={chartMode}
-          onChartModeChange={setChartMode}
           isInWatchlist={isInWatchlist}
           onToggleWatchlist={toggleWatchlist}
         />
 
+        {/* 차트 모드 선택 + 차트 타입 선택 */}
+        <div className="flex items-center gap-3 mt-4">
+          <ChartModeSelector
+            chartMode={chartMode}
+            onChartModeChange={setChartMode}
+          />
+          <ChartTypeSelector
+            chartType={chartType}
+            onChartTypeChange={setChartType}
+          />
+        </div>
+
         {/* Chart Mode에 따른 다른 UI */}
-        <div className="mt-6">
+        <div className="mt-4">
           {chartMode === "basic" ? (
             // Basic 모드: TimeRange 버튼만 표시
             <TimeRangeSelector

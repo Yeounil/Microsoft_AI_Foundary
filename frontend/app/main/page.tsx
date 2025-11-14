@@ -36,7 +36,7 @@ export default function MainPage() {
   return (
     <div className="container px-4 py-6 m-auto">
       <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
-        {/* Left Side - Chart and Stock List (65%) */}
+        {/* Left Side - Chart and Stock List */}
         <div className="space-y-6">
           {selectedSymbol ? (
             <RealtimeStockChart symbol={selectedSymbol} />

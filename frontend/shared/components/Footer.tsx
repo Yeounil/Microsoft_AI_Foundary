@@ -8,8 +8,10 @@ export default function Footer() {
           {/* Left: Company Info */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              <span className="font-bold text-lg">Green Wire</span>
+              <TrendingUp className="h-6 w-6 text-primary" color="green" />
+              <span className="text-xl font-bold hidden sm:inline text-green-600">
+                Green Wire
+              </span>
             </div>
             <p className="text-sm text-muted-foreground max-w-md">
               AI 기술을 활용한 금융 데이터 분석 및 실시간 시장 정보 제공 플랫폼

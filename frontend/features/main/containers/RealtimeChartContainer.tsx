@@ -60,17 +60,21 @@ export function RealtimeChartContainer({
       timeRange = "1M";
       interval = enhancedMinuteInterval;
     } else if (enhancedChartType === "day") {
+      // 일봉: 전체 데이터를 일 단위로
       timeRange = "ALL";
       interval = "1d";
     } else if (enhancedChartType === "week") {
+      // 주봉: 일봉 데이터를 가져와서 프론트에서 주봉으로 집계
       timeRange = "ALL";
-      interval = "1d";
+      interval = "1wk"; // useHistoricalData에서 집계 시 사용
     } else if (enhancedChartType === "month") {
+      // 월봉: 일봉 데이터를 가져와서 프론트에서 월봉으로 집계
       timeRange = "ALL";
-      interval = "1d";
+      interval = "1mo"; // useHistoricalData에서 집계 시 사용
     } else {
+      // 연봉: 일봉 데이터를 가져와서 프론트에서 연봉으로 집계
       timeRange = "ALL";
-      interval = "1d";
+      interval = "1y"; // useHistoricalData에서 집계 시 사용
     }
   }
 
@@ -84,7 +88,8 @@ export function RealtimeChartContainer({
     timeRange,
     interval,
     chartType,
-    chartMode
+    chartMode,
+    enhancedChartType // Enhanced 차트 타입도 전달
   );
   const { isRealtime } = useRealtimeWebSocket(
     chartRef,
@@ -136,15 +141,13 @@ export function RealtimeChartContainer({
           currentPrice={priceInfo.currentPrice}
           priceChange={priceInfo.priceChange}
           priceChangePercent={priceInfo.priceChangePercent}
-          chartMode={chartMode}
-          onChartModeChange={setChartMode}
         />
 
         {/* 차트 모드 선택 + 차트 타입 선택 */}
         <div className="flex items-center gap-3 mt-4">
           <ChartModeSelector
             chartMode={chartMode}
-            onChartModeChange={setChartMode}
+            onChartModeChange={(mode) => setChartMode(mode)}
           />
           <ChartTypeSelector
             chartType={chartType}

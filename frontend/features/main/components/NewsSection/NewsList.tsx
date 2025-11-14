@@ -36,7 +36,7 @@ export function NewsList({
 
   if (isLoading) {
     return (
-      <div className="flex h-[870px] items-center justify-center">
+      <div className="flex h-[720px] items-center justify-center">
         <div className="text-sm text-muted-foreground">
           뉴스를 불러오는 중...
         </div>
@@ -46,7 +46,7 @@ export function NewsList({
 
   if (news.length === 0) {
     return (
-      <div className="flex h-[870px] items-center justify-center">
+      <div className="flex h-[720px] items-center justify-center">
         <div className="text-center space-y-2">
           <div className="text-sm text-muted-foreground">
             {selectedStock
@@ -59,7 +59,7 @@ export function NewsList({
   }
 
   return (
-    <div className="flex flex-col h-[870px]">
+    <div className="flex flex-col h-[720px]">
       <div className="flex-1 overflow-y-auto space-y-3 mb-4">
         {news.map((item, index) => (
           <NewsCard key={item.id || index} article={item} index={index} />

@@ -10,7 +10,6 @@ import {
   TimeRange,
   ChartInterval,
   getPeriodFromRange,
-  getVisibleDataPoints,
 } from "../services/chartService";
 import {
   ChartMode,
@@ -40,7 +39,8 @@ export function useHistoricalData(
   timeRange: TimeRange,
   interval: ChartInterval,
   chartType: ChartType,
-  chartMode?: ChartMode
+  chartMode?: ChartMode,
+  enhancedChartType?: string // Enhanced 차트 타입 추가
 ) {
   const [isLoading, setIsLoading] = useState(false);
   const [priceInfo, setPriceInfo] = useState<PriceInfo>({
@@ -62,41 +62,68 @@ export function useHistoricalData(
     try {
       const period = getPeriodFromRange(timeRange);
 
-      // Enhanced 모드에서 분단위 선택 시 interval 유지
-      // chartMode가 없거나 basic이면 기존 로직 사용
+      // Enhanced 모드는 항상 interval 유지
+      // Basic 모드는 조건에 따라 interval 결정
       let chartInterval: ChartInterval;
-      if (chartMode === "enhanced" && ["1m", "5m", "15m", "30m", "1h"].includes(interval)) {
-        // Enhanced 분단위: interval 유지
+      if (chartMode === "enhanced") {
+        // Enhanced 모드: 항상 전달받은 interval 사용
         chartInterval = interval;
       } else if (timeRange === "1D" || timeRange === "1W" || timeRange === "1M") {
-        // 1D, 1W, 1M: interval 사용
+        // Basic 모드 1D, 1W, 1M: interval 사용
         chartInterval = interval;
       } else {
-        // 나머지: 1d 고정
+        // Basic 모드 나머지: 1d 고정
         chartInterval = "1d";
       }
 
+      // 주봉/월봉/연봉은 일봉 데이터를 가져와서 프론트에서 집계
+      const apiInterval = (chartInterval === "1wk" || chartInterval === "1mo" || chartInterval === "1y")
+        ? "1d"
+        : chartInterval;
+
       console.log(
-        `[Chart] Loading historical data: ${symbol}, period: ${period}, interval: ${chartInterval}, mode: ${chartMode}`
+        `[Chart] Loading historical data: ${symbol}, period: ${period}, apiInterval: ${apiInterval}, chartInterval: ${chartInterval}, mode: ${chartMode}, enhancedType: ${enhancedChartType}`
       );
 
       // ChartDataLoader 사용 (자동으로 Intraday API 라우팅)
       const candleData = await ChartDataLoader.loadHistoricalData(
         symbol,
         period as LoaderChartPeriod,
-        chartInterval as LoaderChartInterval
+        apiInterval as LoaderChartInterval
       );
 
       console.log(`[Chart] Received ${candleData.length} candles from API`);
 
       if (candleData.length > 0) {
-        // Basic 모드일 때 데이터 필터링
+        // 데이터 처리
         let processedData = candleData;
+
+        // Basic 모드일 때 데이터 필터링
         if (chartMode === "basic") {
           processedData = filterBasicModeData(candleData, timeRange);
           console.log(
             `[Chart] Filtered data: ${candleData.length} -> ${processedData.length}`
           );
+        }
+
+        // Enhanced 모드에서 주봉/월봉/연봉 집계
+        if (chartMode === "enhanced") {
+          if (chartInterval === "1wk") {
+            processedData = ChartDataLoader.aggregateToWeekly(processedData);
+            console.log(
+              `[Chart] Aggregated to weekly: ${candleData.length} -> ${processedData.length} candles`
+            );
+          } else if (chartInterval === "1mo") {
+            processedData = ChartDataLoader.aggregateToMonthly(processedData);
+            console.log(
+              `[Chart] Aggregated to monthly: ${candleData.length} -> ${processedData.length} candles`
+            );
+          } else if (chartInterval === "1y") {
+            processedData = ChartDataLoader.aggregateToYearly(processedData);
+            console.log(
+              `[Chart] Aggregated to yearly: ${candleData.length} -> ${processedData.length} candles`
+            );
+          }
         }
 
         // 초기 가격 정보 설정 (마지막 캔들 기준)
@@ -138,19 +165,32 @@ export function useHistoricalData(
           if (chartMode === "basic") {
             chartRef.current?.timeScale().fitContent();
           } else {
-            // Enhanced 모드: 분단위 차트(1D)는 최근 데이터만 보이도록 확대
-            if (timeRange === "1D" && processedData.length > 0) {
-              const visibleCount = getVisibleDataPoints(
-                timeRange,
-                interval,
-                processedData.length
-              );
-              chartRef.current?.timeScale().setVisibleLogicalRange({
-                from: Math.max(0, processedData.length - visibleCount),
-                to: processedData.length - 1,
-              });
-            } else {
-              chartRef.current?.timeScale().fitContent();
+            // Enhanced 모드: interval에 따라 보이는 캔들 개수 조정
+            if (processedData.length > 0) {
+              // interval에 따른 기본 표시 캔들 개수
+              const visibleCountMap: Record<string, number> = {
+                "1m": 120,   // 2시간치
+                "5m": 80,    // 6시간 40분치
+                "15m": 50,   // 12시간 30분치
+                "30m": 40,   // 20시간치
+                "1h": 24,    // 24시간치
+                "1d": 90,    // 3개월치
+                "1wk": 52,   // 1년치
+                "1mo": 24,   // 2년치
+                "1y": 10,    // 10년치
+              };
+
+              const visibleCount = visibleCountMap[chartInterval] || processedData.length;
+
+              // 데이터가 visibleCount보다 많으면 확대, 적으면 전체 표시
+              if (processedData.length > visibleCount) {
+                chartRef.current?.timeScale().setVisibleLogicalRange({
+                  from: Math.max(0, processedData.length - visibleCount),
+                  to: processedData.length - 1,
+                });
+              } else {
+                chartRef.current?.timeScale().fitContent();
+              }
             }
           }
 
@@ -168,7 +208,7 @@ export function useHistoricalData(
     } finally {
       setIsLoading(false);
     }
-  }, [seriesRef, chartRef, symbol, timeRange, interval, chartType, chartMode]);
+  }, [seriesRef, chartRef, symbol, timeRange, interval, chartType, chartMode, enhancedChartType]);
 
   // Historical 데이터 로드
   useEffect(() => {

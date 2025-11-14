@@ -8,8 +8,6 @@ interface ChartHeaderProps {
   currentPrice: number | null;
   priceChange: number;
   priceChangePercent: number;
-  chartMode: string;
-  onChartModeChange: (mode: string) => void;
 }
 
 /**

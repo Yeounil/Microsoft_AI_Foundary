@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useMemo, useEffect } from "react";
 import { convertToStockItems } from "../services/stockListService";
 
 interface StockBase {
@@ -22,24 +22,25 @@ export function useStockData({
   onSelectStock,
   selectedSymbol,
 }: UseStockDataParams) {
-  const [allStocks, setAllStocks] = useState<StockBase[]>([]);
-
-  // Convert supported stocks to allStocks format
-  useEffect(() => {
+  // Convert supported stocks to allStocks format using useMemo
+  const allStocks = useMemo(() => {
     if (supportedStocks.length > 0) {
       const stocks = convertToStockItems(supportedStocks);
-      setAllStocks(stocks);
       console.log(
         `[useStockData] ✅ Received ${stocks.length} stocks from MainPage`
       );
-
-      // 첫 번째 종목을 자동으로 선택
-      if (stocks.length > 0 && onSelectStock && !selectedSymbol) {
-        onSelectStock(stocks[0].symbol);
-        console.log(`[useStockData] Auto-selected first stock: ${stocks[0].symbol}`);
-      }
+      return stocks;
     }
-  }, [supportedStocks, onSelectStock, selectedSymbol]);
+    return [];
+  }, [supportedStocks]);
+
+  // Auto-select first stock (separate effect)
+  useEffect(() => {
+    if (allStocks.length > 0 && onSelectStock && !selectedSymbol) {
+      onSelectStock(allStocks[0].symbol);
+      console.log(`[useStockData] Auto-selected first stock: ${allStocks[0].symbol}`);
+    }
+  }, [allStocks, onSelectStock, selectedSymbol]);
 
   return {
     allStocks,

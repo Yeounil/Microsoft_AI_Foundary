@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -53,13 +52,20 @@ export function EnhancedChartSelector({
     onChartTypeChange(type);
   };
 
+  // 현재 선택된 분단위 간격의 레이블 찾기
+  const currentMinuteLabel = MINUTE_INTERVALS.find(
+    (item) => item.value === minuteInterval
+  )?.label || "분단위";
+
   return (
     <div className="flex items-center gap-2 flex-wrap">
       {/* 분단위 탭 - 클릭 시 셀렉트박스로 변환 */}
       {chartType === "minute" ? (
         <Select value={minuteInterval} onValueChange={onMinuteIntervalChange}>
-          <SelectTrigger className="w-[85px] h-9 text-xs">
-            <SelectValue placeholder="분단위" />
+          <SelectTrigger className="w-[85px] h-9 text-xs bg-primary text-primary-foreground hover:bg-primary/90">
+            <SelectValue>
+              {currentMinuteLabel}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent className="w-[85px] min-w-[85px]">
             {MINUTE_INTERVALS.map((item) => (

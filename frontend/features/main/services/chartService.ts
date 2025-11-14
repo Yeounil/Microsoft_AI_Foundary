@@ -5,7 +5,7 @@
 
 export type ChartType = "area" | "line" | "candle";
 export type TimeRange = "1D" | "1W" | "1M" | "3M" | "6M" | "1Y" | "5Y" | "ALL";
-export type ChartInterval = "1m" | "5m" | "15m" | "30m" | "1h" | "1d";
+export type ChartInterval = "1m" | "5m" | "15m" | "30m" | "1h" | "1d" | "1wk" | "1mo" | "1y";
 
 /**
  * TimeRange를 API 기간 문자열로 변환
@@ -116,7 +116,7 @@ export function getVisibleDataPoints(
   }
 
   // 1D일 때는 인터벌에 따라 표시할 데이터 포인트 수 조정
-  const visibleCountMap: Record<ChartInterval, number> = {
+  const visibleCountMap: Partial<Record<ChartInterval, number>> = {
     "1m": 120, // 2시간
     "5m": 80, // 6시간 40분
     "15m": 50, // 12시간 30분
