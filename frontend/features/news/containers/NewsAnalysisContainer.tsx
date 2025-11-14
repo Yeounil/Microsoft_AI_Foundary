@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +15,7 @@ import { ArticleHeader } from "../components/NewsAnalysis/ArticleHeader";
 import { ImpactAnalysis } from "../components/NewsAnalysis/ImpactAnalysis";
 import { ContentTabs } from "../components/NewsAnalysis/ContentTabs";
 import { RelatedNewsList } from "../components/NewsAnalysis/RelatedNewsList";
+import apiClient from "@/lib/api-client";
 
 interface NewsAnalysisContainerProps {
   newsData: NewsData;
@@ -31,6 +33,7 @@ export function NewsAnalysisContainer({
   error,
 }: NewsAnalysisContainerProps) {
   const router = useRouter();
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
   // 관련 뉴스 hook
   const { relatedNews, page, setPage, hasNextPage } = useRelatedNews({
@@ -38,6 +41,28 @@ export function NewsAnalysisContainer({
     currentNewsId: newsData?.id || 0,
     isEnabled: !isLoading && !error,
   });
+
+  // 레포트 생성 핸들러
+  const handleGenerateReport = async () => {
+    if (!newsData?.symbol) {
+      alert("종목 정보를 찾을 수 없습니다.");
+      return;
+    }
+
+    setIsGeneratingReport(true);
+
+    try {
+      // POST 요청으로 레포트 생성
+      await apiClient.createNewsReport(newsData.symbol, 20);
+
+      // 레포트 페이지로 이동
+      router.push(`/news-report/${newsData.symbol}`);
+    } catch (err: any) {
+      console.error("Failed to generate report:", err);
+      alert(err.response?.data?.detail || "레포트 생성 중 오류가 발생했습니다.");
+      setIsGeneratingReport(false);
+    }
+  };
 
   // Early returns
   if (isLoading) {
@@ -84,7 +109,8 @@ export function NewsAnalysisContainer({
       {/* Header */}
       <NewsAnalysisHeader
         onBack={() => router.back()}
-        onViewReport={() => router.push(`/news-report/${newsData.id}`)}
+        onViewReport={handleGenerateReport}
+        isGeneratingReport={isGeneratingReport}
       />
 
       <div className="grid gap-6 lg:grid-cols-[1fr_400px]">

@@ -1,5 +1,10 @@
 import os
 from typing import Optional
+from dotenv import load_dotenv
+
+# .env 파일 로드
+load_dotenv()
+
 try:
     from pydantic_settings import BaseSettings
 except ImportError:
@@ -23,6 +28,9 @@ class Settings(BaseSettings):
     # OpenAI (GPT-5)
     openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
     openai_model_name: str = os.getenv("OPENAI_MODEL_NAME", "gpt-5")
+
+    # Anthropic Claude
+    anthropic_api_key: Optional[str] = os.getenv("ANTHROPIC_API_KEY")
     
     # External APIs
     alpha_vantage_api_key: str = os.getenv("ALPHA_VANTAGE_API_KEY", "")
