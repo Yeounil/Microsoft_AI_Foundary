@@ -27,10 +27,10 @@ export function NewsCard({ article, index }: NewsCardProps) {
       href={`/news-analysis/${article.id}`}
       className="block"
     >
-      <Card className="cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 min-h-[140px]">
-        <CardHeader className="pb-2">
-          <div className="flex items-start justify-between gap-2 mb-2">
-            <CardTitle className="line-clamp-2 text-sm leading-5 flex-1 min-h-10">
+      <Card className="cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 h-[120px] py-2">
+        <CardHeader className="pb-1 pt-3">
+          <div className="flex items-start justify-between gap-2 mb-1">
+            <CardTitle className="line-clamp-2 text-xs leading-4 flex-1">
               {article.title}
             </CardTitle>
             <div
