@@ -3,6 +3,7 @@ import { Stock, StockPriceData, PriceUpdate } from '@/types';
 import apiClient from '@/lib/api-client';
 import wsClient from '@/lib/websocket-client';
 import { extractErrorMessage } from '@/types/api';
+import { useAuthStore } from './auth-store';
 
 interface StockState {
   // Current stock data
@@ -44,35 +45,27 @@ export const useStockStore = create<StockState>((set, get) => ({
   isLoadingChart: false,
   error: null,
 
+  // Removed: getStockData API is no longer used
   selectStock: async (symbol) => {
-    set({ isLoadingStock: true, error: null });
-    try {
-      const stockData = await apiClient.getStockData(symbol);
-      set({
-        selectedStock: {
-          symbol: stockData.symbol,
-          company_name: stockData.company_name,
-          current_price: stockData.current_price,
-          pe_ratio: stockData.pe_ratio,
-          eps: stockData.eps,
-          dividend_yield: stockData.dividend_yield,
-          fifty_two_week_high: stockData.fifty_two_week_high,
-          fifty_two_week_low: stockData.fifty_two_week_low,
-          exchange: stockData.exchange,
-          industry: stockData.industry,
-          sector: stockData.sector,
-          currency: stockData.currency,
-        },
-        chartData: stockData.price_data || null,
-        isLoadingStock: false,
-      });
-    } catch (error) {
-      const errorMessage = extractErrorMessage(error);
-      set({
-        isLoadingStock: false,
-        error: errorMessage,
-      });
-    }
+    // Simply set the selected stock symbol without API call
+    set({
+      selectedStock: {
+        symbol: symbol.toUpperCase(),
+        company_name: symbol.toUpperCase(), // Will be updated by chart data
+        current_price: 0,
+        pe_ratio: undefined,
+        eps: undefined,
+        dividend_yield: undefined,
+        fifty_two_week_high: undefined,
+        fifty_two_week_low: undefined,
+        exchange: undefined,
+        industry: undefined,
+        sector: undefined,
+        currency: 'USD',
+      },
+      isLoadingStock: false,
+      error: null,
+    });
   },
 
   loadChartData: async (symbol, period, interval) => {
@@ -94,15 +87,13 @@ export const useStockStore = create<StockState>((set, get) => ({
 
   loadWatchlist: async () => {
     try {
-      const favorites = await apiClient.getFavorites();
-      // favorites는 배열 형태: [{ symbol: "AAPL", company_name: "Apple Inc.", ... }]
-      const symbols = favorites.map((fav: { symbol: string }) => fav.symbol.toUpperCase());
+      const response = await apiClient.getFavorites();
+      // response: { user_id, total_count, interests: [{id, user_id, interest, created_at}, ...] }
+      const symbols = response.interests.map((item: { interest: string }) => item.interest.toUpperCase());
       set({ watchlist: symbols });
 
-      // Subscribe to real-time updates
-      if (symbols.length > 0) {
-        get().subscribeToRealtime(symbols);
-      }
+      // Note: WebSocket 구독은 실제로 차트를 볼 때 수행됨
+      // 관심 종목 로딩 시에는 구독하지 않음
     } catch (error) {
       console.error('Failed to load watchlist:', error);
       // 로그인 안되어있으면 빈 배열로 설정
@@ -113,15 +104,24 @@ export const useStockStore = create<StockState>((set, get) => ({
   addToWatchlist: async (symbol, companyName) => {
     const upperSymbol = symbol.toUpperCase();
 
+    // Get user ID from auth store
+    const user = useAuthStore.getState().user;
+    if (!user?.id) {
+      const errorMessage = 'User not logged in';
+      set({ error: errorMessage });
+      throw new Error(errorMessage);
+    }
+
     // 낙관적 업데이트 (UI 먼저 업데이트)
     set((state) => ({
       watchlist: [...new Set([...state.watchlist, upperSymbol])],
     }));
 
     try {
-      await apiClient.addFavorite(upperSymbol, companyName);
-      // Subscribe to real-time updates
-      get().subscribeToRealtime([upperSymbol]);
+      await apiClient.addFavorite(upperSymbol, user.id, companyName);
+
+      // Note: WebSocket 구독은 실제로 차트를 볼 때 수행됨
+      // 관심 종목 추가 시에는 구독하지 않음
     } catch (error) {
       // 실패하면 롤백
       set((state) => ({
@@ -144,8 +144,9 @@ export const useStockStore = create<StockState>((set, get) => ({
 
     try {
       await apiClient.removeFavorite(upperSymbol);
-      // Unsubscribe from real-time updates
-      get().unsubscribeFromRealtime([upperSymbol]);
+
+      // Note: WebSocket 구독 해제는 차트가 언마운트될 때 수행됨
+      // 관심 종목 제거 시에는 구독 해제하지 않음
     } catch (error) {
       // 실패하면 롤백
       set({ watchlist: previousWatchlist });
@@ -162,16 +163,26 @@ export const useStockStore = create<StockState>((set, get) => ({
         wsClient.subscribe(symbols);
       }).catch((error) => {
         console.error('Failed to connect WebSocket:', error);
-        set({ error: 'Failed to connect to real-time updates' });
+        // Don't set error - WebSocket is optional feature
       });
     } else {
-      wsClient.subscribe(symbols);
+      try {
+        wsClient.subscribe(symbols);
+      } catch (error) {
+        console.error('Failed to subscribe to real-time updates:', error);
+        // Don't set error - WebSocket is optional feature
+      }
     }
   },
 
   unsubscribeFromRealtime: (symbols) => {
     if (wsClient.isConnected()) {
-      wsClient.unsubscribe(symbols);
+      try {
+        wsClient.unsubscribe(symbols);
+      } catch (error) {
+        console.error('Failed to unsubscribe from real-time updates:', error);
+        // Don't set error - WebSocket is optional feature
+      }
     }
   },
 

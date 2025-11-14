@@ -73,6 +73,7 @@ export default function DashboardPage() {
             <NewsSectionContainer
               availableStocks={supportedStocks}
               isLoadingStocks={isLoadingStocks}
+              initialStock={symbol.toUpperCase()}
             />
           </div>
         </div>

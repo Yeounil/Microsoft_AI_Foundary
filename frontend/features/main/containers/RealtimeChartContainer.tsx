@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { useLoadingStore } from "@/store/loading-store";
 import { useChartInitialization } from "../hooks/useChartInitialization";
 import { useChartSeries } from "../hooks/useChartSeries";
 import { useHistoricalData } from "../hooks/useHistoricalData";
@@ -78,6 +79,9 @@ export function RealtimeChartContainer({
     }
   }
 
+  // Global loading state
+  const { setChartLoading } = useLoadingStore();
+
   // Hooks
   const chartRef = useChartInitialization(chartContainerRef);
   const seriesRef = useChartSeries(chartRef, chartType);
@@ -101,6 +105,11 @@ export function RealtimeChartContainer({
     priceInfo,
     setPriceInfo
   );
+
+  // Update global loading state
+  useEffect(() => {
+    setChartLoading(isLoading);
+  }, [isLoading, setChartLoading]);
 
   // Basic 모드 시간 범위 변경
   const handleBasicTimeRangeChange = useCallback((range: TimeRange) => {
@@ -176,7 +185,7 @@ export function RealtimeChartContainer({
       </CardHeader>
 
       <CardContent>
-        <ChartCanvas chartContainerRef={chartContainerRef} />
+        <ChartCanvas chartContainerRef={chartContainerRef} isLoading={isLoading} />
       </CardContent>
     </Card>
   );

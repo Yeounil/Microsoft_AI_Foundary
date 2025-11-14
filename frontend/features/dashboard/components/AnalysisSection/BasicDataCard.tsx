@@ -8,14 +8,14 @@ interface BasicDataCardProps {
 export function BasicDataCard({ analysis }: BasicDataCardProps) {
   return (
     <Card className="flex-1 flex flex-col">
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-2">
         <CardTitle className="text-lg">기본 데이터</CardTitle>
         <CardDescription className="text-xs">
           주요 재무 및 시장 지표
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-1 flex items-center">
-        <div className="grid gap-3 grid-cols-2 w-full">
+        <div className="grid gap-2 grid-cols-2 w-full">
           <DataItem label="시가총액" value="$2.8T" />
           <DataItem
             label="P/E 비율"
@@ -33,9 +33,9 @@ export function BasicDataCard({ analysis }: BasicDataCardProps) {
 
 function DataItem({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="flex items-center justify-between rounded-lg border p-3">
+    <div className="flex items-center justify-between rounded-lg border p-2">
       <span className="text-sm text-muted-foreground">{label}</span>
-      <span className="text-base font-semibold">{value}</span>
+      <span className="text-sm font-semibold">{value}</span>
     </div>
   );
 }

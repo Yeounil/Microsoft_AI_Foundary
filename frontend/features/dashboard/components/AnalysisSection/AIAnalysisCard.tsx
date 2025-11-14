@@ -9,14 +9,14 @@ interface AIAnalysisCardProps {
 export function AIAnalysisCard({ analysis }: AIAnalysisCardProps) {
   return (
     <Card className="flex-1 flex flex-col">
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-2">
         <CardTitle className="text-lg">AI 종합 분석</CardTitle>
         <CardDescription className="text-xs">
           머신러닝 기반 투자 적합도 평가
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3 flex-1 flex flex-col justify-center">
-        <div className="grid gap-4 grid-cols-2">
+      <CardContent className="space-y-2 flex-1 flex flex-col justify-center">
+        <div className="grid gap-3 grid-cols-2">
           <ScoreItem
             label="AI 투자 점수"
             value={analysis.ai_score}
@@ -35,8 +35,8 @@ export function AIAnalysisCard({ analysis }: AIAnalysisCardProps) {
           />
         </div>
 
-        <div className="rounded-lg bg-muted p-3">
-          <p className="text-sm font-medium mb-1.5">AI 추천</p>
+        <div className="rounded-lg bg-muted p-2">
+          <p className="text-sm font-medium mb-1">AI 추천</p>
           <p className="text-sm text-muted-foreground leading-relaxed">
             {analysis.recommendation}
           </p>
@@ -48,10 +48,10 @@ export function AIAnalysisCard({ analysis }: AIAnalysisCardProps) {
 
 function ScoreItem({ label, value }: { label: string; value: number }) {
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1">
       <p className="text-sm font-medium">{label}</p>
       <div className="flex items-baseline gap-2">
-        <span className="text-2xl font-bold">{value}</span>
+        <span className="text-xl font-bold">{value}</span>
         <span className="text-sm text-muted-foreground">/100</span>
       </div>
       <Progress value={value} className="h-2" />

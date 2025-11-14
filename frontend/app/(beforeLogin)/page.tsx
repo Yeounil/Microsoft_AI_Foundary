@@ -1,9 +1,45 @@
+'use client';
+
 import Link from "next/link"
 import { ChevronDown, TrendingUp, Sparkles, BookOpen, BarChart3 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default function Home() {
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (!element) return;
+
+    const headerOffset = 64;
+    const elementPosition = element.getBoundingClientRect().top;
+    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+    const startPosition = window.pageYOffset;
+    const distance = offsetPosition - startPosition;
+    const duration = 1000; // 1초
+    let start: number | null = null;
+
+    const easeInOutCubic = (t: number): number => {
+      return t < 0.5
+        ? 4 * t * t * t
+        : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    };
+
+    const animation = (currentTime: number) => {
+      if (start === null) start = currentTime;
+      const timeElapsed = currentTime - start;
+      const progress = Math.min(timeElapsed / duration, 1);
+      const ease = easeInOutCubic(progress);
+
+      window.scrollTo(0, startPosition + distance * ease);
+
+      if (timeElapsed < duration) {
+        requestAnimationFrame(animation);
+      }
+    };
+
+    requestAnimationFrame(animation);
+  };
+
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
@@ -20,14 +56,20 @@ export default function Home() {
           </p>
 
           <div className="flex justify-center pt-4">
-            <ChevronDown className="h-8 w-8 animate-bounce text-muted-foreground" />
+            <button
+              onClick={() => scrollToSection('charts-section')}
+              className="cursor-pointer hover:opacity-70 transition-opacity"
+              aria-label="다음 섹션으로 스크롤"
+            >
+              <ChevronDown className="h-8 w-8 animate-bounce text-muted-foreground" />
+            </button>
           </div>
         </div>
       </section>
 
       {/* Real-time Charts Feature */}
-      <section className="border-t border-border bg-muted/30 px-4 py-20">
-        <div className="container mx-auto max-w-6xl">
+      <section id="charts-section" className="border-t border-border bg-muted/30 px-4 min-h-[calc(100vh-4rem)] flex items-center scroll-mt-16">
+        <div className="container mx-auto max-w-6xl py-20">
           <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
             {/* Text Content */}
             <div className="space-y-6">
@@ -89,13 +131,19 @@ export default function Home() {
           </div>
 
           <div className="flex justify-center pt-12">
-            <ChevronDown className="h-6 w-6 animate-bounce text-muted-foreground" />
+            <button
+              onClick={() => scrollToSection('ai-section')}
+              className="cursor-pointer hover:opacity-70 transition-opacity"
+              aria-label="다음 섹션으로 스크롤"
+            >
+              <ChevronDown className="h-6 w-6 animate-bounce text-muted-foreground" />
+            </button>
           </div>
         </div>
       </section>
 
       {/* AI Analysis Feature */}
-      <section className="px-4 py-20">
+      <section id="ai-section" className="px-4 py-12 scroll-mt-16">
         <div className="container mx-auto max-w-6xl">
           <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
             {/* Image/Illustration */}
@@ -165,7 +213,7 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="border-t border-border bg-muted/30 px-4 py-20">
+      <section className="border-t border-border bg-muted/30 px-4 py-16">
         <div className="container mx-auto max-w-3xl text-center">
           <h2 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl">지금 시작하세요</h2>
           <p className="mt-4 text-pretty text-lg text-muted-foreground">

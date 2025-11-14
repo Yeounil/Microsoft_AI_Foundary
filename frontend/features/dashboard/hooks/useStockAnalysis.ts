@@ -1,22 +1,16 @@
-import { useQuery } from "@tanstack/react-query";
-import apiClient from "@/lib/api-client";
 import { createMockAnalysis } from "../services/analysisService";
 
 /**
  * StockAnalysis Hook
  * 주식 AI 분석 데이터를 fetching합니다.
+ * Note: analyzeStock API is removed, using mock data only
  */
 export function useStockAnalysis(symbol: string) {
-  const { data: analysis, isLoading } = useQuery({
-    queryKey: ["analysis", symbol],
-    queryFn: () => apiClient.analyzeStock(symbol, "1mo"),
-  });
-
+  // Removed API call, using mock data only
   const mockAnalysis = createMockAnalysis(symbol);
-  const analysisData = analysis || mockAnalysis;
 
   return {
-    analysisData,
-    isLoading,
+    analysisData: mockAnalysis,
+    isLoading: false,
   };
 }

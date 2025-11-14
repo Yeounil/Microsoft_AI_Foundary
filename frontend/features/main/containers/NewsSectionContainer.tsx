@@ -17,6 +17,7 @@ import { NewsList } from "../components/NewsSection/NewsList";
 interface NewsSectionContainerProps {
   availableStocks: string[];
   isLoadingStocks: boolean;
+  initialStock?: string; // 초기 선택 종목 (대시보드 페이지용)
 }
 
 /**
@@ -26,6 +27,7 @@ interface NewsSectionContainerProps {
 export function NewsSectionContainer({
   availableStocks,
   isLoadingStocks,
+  initialStock,
 }: NewsSectionContainerProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState("hot");
@@ -47,7 +49,7 @@ export function NewsSectionContainer({
     handleInputChange,
     setShowDropdown,
     setHighlightedIndex,
-  } = useNewsSearch(availableStocks);
+  } = useNewsSearch(availableStocks, initialStock);
 
   // 뉴스 데이터 fetching hook
   const { hotNewsData, isLoadingHot, watchlistNewsData, isLoadingWatchlist } =
@@ -105,7 +107,7 @@ export function NewsSectionContainer({
               Hot 뉴스
             </TabsTrigger>
             <TabsTrigger value="favorites" className="flex-1">
-              관심 종목
+              관심종목
             </TabsTrigger>
           </TabsList>
 

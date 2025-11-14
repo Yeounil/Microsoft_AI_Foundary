@@ -4,14 +4,22 @@ import { useState, useRef, useEffect, useMemo, useCallback } from "react";
  * 뉴스 검색 Hook
  * 검색, 필터링, dropdown, keyboard navigation을 관리합니다.
  */
-export function useNewsSearch(availableStocks: string[]) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedStock, setSelectedStock] = useState<string | null>(null);
+export function useNewsSearch(availableStocks: string[], initialStock?: string) {
+  const [searchQuery, setSearchQuery] = useState(initialStock || "");
+  const [selectedStock, setSelectedStock] = useState<string | null>(initialStock || null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Set initial stock if provided
+  useEffect(() => {
+    if (initialStock && initialStock !== selectedStock) {
+      setSelectedStock(initialStock);
+      setSearchQuery(initialStock);
+    }
+  }, [initialStock, selectedStock]);
 
   // Filter stocks based on search query (memoized)
   const filteredStocks = useMemo(

@@ -1,4 +1,5 @@
 import { CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, TrendingDown } from "lucide-react";
 
 interface ChartHeaderProps {
@@ -24,21 +25,30 @@ export function ChartHeader({
 }: ChartHeaderProps) {
   return (
     <div className="flex-1">
-      <div className="flex items-center gap-3 mb-2">
-        <CardTitle>실시간 차트 - {symbol}</CardTitle>
-        {isRealtime && (
-          <span className="flex items-center gap-1 text-xs text-green-600">
-            <span className="inline-block w-2 h-2 bg-green-600 rounded-full animate-pulse"></span>
-            LIVE
-          </span>
-        )}
-        {isLoading && (
-          <span className="text-xs text-muted-foreground">로딩 중...</span>
-        )}
-      </div>
+      {/* Title Section */}
+      {isLoading ? (
+        <div className="mb-2">
+          <Skeleton className="h-8 w-64" />
+        </div>
+      ) : (
+        <div className="flex items-center gap-3 mb-2">
+          <CardTitle>실시간 차트 - {symbol}</CardTitle>
+          {isRealtime && (
+            <span className="flex items-center gap-1 text-xs text-green-600">
+              <span className="inline-block w-2 h-2 bg-green-600 rounded-full animate-pulse"></span>
+              LIVE
+            </span>
+          )}
+        </div>
+      )}
 
-      {/* 실시간 가격 정보 */}
-      {currentPrice !== null ? (
+      {/* Price Section */}
+      {isLoading ? (
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-5 w-24" />
+        </div>
+      ) : currentPrice !== null ? (
         <div className="flex items-center gap-4">
           <span className="text-2xl font-bold">${currentPrice.toFixed(2)}</span>
           <span

@@ -42,7 +42,7 @@ export function useHistoricalData(
   chartMode?: ChartMode,
   enhancedChartType?: string // Enhanced 차트 타입 추가
 ) {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Start with loading state
   const [priceInfo, setPriceInfo] = useState<PriceInfo>({
     currentPrice: null,
     priceChange: 0,

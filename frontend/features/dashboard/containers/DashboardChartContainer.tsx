@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useStockStore } from "@/store/stock-store";
+import { useLoadingStore } from "@/store/loading-store";
 import { useChartInitialization } from "@/features/main/hooks/useChartInitialization";
 import { useChartSeries } from "@/features/main/hooks/useChartSeries";
 import { useHistoricalData } from "@/features/main/hooks/useHistoricalData";
@@ -52,6 +53,7 @@ export function DashboardChartContainer({
 
   const { selectedStock, watchlist, addToWatchlist, removeFromWatchlist } =
     useStockStore();
+  const { setChartLoading } = useLoadingStore();
 
   const isInWatchlist = watchlist.includes(symbol);
 
@@ -117,6 +119,11 @@ export function DashboardChartContainer({
     priceInfo,
     setPriceInfo
   );
+
+  // Update global loading state
+  useEffect(() => {
+    setChartLoading(isLoading);
+  }, [isLoading, setChartLoading]);
 
   // 관심 종목 토글
   const toggleWatchlist = useCallback(async () => {
@@ -210,7 +217,7 @@ export function DashboardChartContainer({
         </div>
       </CardHeader>
       <CardContent>
-        <ChartCanvas chartContainerRef={chartContainerRef} />
+        <ChartCanvas chartContainerRef={chartContainerRef} isLoading={isLoading} />
       </CardContent>
     </Card>
   );

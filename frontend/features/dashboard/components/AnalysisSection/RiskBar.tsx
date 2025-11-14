@@ -14,7 +14,7 @@ interface RiskBarProps {
 
 export function RiskBar({ label, level }: RiskBarProps) {
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium">{label}</span>
         <Badge

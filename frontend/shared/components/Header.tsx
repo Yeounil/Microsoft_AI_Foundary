@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import { Bell, Search, User, LogOut, Menu, X, TrendingUp } from "lucide-react";
+import { Search, User, LogOut, Menu, X, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuthStore } from "@/store/auth-store";
+import { NotificationDropdown } from "./NotificationDropdown";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -32,7 +33,6 @@ export default function Header() {
   const pathname = usePathname();
   const { user, isAuthenticated, logout } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState("");
-  const [hasNotification] = useState(false); // TODO: Implement notification system
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -55,7 +55,7 @@ export default function Header() {
 
   const handleLogout = async () => {
     await logout();
-    router.push("/");
+    router.push("/login");
   };
 
   return (
@@ -118,23 +118,8 @@ export default function Header() {
               </div>
             </form>
 
-            {/* Notification Bell */}
-            {isAuthenticated && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative"
-                onClick={() => router.push("/notifications")}
-              >
-                <Bell className="h-5 w-5" />
-                {hasNotification && (
-                  <span className="absolute right-1 top-1 h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
-                  </span>
-                )}
-              </Button>
-            )}
+            {/* Notification Dropdown */}
+            {isAuthenticated && <NotificationDropdown />}
 
             {/* User Menu */}
             {isAuthenticated ? (

@@ -1,6 +1,7 @@
 import { Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface DashboardChartHeaderProps {
   symbol: string;
@@ -34,36 +35,47 @@ export function DashboardChartHeader({
   return (
     <div className="flex items-start justify-between">
       <div>
-        <div className="flex items-center gap-3">
-          <CardTitle className="text-2xl font-bold">
-            {companyName || symbol}
-          </CardTitle>
-          {isRealtime && (
-            <span className="flex items-center gap-1 text-xs text-green-600">
-              <span className="inline-block w-2 h-2 bg-green-600 rounded-full animate-pulse"></span>
-              LIVE
+        {/* Title Section */}
+        {isLoading ? (
+          <Skeleton className="h-9 w-64 mb-2" />
+        ) : (
+          <div className="flex items-center gap-3">
+            <CardTitle className="text-2xl font-bold">
+              {companyName || symbol}
+            </CardTitle>
+            {isRealtime && (
+              <span className="flex items-center gap-1 text-xs text-green-600">
+                <span className="inline-block w-2 h-2 bg-green-600 rounded-full animate-pulse"></span>
+                LIVE
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Price Section */}
+        {isLoading ? (
+          <div className="mt-2 flex items-center gap-4">
+            <Skeleton className="h-7 w-32" />
+            <Skeleton className="h-5 w-24" />
+          </div>
+        ) : (
+          <div className="mt-2 flex items-center gap-4">
+            <span className="text-lg font-semibold">
+              ${currentPrice?.toFixed(2) || "0.00"}
             </span>
-          )}
-        </div>
-        <div className="mt-2 flex items-center gap-4">
-          <span className="text-lg font-semibold">
-            ${currentPrice?.toFixed(2) || "0.00"}
-          </span>
-          {priceChange !== undefined && priceChangePercent !== undefined && (
-            <span
-              className={`text-sm font-medium ${
-                isPositive ? "text-green-600" : "text-red-600"
-              }`}
-            >
-              {isPositive ? "+" : ""}
-              {priceChange.toFixed(2)} ({isPositive ? "+" : ""}
-              {priceChangePercent.toFixed(2)}%)
-            </span>
-          )}
-          {isLoading && (
-            <span className="text-xs text-muted-foreground">로딩 중...</span>
-          )}
-        </div>
+            {priceChange !== undefined && priceChangePercent !== undefined && (
+              <span
+                className={`text-sm font-medium ${
+                  isPositive ? "text-green-600" : "text-red-600"
+                }`}
+              >
+                {isPositive ? "+" : ""}
+                {priceChange.toFixed(2)} ({isPositive ? "+" : ""}
+                {priceChangePercent.toFixed(2)}%)
+              </span>
+            )}
+          </div>
+        )}
       </div>
       <div className="flex items-center gap-4">
         <Button

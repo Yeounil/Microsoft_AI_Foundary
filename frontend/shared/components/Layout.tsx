@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Header from './Header';
 import Footer from './Footer';
 import { useAuthStore } from '@/store/auth-store';
+import { useStockStore } from '@/store/stock-store';
+import { useLoadingStore } from '@/store/loading-store';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,12 +24,21 @@ interface LayoutProps {
 
 export default function Layout({ children, showFooter = true }: LayoutProps) {
   const router = useRouter();
-  const { fetchUser, showSessionExpiredDialog, setSessionExpired, logout } = useAuthStore();
+  const { fetchUser, showSessionExpiredDialog, setSessionExpired, logout, isAuthenticated } = useAuthStore();
+  const { loadWatchlist } = useStockStore();
+  const { isChartLoading } = useLoadingStore();
 
   useEffect(() => {
     // Check authentication status on mount
     fetchUser();
   }, [fetchUser]);
+
+  useEffect(() => {
+    // Load watchlist when user is authenticated
+    if (isAuthenticated) {
+      loadWatchlist();
+    }
+  }, [isAuthenticated, loadWatchlist]);
 
   useEffect(() => {
     // Listen for session expired event
@@ -47,6 +58,13 @@ export default function Layout({ children, showFooter = true }: LayoutProps) {
 
   return (
     <div className="min-h-screen flex flex-col">
+      {/* Global Loading Progress Bar */}
+      {isChartLoading && (
+        <div className="fixed top-0 left-0 right-0 z-[100] h-1 bg-transparent">
+          <div className="h-full bg-primary animate-progress-indeterminate" />
+        </div>
+      )}
+
       <Header />
       <main className="flex-1">{children}</main>
       {showFooter && <Footer />}
