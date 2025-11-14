@@ -1,6 +1,6 @@
 """
 뉴스 크롤링 스케줄러 서비스
-- 2시간마다 자동으로 인기 종목 뉴스 크롤링
+- 5시간마다 자동으로 인기 종목 뉴스 크롤링
 - 서버 재시작 시 누락된 뉴스 자동 보충
 """
 import asyncio
@@ -45,12 +45,12 @@ class NewsScheduler:
         # 1. 서버 시작 시 누락된 뉴스 확인 및 크롤링 (비동기로 즉시 실행)
         asyncio.create_task(self._recover_missing_news())
 
-        # 2. 2시간마다 정기 크롤링 스케줄 등록
+        # 2. 5시간마다 정기 크롤링 스케줄 등록
         self.scheduler.add_job(
             self._scheduled_crawl,
-            trigger=IntervalTrigger(hours=2),
-            id='news_crawl_2hours',
-            name='News crawling every 2 hours',
+            trigger=IntervalTrigger(hours=5),
+            id='news_crawl_5hours',
+            name='News crawling every 5 hours',
             replace_existing=True
         )
 
@@ -114,7 +114,7 @@ class NewsScheduler:
         self.is_running = True
 
         logger.info("[OK] News crawling scheduler started successfully")
-        logger.info("[CONFIG] - Automatic news crawling every 2 hours")
+        logger.info("[CONFIG] - Automatic news crawling every 5 hours")
         logger.info("[CONFIG] - Daily news cleanup at midnight")
         logger.info("[CONFIG] - Daily stock indicators collection at 2 AM")
         logger.info("[CONFIG] - Daily price history collection at 3 AM")
@@ -133,9 +133,23 @@ class NewsScheduler:
         logger.info("[OK] Scheduler shutdown completed")
 
     async def _scheduled_crawl(self):
-        """정기 크롤링 작업 (2시간마다 실행)"""
+        """정기 크롤링 작업 (5시간마다 실행)"""
+        crawl_start_time = datetime.now()
+
         try:
             logger.info("========== [SCHEDULED_CRAWL] News crawling started ==========")
+
+            # 크롤링 시작 기록 저장
+            supabase = get_supabase()
+            crawl_record = supabase.table("news_crawl_history").insert({
+                "symbol": "ALL",
+                "crawl_type": "scheduled",
+                "articles_collected": 0,
+                "crawl_started_at": crawl_start_time.isoformat(),
+                "status": "in_progress"
+            }).execute()
+
+            crawl_record_id = crawl_record.data[0]["id"] if crawl_record.data else None
 
             # 인기 종목 뉴스 수집
             total_collected = 0
@@ -145,7 +159,7 @@ class NewsScheduler:
             for symbol in POPULAR_SYMBOLS:
                 try:
                     logger.info(f"[CRAWL] Collecting news for {symbol}...")
-                    articles = await NewsService.crawl_and_save_stock_news(symbol, limit=100)
+                    articles = await NewsService.crawl_and_save_stock_news(symbol, limit=200)
 
                     if articles:
                         total_collected += len(articles)
@@ -165,10 +179,31 @@ class NewsScheduler:
             logger.info(f"[CRAWL_RESULT] Total collected: {total_collected} articles")
             logger.info(f"[CRAWL_RESULT] Successful symbols: {len(successful_symbols)}")
             logger.info(f"[CRAWL_RESULT] Failed symbols: {len(failed_symbols)}")
+
+            # 크롤링 완료 기록 업데이트
+            if crawl_record_id:
+                supabase.table("news_crawl_history").update({
+                    "articles_collected": total_collected,
+                    "crawl_completed_at": datetime.now().isoformat(),
+                    "status": "completed"
+                }).eq("id", crawl_record_id).execute()
+                logger.info(f"[CRAWL_HISTORY] Crawl record saved (ID: {crawl_record_id})")
+
             logger.info("========== [SCHEDULED_CRAWL] Crawling completed ==========")
 
         except Exception as e:
             logger.error(f"[ERROR] Error during scheduled crawling: {str(e)}")
+
+            # 오류 발생 시 크롤링 기록 업데이트
+            if 'crawl_record_id' in locals() and crawl_record_id:
+                try:
+                    supabase.table("news_crawl_history").update({
+                        "crawl_completed_at": datetime.now().isoformat(),
+                        "status": "failed",
+                        "error_message": str(e)
+                    }).eq("id", crawl_record_id).execute()
+                except:
+                    pass
 
     async def _recover_missing_news(self):
         """서버 재시작 시 누락된 뉴스 복구"""
@@ -191,12 +226,12 @@ class NewsScheduler:
             logger.info(f"[RECOVERY] Last crawl: {last_crawl_time.strftime('%Y-%m-%d %H:%M:%S')}")
             logger.info(f"[RECOVERY] Time elapsed: {hours_passed:.1f} hours")
 
-            # 3. 2시간 이상 경과했으면 즉시 크롤링
-            if hours_passed >= 2:
-                logger.info(f"[RECOVERY] More than 2 hours elapsed. Starting immediate crawl.")
+            # 3. 5시간 이상 경과했으면 즉시 크롤링
+            if hours_passed >= 5:
+                logger.info(f"[RECOVERY] More than 5 hours elapsed. Starting immediate crawl.")
                 await self._scheduled_crawl()
             else:
-                remaining_time = 2 - hours_passed
+                remaining_time = 5 - hours_passed
                 logger.info(f"[RECOVERY] {remaining_time:.1f} hours remaining until next scheduled crawl.")
 
             logger.info("========== [RECOVERY] Recovery check completed ==========")
@@ -298,7 +333,7 @@ class NewsScheduler:
             for symbol in target_symbols:
                 try:
                     logger.info(f"[MANUAL_CRAWL] Collecting news for {symbol}...")
-                    articles = await NewsService.crawl_and_save_stock_news(symbol, limit=20 if symbols else 100)
+                    articles = await NewsService.crawl_and_save_stock_news(symbol, limit=200)
 
                     collected_count = len(articles) if articles else 0
                     total_collected += collected_count

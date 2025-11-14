@@ -23,6 +23,8 @@ async def get_financial_news_v1(
     조건:
     - kr_translate가 NULL이 아닌 기사만
     - ai_score가 0.5 이상인 기사만
+    - analyzed_at이 NULL이 아닌 기사만
+    - positive_score가 NULL이 아닌 기사만
     - published_at 내림차순 정렬 (최신 기사부터)
     - symbol이 제공되면 해당 종목 기사만
     """
@@ -44,14 +46,20 @@ async def get_financial_news_v1(
         # 2. ai_score가 0.5 이상인 것만
         query_builder = query_builder.gte("ai_score", 0.5)
 
-        # 3. symbol이 제공되면 해당 종목만
+        # 3. analyzed_at이 NULL이 아닌 것만
+        query_builder = query_builder.not_.is_("analyzed_at", "null")
+
+        # 4. positive_score가 NULL이 아닌 것만
+        query_builder = query_builder.not_.is_("positive_score", "null")
+
+        # 5. symbol이 제공되면 해당 종목만
         if symbol:
             query_builder = query_builder.eq("symbol", symbol.upper())
 
-        # 4. published_at 내림차순 정렬 (최신 기사부터)
+        # 6. published_at 내림차순 정렬 (최신 기사부터)
         query_builder = query_builder.order("published_at", desc=True)
 
-        # 5. 페이지네이션 (offset과 limit)
+        # 7. 페이지네이션 (offset과 limit)
         query_builder = query_builder.range(offset, offset + limit - 1)
 
         # 실행

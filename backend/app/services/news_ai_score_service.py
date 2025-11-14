@@ -259,10 +259,10 @@ class NewsAIScoreService:
         limit: int,
         symbol: Optional[str] = None
     ) -> List[Dict]:
-        """부분 평가 또는 미평가 뉴스 조회 (ai_analyzed_text 또는 postive_score가 NULL)"""
+        """부분 평가 또는 미평가 뉴스 조회 (ai_analyzed_text 또는 positive_score가 NULL)"""
         try:
             query = self.supabase.table("news_articles")\
-                .select("id, title, description, body, symbol, published_at, ai_score, analyzed_at, ai_analyzed_text, postive_score")\
+                .select("id, title, description, body, symbol, published_at, ai_score, analyzed_at, ai_analyzed_text, positive_score")\
                 .is_("ai_analyzed_text", "null")\
                 .order("published_at", desc=True)\
                 .limit(limit)
@@ -290,10 +290,9 @@ class NewsAIScoreService:
         """뉴스 AI Score, Positive Score 및 분석 텍스트를 DB에 업데이트"""
         try:
             # 업데이트 데이터 준비
-            # 주의: DB 컬럼명이 'postive_score' (오타)로 되어 있음
             update_data = {
                 "ai_score": ai_score,
-                "postive_score": positive_score,  # DB 컬럼명 오타에 맞춤
+                "positive_score": positive_score,
                 "ai_analyzed_text": analyzed_text,
                 "analyzed_at": datetime.now().isoformat()
             }

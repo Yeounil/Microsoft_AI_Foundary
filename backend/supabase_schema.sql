@@ -41,8 +41,11 @@ CREATE TABLE public.news_articles (
   updated_at timestamp with time zone DEFAULT now(),
   base_score double precision DEFAULT 0.5,
   ai_score double precision DEFAULT 0.5,
+  positive_score double precision DEFAULT 0.5,
+  ai_analyzed_text text,
   analyzed_at timestamp with time zone,
   body text,
+  kr_translate text,
   CONSTRAINT news_articles_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.news_crawl_history (

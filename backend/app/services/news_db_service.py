@@ -128,6 +128,39 @@ class NewsDBService:
             return []
 
     @staticmethod
+    async def get_last_crawl_date_for_symbol(symbol: str) -> Optional[str]:
+        """특정 종목의 마지막 크롤링 날짜 조회
+
+        Args:
+            symbol: 종목 심볼
+
+        Returns:
+            마지막 뉴스의 published_at (ISO 8601 형식) 또는 None
+        """
+        try:
+            supabase = get_supabase()
+
+            # 해당 종목의 가장 최근 뉴스 조회
+            result = supabase.table("news_articles")\
+                .select("published_at")\
+                .eq("symbol", symbol)\
+                .order("published_at", desc=True)\
+                .limit(1)\
+                .execute()
+
+            if result.data and len(result.data) > 0:
+                published_at = result.data[0].get("published_at")
+                logger.info(f"[LAST_CRAWL] {symbol}: Last article published at {published_at}")
+                return published_at
+
+            logger.info(f"[LAST_CRAWL] {symbol}: No previous articles found")
+            return None
+
+        except Exception as e:
+            logger.error(f"마지막 크롤링 날짜 조회 중 오류: {str(e)}")
+            return None
+
+    @staticmethod
     async def delete_old_news(days: int = 365) -> int:
         """N일 이상 된 뉴스 삭제 (기본값: 1년)
 

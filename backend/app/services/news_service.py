@@ -12,13 +12,22 @@ logger = logging.getLogger(__name__)
 class NewsService:
     
     @staticmethod
-    async def crawl_and_save_stock_news(symbol: str, limit: int = 100) -> List[Dict]:
-        """특정 종목의 뉴스를 Reuters API에서만 크롤링하고 데이터베이스에 저장"""
-        try:
-            logger.info(f"[CRAWL] Starting news crawl for symbol: {symbol} (no limit per symbol, Reuters only)")
+    async def crawl_and_save_stock_news(symbol: str, limit: int = 200) -> List[Dict]:
+        """특정 종목의 뉴스를 Reuters API에서만 크롤링하고 데이터베이스에 저장
 
-            # Reuters API에서 뉴스 가져오기 (유일한 소스)
-            reuters_articles = await NewsService.get_reuters_news(symbol, limit)
+        마지막 크롤링 시점 이후의 뉴스만 가져옵니다.
+        """
+        try:
+            # 마지막 크롤링 시점 조회
+            last_crawl_date = await NewsDBService.get_last_crawl_date_for_symbol(symbol)
+
+            if last_crawl_date:
+                logger.info(f"[CRAWL] Starting incremental crawl for {symbol} from {last_crawl_date}")
+            else:
+                logger.info(f"[CRAWL] Starting full crawl for {symbol} (first time, limit: {limit})")
+
+            # Reuters API에서 뉴스 가져오기 (마지막 크롤링 시점 이후)
+            reuters_articles = await NewsService.get_reuters_news(symbol, limit, date_start=last_crawl_date)
 
             if not reuters_articles:
                 logger.warning(f"[CRAWL] No articles found for {symbol} from Reuters API")
@@ -46,11 +55,17 @@ class NewsService:
             return []
     
     @staticmethod
-    async def get_stock_news_from_api(symbol: str, limit: int = 100) -> List[Dict]:
-        """Reuters API에서 특정 종목 뉴스 가져오기 (유일한 소스)"""
+    async def get_stock_news_from_api(symbol: str, limit: int = 100, date_start: str = None) -> List[Dict]:
+        """Reuters API에서 특정 종목 뉴스 가져오기 (유일한 소스)
+
+        Args:
+            symbol: 종목 심볼
+            limit: 가져올 뉴스 개수
+            date_start: 시작 날짜 (선택)
+        """
         try:
             # Reuters API 사용 (유일한 뉴스 소스)
-            reuters_articles = await NewsService.get_reuters_news(symbol, limit)
+            reuters_articles = await NewsService.get_reuters_news(symbol, limit, date_start=date_start)
             if reuters_articles:
                 return reuters_articles
 
@@ -63,15 +78,20 @@ class NewsService:
             return []
 
     @staticmethod
-    async def get_reuters_news(symbol: str, limit: int = 100) -> List[Dict]:
+    async def get_reuters_news(symbol: str, limit: int = 100, date_start: str = None) -> List[Dict]:
         """newsapi.ai (Event Registry)를 통해 금융 뉴스 가져오기
+
+        Args:
+            symbol: 종목 심볼
+            limit: 가져올 뉴스 개수
+            date_start: 시작 날짜 (YYYY-MM-DD 형식 또는 ISO 8601). None이면 최근 150일
 
         공식 쿼리 형식을 사용:
         - Source: Reuters, Bloomberg, WSJ, CNBC, MarketWatch, Benzinga (고신뢰도 금융 뉴스)
         - Category: Business/Investing/Stocks_and_Bonds
         - Language: English
         - 전체 기사 본문(body) 포함
-        - Time window: 150일 (5개월)
+        - Time window: date_start 이후 또는 150일 (5개월)
         """
         try:
             if not settings.news_api_key:
@@ -102,6 +122,22 @@ class NewsService:
             }
 
             concept_uri = concept_uri_mapping.get(symbol, f"http://en.wikipedia.org/wiki/{symbol}")
+
+            # 날짜 처리: ISO 8601 형식을 YYYY-MM-DD로 변환
+            formatted_date_start = None
+            if date_start:
+                try:
+                    # ISO 8601 형식 (2025-11-14T21:29:00+00:00) -> YYYY-MM-DD
+                    from datetime import datetime
+                    if 'T' in date_start:
+                        dt = datetime.fromisoformat(date_start.replace('Z', '+00:00'))
+                        formatted_date_start = dt.strftime('%Y-%m-%d')
+                    else:
+                        formatted_date_start = date_start  # 이미 YYYY-MM-DD 형식
+                    logger.info(f"[NEWSAPI.AI] Using dateStart: {formatted_date_start}")
+                except Exception as e:
+                    logger.warning(f"[NEWSAPI.AI] Failed to parse date_start: {str(e)}")
+                    formatted_date_start = None
 
             # Event Registry API 엔드포인트
             eventregistry_url = "http://eventregistry.org/api/v1/article/getArticles"
@@ -145,6 +181,10 @@ class NewsService:
                 }
             }
 
+            # 날짜 필터 추가 (date_start가 있으면)
+            if formatted_date_start:
+                query_dsl["$filter"]["dateStart"] = formatted_date_start
+
             # POST 요청을 위한 파라미터
             params = {
                 "query": json.dumps(query_dsl),  # ✅ JSON 쿼리
@@ -164,7 +204,8 @@ class NewsService:
                 "Content-Type": "application/json"
             }
 
-            logger.info(f"[NEWSAPI.AI] Requesting articles for symbol: {symbol} (Reuters/Bloomberg, Stocks & Bonds)")
+            date_info = f" from {formatted_date_start}" if formatted_date_start else " (last 150 days)"
+            logger.info(f"[NEWSAPI.AI] Requesting articles for {symbol}{date_info} (Reuters/Bloomberg, Stocks & Bonds)")
 
             # POST 요청으로 데이터 전송
             response = requests.post(eventregistry_url, json=params, headers=headers, timeout=15)
@@ -182,7 +223,7 @@ class NewsService:
             total_articles = articles_data.get("totalHits", 0)
             result_articles = articles_data.get("results", [])
 
-            logger.info(f"[NEWSAPI.AI] Found {total_articles} articles for {symbol} (Reuters/Bloomberg, returning {len(result_articles)})")
+            logger.info(f"[NEWSAPI.AI] Found {total_articles} articles for {symbol}{date_info} (returning {len(result_articles)})")
 
             articles = []
             for item in result_articles[:limit]:
