@@ -254,6 +254,26 @@ class ApiClient {
     return response.data;
   }
 
+  async createNewsReport(symbol: string, limit: number = 20) {
+    const response = await this.client.post('/api/v1/news-report', {
+      symbol,
+      limit,
+    });
+    return response.data;
+  }
+
+  async getNewsReport(symbol: string) {
+    const response = await this.client.get(`/api/v1/news-report/${symbol}`);
+    return response.data;
+  }
+
+  async previewNewsForReport(symbol: string, limit: number = 20) {
+    const response = await this.client.get(`/api/v1/news-report/${symbol}/preview`, {
+      params: { limit },
+    });
+    return response.data;
+  }
+
   // Analysis methods
   // Removed: /api/v2/analysis/stock API is no longer used
   // async analyzeStock(symbol: string, period: string = '1mo') {
