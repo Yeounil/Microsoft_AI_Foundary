@@ -99,6 +99,7 @@ class NewsTranslator:
             print(f"🏷️  종목: {symbol}")
         if limit:
             print(f"📊 제한: 최대 {limit}개")
+        print(f"📑 정렬: 최신 뉴스부터 (published_at 내림차순)")
         print(f"⚙️  배치 크기: {batch_size}개 동시 처리")
         print(f"⏱️  딜레이: {delay}초")
         print("=" * 80)
@@ -203,11 +204,11 @@ class NewsTranslator:
         untranslated_only: bool,
         all_news: bool
     ) -> List[Dict]:
-        """대상 뉴스 조회"""
+        """대상 뉴스 조회 (최신 뉴스부터 내림차순)"""
         try:
+            # 최신 뉴스부터 먼저 번역하도록 published_at 기준 내림차순 정렬
             query = self.supabase.table("news_articles")\
                 .select("id, title, description, body, symbol, published_at, kr_translate, ai_score")\
-                .order("ai_score", desc=True)\
                 .order("published_at", desc=True)
 
             # 미번역만

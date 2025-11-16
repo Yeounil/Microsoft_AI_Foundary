@@ -4,6 +4,7 @@ import Link from "next/link"
 import { ChevronDown, TrendingUp, Sparkles, BookOpen, BarChart3 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import Image from "next/image";
 
 export default function Home() {
   const scrollToSection = (sectionId: string) => {
@@ -46,13 +47,13 @@ export default function Home() {
       <section className="relative flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center px-4 py-20 text-center">
         <div className="mx-auto max-w-4xl space-y-8">
           <h1 className="text-balance text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
-            AI 금융 분석에
+            금융 뉴스 분석 서비스
             <br />
-            오신 것을 환영합니다
+            <span className="text-green-500">Green Wire</span>입니다
           </h1>
 
           <p className="text-pretty text-lg text-muted-foreground sm:text-xl md:text-2xl">
-            주식 시장 분석을 위한 원스톱 솔루션입니다
+            금융 뉴스 분석 전문 솔루션입니다
           </p>
 
           <div className="flex justify-center pt-4">
@@ -75,7 +76,7 @@ export default function Home() {
             <div className="space-y-6">
               <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
                 <TrendingUp className="h-4 w-4" />
-                실시간 데이터
+                실시간 주식 차트
               </div>
 
               <h2 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
@@ -83,17 +84,27 @@ export default function Home() {
               </h2>
 
               <p className="text-pretty text-lg text-muted-foreground leading-relaxed">
-                인터랙티브한 실시간 차트로 시장 동향을 한눈에 파악하세요. 다양한 기간과 인터벌 설정으로 원하는 정보를
+                인터랙티브한 실시간 차트로 주가 동향을 한눈에 파악하세요. 다양한 기간과 인터벌 설정으로 원하는 정보를
                 정확하게 확인할 수 있습니다.
               </p>
+    
 
               <div className="grid gap-4 pt-4 sm:grid-cols-3">
                 <Card>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium">1D-1Y</CardTitle>
+                    <CardTitle className="text-sm font-medium">1D-5Y</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-xs text-muted-foreground">기간 선택</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium">Advanced Chart</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-xs text-muted-foreground">캔들, 라인 차트 지원</p>
                   </CardContent>
                 </Card>
 
@@ -105,25 +116,20 @@ export default function Home() {
                     <p className="text-xs text-muted-foreground">업데이트</p>
                   </CardContent>
                 </Card>
-
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium">자동</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-xs text-muted-foreground">새로고침</p>
-                  </CardContent>
-                </Card>
               </div>
             </div>
-
+            
             {/* Chart Placeholder */}
             <div className="relative aspect-video overflow-hidden rounded-lg border border-border bg-card shadow-lg">
-              <div className="flex h-full items-center justify-center p-8">
+              <div className="flex h-full items-center justify-center p-0">
                 <div className="space-y-4 text-center">
-                  <BarChart3 className="h-16 w-16 mx-auto text-primary/30" />
                   <p className="text-sm text-muted-foreground">
-                    실시간 주식 차트 미리보기
+                    <Image
+                      src="/stock.png"
+                      alt="실시간 주식 차트"
+                      width={550}
+                      height={500}
+                    />
                   </p>
                 </div>
               </div>
@@ -149,10 +155,14 @@ export default function Home() {
             {/* Image/Illustration */}
             <div className="order-2 lg:order-1">
               <div className="relative aspect-square overflow-hidden rounded-lg border border-border bg-gradient-to-br from-primary/5 via-background to-accent/5 shadow-lg">
-                <div className="flex h-full items-center justify-center p-8">
+                <div className="flex h-full items-center justify-center p-0">
                   <div className="space-y-4 text-center">
-                    <Sparkles className="h-20 w-20 mx-auto text-primary/30" />
-                    <p className="text-sm text-muted-foreground">AI 분석 시스템</p>
+                    <Image
+                      src="/news.png"
+                      alt="실시간 주식 차트"
+                      width={550}
+                      height={550}
+                    />
                   </div>
                 </div>
               </div>
@@ -162,16 +172,15 @@ export default function Home() {
             <div className="order-1 space-y-6 lg:order-2">
               <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
                 <Sparkles className="h-4 w-4" />
-                AI 기술
+                FinBERT
               </div>
 
               <h2 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-                AI 기반 분석 및 뉴스
+                AI 기반 금융 뉴스 감정 분석
               </h2>
 
               <p className="text-pretty text-lg text-muted-foreground leading-relaxed">
-                선택한 주식에 대한 최신 뉴스를 AI가 자동으로 수집하고 분석합니다. 관심 종목을 등록하면 맞춤형 뉴스
-                추천을 받을 수 있습니다.
+                주가에 대한 최신 뉴스를 자동으로 수집하고 분석합니다. 관심 종목을 등록하면 맞춤형 뉴스 추천을 받을 수 있습니다.
               </p>
 
               <div className="space-y-4 pt-4">
