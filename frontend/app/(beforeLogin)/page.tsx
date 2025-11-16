@@ -154,7 +154,7 @@ export default function Home() {
           <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
             {/* Image/Illustration */}
             <div className="order-2 lg:order-1">
-              <div className="relative aspect-square overflow-hidden rounded-lg border border-border bg-gradient-to-br from-primary/5 via-background to-accent/5 shadow-lg">
+              <div className="relative aspect-square overflow-hidden rounded-lg border border-border bg-linear-to-br from-primary/5 via-background to-accent/5 shadow-lg">
                 <div className="flex h-full items-center justify-center p-0">
                   <div className="space-y-4 text-center">
                     <Image

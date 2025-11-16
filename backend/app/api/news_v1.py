@@ -14,6 +14,7 @@ router = APIRouter()
 @router.get("/financial")
 async def get_financial_news_v1(
     symbol: Optional[str] = Query(None, description="특정 종목 심볼 (옵셔널)"),
+    symbols: Optional[str] = Query(None, description="여러 종목 심볼 (쉼표로 구분, 예: AAPL,MSFT,GOOGL)"),
     limit: int = Query(5, description="가져올 뉴스 개수"),
     page: int = Query(1, description="페이지 번호 (1부터 시작)"),
     lang: str = Query("en", description="언어 (en: 영어, kr: 한국어)")
@@ -27,6 +28,7 @@ async def get_financial_news_v1(
     - positive_score가 NULL이 아닌 기사만
     - published_at 내림차순 정렬 (최신 기사부터)
     - symbol이 제공되면 해당 종목 기사만
+    - symbols가 제공되면 해당 종목들의 기사만 (OR 조건)
     """
     try:
         from app.db.supabase_client import get_supabase
@@ -52,8 +54,13 @@ async def get_financial_news_v1(
         # 4. positive_score가 NULL이 아닌 것만
         query_builder = query_builder.not_.is_("positive_score", "null")
 
-        # 5. symbol이 제공되면 해당 종목만
-        if symbol:
+        # 5. symbol(s) 필터링
+        if symbols:
+            # 여러 종목의 경우 (쉼표로 구분)
+            symbol_list = [s.strip().upper() for s in symbols.split(",")]
+            query_builder = query_builder.in_("symbol", symbol_list)
+        elif symbol:
+            # 단일 종목의 경우
             query_builder = query_builder.eq("symbol", symbol.upper())
 
         # 6. published_at 내림차순 정렬 (최신 기사부터)
@@ -69,6 +76,7 @@ async def get_financial_news_v1(
 
         return {
             "symbol": symbol,
+            "symbols": symbols,
             "language": lang,
             "page": page,
             "limit": limit,

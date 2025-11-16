@@ -227,6 +227,7 @@ class ApiClient {
 
   async getFinancialNewsV1(params: {
     symbol?: string;
+    symbols?: string;
     page?: number;
     limit?: number;
     lang?: string;
