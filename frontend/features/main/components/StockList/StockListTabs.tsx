@@ -7,10 +7,7 @@ interface StockListTabsProps {
   onTabChange: (value: string) => void;
   allStocksCount: number;
   favoriteStocksCount: number;
-  visibleStocks: StockItem[];
-  displayStocksCount: number;
-  showAll: boolean;
-  onToggleShowAll: () => void;
+  displayStocks: StockItem[];
   watchlist: string[];
   onToggleWatchlist: (e: React.MouseEvent, symbol: string) => void;
   onSelectStock?: (symbol: string) => void;
@@ -26,10 +23,7 @@ export function StockListTabs({
   onTabChange,
   allStocksCount,
   favoriteStocksCount,
-  visibleStocks,
-  displayStocksCount,
-  showAll,
-  onToggleShowAll,
+  displayStocks,
   watchlist,
   onToggleWatchlist,
   onSelectStock,
@@ -48,10 +42,7 @@ export function StockListTabs({
 
       <TabsContent value="all" className="mt-0">
         <StockListContent
-          stocks={visibleStocks}
-          showAll={showAll}
-          onToggleShowAll={onToggleShowAll}
-          totalCount={displayStocksCount}
+          stocks={displayStocks}
           watchlist={watchlist}
           onToggleWatchlist={onToggleWatchlist}
           onSelectStock={onSelectStock}
@@ -61,10 +52,7 @@ export function StockListTabs({
 
       <TabsContent value="favorites" className="mt-0">
         <StockListContent
-          stocks={visibleStocks}
-          showAll={showAll}
-          onToggleShowAll={onToggleShowAll}
-          totalCount={displayStocksCount}
+          stocks={displayStocks}
           watchlist={watchlist}
           onToggleWatchlist={onToggleWatchlist}
           onSelectStock={onSelectStock}

@@ -1,25 +1,50 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 
+interface TabSearchState {
+  searchQuery: string;
+  selectedStock: string | null;
+}
+
 /**
  * 뉴스 검색 Hook
  * 검색, 필터링, dropdown, keyboard navigation을 관리합니다.
+ * 탭별 독립적인 검색 상태를 유지합니다.
  */
-export function useNewsSearch(availableStocks: string[], initialStock?: string) {
-  const [searchQuery, setSearchQuery] = useState(initialStock || "");
-  const [selectedStock, setSelectedStock] = useState<string | null>(initialStock || null);
+export function useNewsSearch(
+  availableStocks: string[],
+  activeTab: string,
+  initialStock?: string
+) {
+  // 탭별 독립적인 검색 상태
+  const [hotTabSearch, setHotTabSearch] = useState<TabSearchState>({
+    searchQuery: "",
+    selectedStock: null,
+  });
+  const [favoritesTabSearch, setFavoritesTabSearch] = useState<TabSearchState>({
+    searchQuery: "",
+    selectedStock: null,
+  });
+
   const [showDropdown, setShowDropdown] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Set initial stock if provided
+  // 현재 활성 탭의 검색 상태 가져오기
+  const currentTabSearch = activeTab === "hot" ? hotTabSearch : favoritesTabSearch;
+  const searchQuery = currentTabSearch.searchQuery;
+  const selectedStock = currentTabSearch.selectedStock;
+
+  // Set initial stock if provided (only for dashboard pages, not for main page tabs)
   useEffect(() => {
-    if (initialStock && initialStock !== selectedStock) {
-      setSelectedStock(initialStock);
-      setSearchQuery(initialStock);
+    if (initialStock && activeTab === "hot") {
+      setHotTabSearch({
+        searchQuery: initialStock,
+        selectedStock: initialStock,
+      });
     }
-  }, [initialStock, selectedStock]);
+  }, [initialStock, activeTab]);
 
   // Filter stocks based on search query (memoized)
   const filteredStocks = useMemo(
@@ -33,31 +58,45 @@ export function useNewsSearch(availableStocks: string[], initialStock?: string) 
   );
 
   // Handler functions (declared before effects)
-  const handleSelectStock = useCallback((stock: string) => {
-    setSelectedStock(stock);
-    setSearchQuery(stock);
-    setShowDropdown(false);
-    setHighlightedIndex(-1);
-  }, []);
+  const handleSelectStock = useCallback(
+    (stock: string) => {
+      const newState = { searchQuery: stock, selectedStock: stock };
+      if (activeTab === "hot") {
+        setHotTabSearch(newState);
+      } else {
+        setFavoritesTabSearch(newState);
+      }
+      setShowDropdown(false);
+      setHighlightedIndex(-1);
+    },
+    [activeTab]
+  );
 
   const handleClearStock = useCallback(() => {
-    setSelectedStock(null);
-    setSearchQuery("");
+    const newState = { searchQuery: "", selectedStock: null };
+    if (activeTab === "hot") {
+      setHotTabSearch(newState);
+    } else {
+      setFavoritesTabSearch(newState);
+    }
     inputRef.current?.focus();
-  }, []);
+  }, [activeTab]);
 
   const handleInputChange = useCallback(
     (value: string) => {
-      setSearchQuery(value);
+      const newState = {
+        searchQuery: value,
+        selectedStock: selectedStock && value !== selectedStock ? null : selectedStock,
+      };
+      if (activeTab === "hot") {
+        setHotTabSearch(newState);
+      } else {
+        setFavoritesTabSearch(newState);
+      }
       setShowDropdown(value.length > 0);
       setHighlightedIndex(-1);
-
-      // Clear selection if input doesn't match selected stock
-      if (selectedStock && value !== selectedStock) {
-        setSelectedStock(null);
-      }
     },
-    [selectedStock]
+    [selectedStock, activeTab]
   );
 
   // Close dropdown when clicking outside

@@ -8,14 +8,14 @@ interface RiskAnalysisCardProps {
 
 export function RiskAnalysisCard({ analysis }: RiskAnalysisCardProps) {
   return (
-    <Card className="flex-1 flex flex-col">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg">리스크 분석</CardTitle>
-        <CardDescription className="text-xs">
+    <Card className="flex-1 flex flex-col min-h-80">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg font-semibold">리스크 분석</CardTitle>
+        <CardDescription className="text-xs text-muted-foreground">
           AI 기반 위험 요소 평가
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 space-y-3 flex flex-col justify-center">
+      <CardContent className="flex-1 flex gap-10 justify-center items-center py-8 px-6">
         <RiskBar
           label="시장 리스크"
           level={analysis.risk_analysis?.market_risk || "low"}

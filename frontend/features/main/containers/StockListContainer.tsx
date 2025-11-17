@@ -27,7 +27,6 @@ export function StockListContainer({
   supportedStocks,
   isLoadingStocks,
 }: StockListContainerProps) {
-  const [showAll, setShowAll] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -81,7 +80,6 @@ export function StockListContainer({
 
   // 현재 탭에 따른 표시 종목
   const displayStocks = activeTab === "all" ? filteredStocks : favoriteStocks;
-  const visibleStocks = showAll ? displayStocks : displayStocks.slice(0, 5);
 
   // 관심 종목 토글
   const toggleWatchlist = (e: React.MouseEvent, symbol: string) => {
@@ -117,10 +115,7 @@ export function StockListContainer({
             onTabChange={setActiveTab}
             allStocksCount={filteredStocks.length}
             favoriteStocksCount={favoriteStocks.length}
-            visibleStocks={visibleStocks}
-            displayStocksCount={displayStocks.length}
-            showAll={showAll}
-            onToggleShowAll={() => setShowAll(!showAll)}
+            displayStocks={displayStocks}
             watchlist={watchlist}
             onToggleWatchlist={toggleWatchlist}
             onSelectStock={onSelectStock}

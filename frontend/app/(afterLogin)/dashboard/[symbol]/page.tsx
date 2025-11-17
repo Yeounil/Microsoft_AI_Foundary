@@ -1,46 +1,25 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DashboardChartContainer } from '@/features/dashboard/containers/DashboardChartContainer';
 import { AnalysisSectionContainer } from '@/features/dashboard/containers/AnalysisSectionContainer';
-import { NewsSectionContainer } from '@/features/main/containers/NewsSectionContainer';
+import { SimpleNewsSection } from '@/features/main/components/NewsSection/SimpleNewsSection';
 import { useStockStore } from '@/store/stock-store';
-import apiClient from '@/lib/api-client';
 
 export default function DashboardPage() {
   const params = useParams();
   const router = useRouter();
   const symbol = params.symbol as string;
   const { selectStock } = useStockStore();
-  const [supportedStocks, setSupportedStocks] = useState<string[]>([]);
-  const [isLoadingStocks, setIsLoadingStocks] = useState(true);
 
   useEffect(() => {
     if (symbol) {
       selectStock(symbol.toUpperCase());
     }
   }, [symbol, selectStock]);
-
-  // Fetch supported stocks
-  useEffect(() => {
-    const loadSupportedStocks = async () => {
-      try {
-        const response = await apiClient.getSupportedStocks();
-        if (response.all_symbols && Array.isArray(response.all_symbols)) {
-          setSupportedStocks(response.all_symbols);
-        }
-        setIsLoadingStocks(false);
-      } catch (error) {
-        console.error('Failed to load stocks:', error);
-        setIsLoadingStocks(false);
-      }
-    };
-
-    loadSupportedStocks();
-  }, []);
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -70,11 +49,7 @@ export default function DashboardPage() {
 
           {/* Right Side - News (50%) */}
           <div>
-            <NewsSectionContainer
-              availableStocks={supportedStocks}
-              isLoadingStocks={isLoadingStocks}
-              initialStock={symbol.toUpperCase()}
-            />
+            <SimpleNewsSection symbol={symbol.toUpperCase()} />
           </div>
         </div>
       </div>

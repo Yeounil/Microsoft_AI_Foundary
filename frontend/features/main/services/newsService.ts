@@ -14,6 +14,7 @@ export interface FinancialNewsArticle {
   sentiment?: string;
   symbol?: string;
   text?: string;
+  kr_translate?: string;
   positive_score?: number;
 }
 
