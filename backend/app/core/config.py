@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     alpha_vantage_api_key: str = os.getenv("ALPHA_VANTAGE_API_KEY", "")
     news_api_key: str = os.getenv("NEWS_API_KEY", "")
     apify_api_token: str = os.getenv("APIFY_API_TOKEN", "")
+    massive_api_key: str = os.getenv("MASSIVE_API_KEY", "")
     
     # Naver API
     naver_client_id: str = os.getenv("NAVER_CLIENT_ID", "")
