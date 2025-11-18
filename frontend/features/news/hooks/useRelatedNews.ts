@@ -40,8 +40,8 @@ export function useRelatedNews({
     ?.filter((article: RelatedNewsArticle) => article.id !== currentNewsId)
     .slice(0, 5) || []) as RelatedNewsArticle[];
 
-  // 다음 페이지 존재 여부 (원본 데이터가 6개면 더 있을 가능성)
-  const hasNextPage = (relatedNewsData?.articles?.length || 0) >= 6;
+  // 다음 페이지 존재 여부 (현재 페이지 데이터가 5개면 다음 페이지 존재 가능)
+  const hasNextPage = relatedNews.length >= 5;
 
   return {
     relatedNews,

@@ -109,7 +109,6 @@ export function NewsAnalysisContainer({
       {/* Header */}
       <NewsAnalysisHeader
         onBack={() => router.back()}
-        onViewReport={handleGenerateReport}
         isGeneratingReport={isGeneratingReport}
       />
 
@@ -137,6 +136,8 @@ export function NewsAnalysisContainer({
             body={newsData.body}
             aiSummary={aiSummary}
             translatedContent={translatedContent}
+            onViewReport={handleGenerateReport}
+            isGeneratingReport={isGeneratingReport}
           />
         </div>
 

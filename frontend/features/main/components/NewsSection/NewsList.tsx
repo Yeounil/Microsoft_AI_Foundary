@@ -1,7 +1,6 @@
 import {
   Pagination,
   PaginationContent,
-  PaginationEllipsis,
   PaginationItem,
   PaginationLink,
   PaginationNext,
@@ -123,7 +122,12 @@ export function NewsList({
             {Array.from({ length: 3 }, (_, i) => {
               const pageNum = Math.max(1, currentPage - 1) + i;
 
-              if (pageNum < currentPage - 1 || pageNum > currentPage + 1) {
+              // 다음 페이지가 없으면 현재 페이지보다 큰 번호는 표시하지 않음
+              if (
+                pageNum < currentPage - 1 ||
+                pageNum > currentPage + 1 ||
+                (pageNum > currentPage && !hasNextPage)
+              ) {
                 return null;
               }
 
@@ -139,13 +143,6 @@ export function NewsList({
                 </PaginationItem>
               );
             }).filter(Boolean)}
-
-            {/* Ellipsis */}
-            {hasNextPage && currentPage > 2 && (
-              <PaginationItem>
-                <PaginationEllipsis />
-              </PaginationItem>
-            )}
 
             <PaginationItem>
               <PaginationNext

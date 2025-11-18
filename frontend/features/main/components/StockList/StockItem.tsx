@@ -31,9 +31,9 @@ export function StockItem({
     >
       <div className="flex-1">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold">{stock.symbol}</h3>
-          <span className="text-xs text-muted-foreground truncate max-w-[200px]">
-            {stock.name}
+          <h3 className="font-semibold truncate max-w-[200px]">{stock.name}</h3>
+          <span className="text-xs text-muted-foreground">
+            {stock.symbol}
           </span>
         </div>
         <div className="mt-1 flex items-center gap-2">

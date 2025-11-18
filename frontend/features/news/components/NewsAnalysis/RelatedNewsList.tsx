@@ -61,14 +61,16 @@ export function RelatedNewsList({
                     />
                   </PaginationItem>
 
-                  {/* Page numbers - Show current page and nearby pages (±1) */}
+                  {/* Page numbers - Show current page and nearby pages */}
                   {Array.from({ length: 3 }, (_, i) => {
                     const pageNum = Math.max(1, currentPage - 1) + i;
 
                     // 현재 페이지 기준으로 앞뒤 1페이지씩만 표시
+                    // 다음 페이지가 없으면 현재 페이지보다 큰 번호는 표시하지 않음
                     if (
                       pageNum < currentPage - 1 ||
-                      pageNum > currentPage + 1
+                      pageNum > currentPage + 1 ||
+                      (pageNum > currentPage && !hasNextPage)
                     ) {
                       return null;
                     }

@@ -1,47 +1,46 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, memo } from "react";
 
 /**
  * TradingView Ticker Tape Widget
  * 실시간 주식 시세를 표시하는 티커 테이프
  */
-export function TickerTapeWidget() {
+function TickerTapeWidgetComponent() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const initialized = useRef(false);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    const container = containerRef.current;
+    if (!container || initialized.current) return;
 
-    // 기존 스크립트 제거 (중복 방지)
-    const existingScript = containerRef.current.querySelector("script");
-    if (existingScript) {
-      existingScript.remove();
-    }
+    initialized.current = true;
 
     // TradingView 위젯 스크립트 생성
     const script = document.createElement("script");
+    script.type = "text/javascript";
     script.src = "https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js";
     script.async = true;
-    script.innerHTML = JSON.stringify({
+    script.text = JSON.stringify({
       symbols: [
         {
           proName: "NASDAQ:NDX",
           title: "NASDAQ 100"
         },
         {
-          proName: "CME_MINI:NQ1!",
-          title: "NASDAQ 100 Futures"
+          proName: "PEPPERSTONE:NAS100",
+          title: "NASDAQ 100 Index"
         },
         {
-          proName: "SP:SPX",
+          proName: "FOREXCOM:SPXUSD",
           title: "S&P 500"
         },
         {
-          proName: "TVC:DJI",
+          proName: "FOREXCOM:DJI",
           title: "Dow Jones"
         },
         {
-          proName: "FX:USDKRW",
+          proName: "FX_IDC:USDKRW",
           title: "USD/KRW"
         },
         {
@@ -51,37 +50,25 @@ export function TickerTapeWidget() {
       ],
       showSymbolLogo: true,
       isTransparent: false,
-      displayMode: "regular",
+      displayMode: "adaptive",
       colorTheme: "light",
       locale: "en"
     });
 
-    containerRef.current.appendChild(script);
-
-    // Cleanup
-    return () => {
-      if (containerRef.current) {
-        const scriptToRemove = containerRef.current.querySelector("script");
-        if (scriptToRemove) {
-          scriptToRemove.remove();
-        }
-      }
-    };
+    container.appendChild(script);
   }, []);
 
   return (
-    <div className="tradingview-widget-container mb-6">
-      <div className="tradingview-widget-container__widget" ref={containerRef}></div>
-      <div className="tradingview-widget-copyright">
-        <a
-          href="https://www.tradingview.com/"
-          rel="noopener nofollow"
-          target="_blank"
-          className="text-xs text-muted-foreground"
-        >
-          <span className="blue-text">Track all markets on TradingView</span>
-        </a>
-      </div>
+    <div className="tradingview-widget-container mb-6 relative" ref={containerRef}>
+      <div className="tradingview-widget-container__widget"></div>
+      {/* 클릭 방지 오버레이 */}
+      <div
+        className="absolute inset-0 z-10"
+        style={{ cursor: 'default' }}
+        onClick={(e) => e.preventDefault()}
+      />
     </div>
   );
 }
+
+export const TickerTapeWidget = memo(TickerTapeWidgetComponent);

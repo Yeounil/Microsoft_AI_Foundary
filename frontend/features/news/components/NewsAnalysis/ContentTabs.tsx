@@ -1,11 +1,20 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { HelpCircle, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
 interface ContentTabsProps {
   body: string;
   aiSummary: string;
   translatedContent: string;
+  onViewReport: () => void;
+  isGeneratingReport?: boolean;
 }
 
 /**
@@ -16,6 +25,8 @@ export function ContentTabs({
   body,
   aiSummary,
   translatedContent,
+  onViewReport,
+  isGeneratingReport = false,
 }: ContentTabsProps) {
   return (
     <Card>
@@ -24,10 +35,36 @@ export function ContentTabs({
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="english">
-          <TabsList className="mb-4">
-            <TabsTrigger value="english">English</TabsTrigger>
-            <TabsTrigger value="korean">한국어</TabsTrigger>
-          </TabsList>
+          <div className="flex items-center justify-between mb-4">
+            <TabsList>
+              <TabsTrigger value="english">English</TabsTrigger>
+              <TabsTrigger value="korean">한국어</TabsTrigger>
+            </TabsList>
+            <div className="flex items-center gap-2">
+              <Button onClick={onViewReport} disabled={isGeneratingReport}>
+                {isGeneratingReport ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    레포트 생성 중...
+                  </>
+                ) : (
+                  "관련 뉴스 AI 종합 분석"
+                )}
+              </Button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" disabled={isGeneratingReport}>
+                    <HelpCircle className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end">
+                  <p className="text-sm">
+                    AI가 관련 뉴스를 종합적으로 분석하여 투자 인사이트를 제공합니다.
+                  </p>
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
 
           <TabsContent value="english" className="space-y-4">
             <div className="p-4">

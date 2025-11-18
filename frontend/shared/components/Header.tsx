@@ -80,8 +80,8 @@ export default function Header() {
               </span>
             </Link>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-6">
+            {/* Desktop Navigation - Hidden */}
+            <nav className="hidden">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
@@ -202,8 +202,8 @@ export default function Header() {
               </div>
             </form>
 
-            {/* Mobile Nav Items */}
-            <nav className="space-y-2">
+            {/* Mobile Nav Items - Hidden */}
+            <nav className="hidden">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
