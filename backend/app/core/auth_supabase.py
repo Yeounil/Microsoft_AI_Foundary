@@ -22,9 +22,12 @@ async def get_current_user(
     try:
         username = verify_token(credentials.credentials)
         if username is None:
+            logger.error("토큰 검증 실패: username이 None입니다 (토큰 만료 또는 유효하지 않음)")
             raise credentials_exception
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"토큰 검증 실패: {str(e)}")
+        logger.error(f"토큰 검증 중 예외 발생: {type(e).__name__} - {str(e)}")
         raise credentials_exception
     
     # Supabase에서 사용자 정보 조회

@@ -43,11 +43,24 @@ logger = logging.getLogger(__name__)
 MASSIVE_API_BASE_URL = "https://api.massive.com"
 MASSIVE_NEWS_ENDPOINT = "/v2/reference/news"
 
-# 지원 종목 목록
+# 지원 종목 목록 (모든 섹터)
 SUPPORTED_SYMBOLS = [
-    "AAPL", "GOOGL", "GOOG", "MSFT", "TSLA", "NVDA", "AMZN", "META",
-    "NFLX", "JPM", "JNJ", "WMT", "XOM", "VZ", "PFE",
-    "005930.KS", "000660.KS", "035420.KS", "035720.KS"
+    # Tech
+    "AAPL", "MSFT", "GOOGL", "GOOG", "AMZN", "NVDA", "TSLA", "META", "NFLX", "CRM",
+    "ORCL", "ADBE", "INTC", "AMD", "MU", "QCOM", "IBM", "CSCO", "HPQ", "AVGO",
+    # Finance
+    "JPM", "BAC", "WFC", "GS", "MS", "C", "BLK", "SCHW", "AXP", "CB",
+    "AIG", "MMC", "ICE", "CBOE", "V",
+    # Healthcare
+    "JNJ", "UNH", "PFE", "ABBV", "MRK", "TMO", "LLY", "ABT", "AMGN", "GILD",
+    "CVS", "ISRG", "REGN", "BIIB", "VRTX",
+    # Retail & Consumer
+    "WMT", "TGT", "HD", "LOW", "MCD", "SBUX", "KO", "PEP", "NKE", "VFC",
+    "LULU", "DKS", "RH", "COST", "DIS",
+    # Industrials
+    "CAT", "BA", "MMM", "RTX", "HON", "JCI", "PCAR", "GE", "DE", "LMT",
+    # Energy
+    "XOM", "CVX", "COP", "MPC", "PSX", "VLO", "EOG", "OXY", "MRO", "SLB"
 ]
 
 

@@ -1,4 +1,4 @@
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, timezone
 from fastapi import APIRouter, HTTPException, status, Depends, Response, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
@@ -172,7 +172,7 @@ async def login(user_credentials: UserLogin, request: Request):
         await token_service.store_refresh_token(
             user_id=user['id'],
             refresh_token=refresh_token,
-            expires_at=datetime.utcnow() + refresh_token_expires,
+            expires_at=datetime.now(timezone.utc) + refresh_token_expires,
             device_info=user_agent,
             ip_address=client_ip
         )
@@ -270,7 +270,7 @@ async def refresh_token(refresh_request: RefreshTokenRequest, request: Request):
             user_id=user['id'],
             old_refresh_token=refresh_request.refresh_token,
             new_refresh_token=new_refresh_token,
-            expires_at=datetime.utcnow() + refresh_token_expires,
+            expires_at=datetime.now(timezone.utc) + refresh_token_expires,
             device_info=user_agent,
             ip_address=client_ip
         )
