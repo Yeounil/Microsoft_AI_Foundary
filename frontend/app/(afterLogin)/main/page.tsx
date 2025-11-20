@@ -48,14 +48,14 @@ export default function MainPage() {
   }, []);
 
   return (
-    <div className="container px-3 py-4 md:px-4 md:py-6 m-auto">
+    <div className="w-full px-3 py-4 md:px-6 md:py-6 lg:px-8 mx-auto max-w-[1600px]">
       {/* TradingView Ticker Tape */}
       <AnimatedSection animation="fade-in" duration={300}>
         <TickerTapeWidget />
       </AnimatedSection>
 
       {/* Main Content Grid - News first on all devices (뉴스 분석이 메인) */}
-      <div className="grid gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-[6fr_4fr]">
+      <div className="flex flex-col gap-4 md:gap-6 lg:grid lg:grid-cols-2 lg:gap-8">
         {/* News Section - Always first */}
         <AnimatedSection animation="fade-up" delay={100}>
           <Suspense fallback={

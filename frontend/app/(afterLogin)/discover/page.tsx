@@ -333,7 +333,7 @@ export default function DiscoverPage() {
                 <div className="flex items-center gap-1">
                   <div className="flex-1 bg-muted rounded-full h-2">
                     <div
-                      className="bg-gradient-to-r from-blue-500 to-purple-500 h-full rounded-full"
+                      className="bg-linear-to-r from-blue-500 to-purple-500 h-full rounded-full"
                       style={{ width: `${stock.trend_score}%` }}
                     />
                   </div>

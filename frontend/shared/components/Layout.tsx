@@ -66,7 +66,7 @@ export default function Layout({ children, showFooter = true }: LayoutProps) {
     <div className="min-h-screen flex flex-col">
       {/* Global Loading Progress Bar */}
       {isChartLoading && (
-        <div className="fixed top-0 left-0 right-0 z-[100] h-1 bg-transparent">
+        <div className="fixed top-0 left-0 right-0 z-100 h-1 bg-transparent">
           <div className="h-full bg-primary animate-progress-indeterminate" />
         </div>
       )}
@@ -81,7 +81,7 @@ export default function Layout({ children, showFooter = true }: LayoutProps) {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col">
         <Header />
-        <main className={`flex-1 px-4 md:px-6 lg:px-8 ${!isAuthPage ? 'container-max' : ''}`}>{children}</main>
+        <main className="flex-1 px-4 md:px-6 lg:px-8">{children}</main>
         {showFooter && <Footer />}
       </div>
 

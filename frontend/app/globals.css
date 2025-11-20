@@ -479,4 +479,48 @@
   .animate-error-pulse {
     animation: error-pulse 0.6s ease-out;
   }
+
+  /* 모바일 최적화 유틸리티 */
+  .hide-mobile {
+    @apply lg:block hidden;
+  }
+
+  .hide-desktop {
+    @apply lg:hidden block;
+  }
+
+  .compact-padding {
+    @apply p-2 md:p-3 lg:p-4;
+  }
+
+  .compact-padding-x {
+    @apply px-2 md:px-3 lg:px-4;
+  }
+
+  .compact-padding-y {
+    @apply py-2 md:py-3 lg:py-4;
+  }
+
+  /* 터치 타겟 최적화 */
+  .touch-target-responsive {
+    @apply min-h-[44px] min-w-[44px] lg:min-h-[36px] lg:min-w-[36px];
+  }
+
+  /* 모바일 최적화 그리드 갭 */
+  .gap-mobile-optimized {
+    @apply gap-2 md:gap-4 lg:gap-6;
+  }
+
+  /* 모바일 텍스트 크기 */
+  .text-xs-mobile {
+    @apply text-[10px] sm:text-xs;
+  }
+
+  .text-sm-mobile {
+    @apply text-xs sm:text-sm;
+  }
+
+  .text-base-mobile {
+    @apply text-sm sm:text-base;
+  }
 }

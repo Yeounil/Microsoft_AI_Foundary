@@ -100,16 +100,16 @@ export function StockListContainer({
   );
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>종목 리스트</CardTitle>
+    <Card className="w-full max-w-full overflow-hidden">
+      <CardHeader className="px-3 md:px-6">
+        <CardTitle className="text-base md:text-lg">종목 리스트</CardTitle>
         <StockListSearch
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           isDisabled={isLoadingStocks}
         />
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-3 md:px-6">
         {isLoadingStocks ? (
           <div className="text-center py-8">
             <div className="text-sm text-muted-foreground animate-pulse">

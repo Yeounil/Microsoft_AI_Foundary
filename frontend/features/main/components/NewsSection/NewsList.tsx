@@ -96,8 +96,8 @@ export function NewsList({
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-300px)] md:h-[1050px] min-h-[400px]">
-      <div className="flex-1 overflow-y-auto space-y-3 mb-4 pt-4 stagger-animate">
+    <div className="flex flex-col md:h-[870px] lg:h-[1080px] min-h-[400px]">
+      <div className="flex-1 overflow-y-auto space-y-4 mb-4 pt-4 stagger-animate">
         {news.map((item, index) => (
           <div key={item.id || index} className="transform transition-all duration-300">
             <NewsCard article={item} index={index} />

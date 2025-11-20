@@ -8,6 +8,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useStockStore } from "@/store/stock-store";
 import { useNewsSearch } from "../hooks/useNewsSearch";
 import { useNewsQuery } from "../hooks/useNewsQuery";
@@ -147,9 +154,9 @@ export function NewsSectionContainer({
   }, [categoryTab, mainTab, isLoadingCategory, isLoadingWatchlist, isLoadingHot]);
 
   return (
-    <Card className="h-fit">
-      <CardHeader>
-        <CardTitle>뉴스</CardTitle>
+    <Card className="h-fit w-full max-w-full overflow-hidden">
+      <CardHeader className="px-3 md:px-6">
+        <CardTitle className="text-base md:text-lg">뉴스</CardTitle>
         <SearchBar
           searchQuery={searchQuery}
           selectedStock={selectedStock}
@@ -166,37 +173,56 @@ export function NewsSectionContainer({
           onHighlightChange={setHighlightedIndex}
         />
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-3 md:px-6">
         {/* 첫 번째 탭 그룹: Hot 뉴스 / 관심종목 */}
         <div className="flex gap-2 mb-3">
           <Button
-            variant={mainTab === "hot" ? "default" : "outline"}
+            variant={mainTab === "hot" && !categoryTab ? "default" : "outline"}
             className="flex-1 min-h-[44px] text-sm md:text-base"
-            onClick={() => handleMainTabChange("hot")}
+            onClick={() => {
+              handleMainTabChange("hot");
+              setCategoryTab(null);
+            }}
           >
             Hot 뉴스
           </Button>
           <Button
-            variant={mainTab === "favorites" ? "default" : "outline"}
+            variant={mainTab === "favorites" && !categoryTab ? "default" : "outline"}
             className="flex-1 min-h-[44px] text-sm md:text-base"
-            onClick={() => handleMainTabChange("favorites")}
+            onClick={() => {
+              handleMainTabChange("favorites");
+              setCategoryTab(null);
+            }}
           >
             관심종목
           </Button>
         </div>
 
-        {/* 두 번째 탭 그룹: 카테고리 - 모바일에서 가로 스크롤 */}
-        <div className="flex gap-2 mb-4 overflow-x-auto pb-2 -mx-2 px-2 scrollbar-hide">
-          {CATEGORY_ORDER.map((categoryKey) => (
-            <Button
-              key={categoryKey}
-              variant={categoryTab === categoryKey ? "default" : "outline"}
-              className="flex-shrink-0 min-w-fit px-3 py-2 min-h-[40px] text-sm md:flex-1 md:min-w-20"
-              onClick={() => handleCategoryTabChange(categoryKey)}
-            >
-              {CATEGORY_LABELS[categoryKey]}
-            </Button>
-          ))}
+        {/* 카테고리 선택 */}
+        <div className="mb-4">
+          <Select
+            value={categoryTab || "none"}
+            onValueChange={(value) => {
+              if (value === "none") {
+                setCategoryTab(null);
+              } else {
+                setCategoryTab(value);
+                setCurrentPage(1);
+              }
+            }}
+          >
+            <SelectTrigger className="w-full min-h-[44px]">
+              <SelectValue placeholder="카테고리 선택 (선택사항)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">전체</SelectItem>
+              {CATEGORY_ORDER.map((categoryKey) => (
+                <SelectItem key={categoryKey} value={categoryKey}>
+                  {CATEGORY_LABELS[categoryKey]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* 뉴스 리스트 */}
