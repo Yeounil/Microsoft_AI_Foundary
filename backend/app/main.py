@@ -25,6 +25,9 @@ async def lifespan(app: FastAPI):
     logger.info("=" * 60)
     logger.info("[STARTUP] AI Finance News Recommendation System starting")
     logger.info("=" * 60)
+    logger.info(f"[CONFIG] SECRET_KEY: {settings.secret_key[:10]}... (length: {len(settings.secret_key)})")
+    logger.info(f"[CONFIG] ALGORITHM: {settings.algorithm}")
+    logger.info(f"[CONFIG] ACCESS_TOKEN_EXPIRE: {settings.access_token_expire_minutes} minutes")
 
     # 뉴스 크롤링 스케줄러 시작
     try:
