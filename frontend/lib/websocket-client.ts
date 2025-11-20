@@ -5,6 +5,7 @@ import {
   isPriceUpdate,
   isWebSocketMessage
 } from '@/types/websocket';
+import { logger } from '@/lib/logger';
 
 type MessageHandler = (data: PriceUpdate) => void;
 type ConnectionHandler = (connected: boolean) => void;
@@ -48,7 +49,7 @@ class WebSocketClient {
         this.ws = new WebSocket(this.url);
 
         this.ws.onopen = () => {
-          console.log('WebSocket connected');
+          logger.info('WebSocket connected');
           this.isConnecting = false;
           this.reconnectAttempts = 0;
           this.notifyConnectionHandlers(true);
@@ -62,7 +63,7 @@ class WebSocketClient {
         };
 
         this.ws.onclose = () => {
-          console.log('WebSocket disconnected');
+          logger.info('WebSocket disconnected');
           this.isConnecting = false;
           this.notifyConnectionHandlers(false);
           this.attemptReconnect();
@@ -92,7 +93,7 @@ class WebSocketClient {
   private handleMessage(data: unknown) {
     // Type guard to ensure data is a WebSocketMessage
     if (!isWebSocketMessage(data)) {
-      console.warn('Invalid WebSocket message received:', data);
+      logger.warn('Invalid WebSocket message received:', data);
       return;
     }
 
@@ -105,7 +106,7 @@ class WebSocketClient {
         }
         break;
       case 'connected':
-        console.log('Connected to price stream:', message.data);
+        logger.info('Connected to price stream:', message.data);
         break;
       case 'error':
         console.error('WebSocket error:', message.error || message.data);
@@ -118,7 +119,7 @@ class WebSocketClient {
         // Handle pong response
         break;
       default:
-        console.log('Unhandled message type:', message.type, message);
+        logger.debug('Unhandled message type:', message.type, message);
     }
   }
 
@@ -139,7 +140,7 @@ class WebSocketClient {
     this.reconnectAttempts++;
     const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
 
-    console.log(`Attempting to reconnect in ${delay}ms (attempt ${this.reconnectAttempts})`);
+    logger.info(`Attempting to reconnect in ${delay}ms (attempt ${this.reconnectAttempts})`);
 
     setTimeout(() => {
       this.connect().catch((error) => {

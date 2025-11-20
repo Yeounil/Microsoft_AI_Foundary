@@ -6,8 +6,6 @@ import { ArrowLeft, Download, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import apiClient from '@/lib/api-client';
 
 interface NewsReportData {
@@ -87,6 +85,7 @@ export default function NewsReportPage() {
   const [reportData, setReportData] = useState<NewsReportData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   useEffect(() => {
     const fetchReport = async () => {
@@ -97,9 +96,10 @@ export default function NewsReportPage() {
         // report_data 필드에서 실제 레포트 데이터 추출
         const data = response.report_data || response;
         setReportData(data);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to fetch news report:', err);
-        setError(err.response?.data?.detail || '레포트를 불러오는데 실패했습니다.');
+        const axiosError = err as { response?: { data?: { detail?: string } } };
+        setError(axiosError.response?.data?.detail || '레포트를 불러오는데 실패했습니다.');
       } finally {
         setIsLoading(false);
       }
@@ -113,36 +113,51 @@ export default function NewsReportPage() {
   const generatePDF = async () => {
     if (!reportRef.current) return;
 
-    const canvas = await html2canvas(reportRef.current, {
-      scale: 2,
-      useCORS: true,
-      logging: false,
-    });
+    setIsGeneratingPDF(true);
+    try {
+      // Dynamic imports for heavy libraries
+      const [html2canvasModule, jsPDFModule] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf')
+      ]);
+      const html2canvas = html2canvasModule.default;
+      const jsPDF = jsPDFModule.default;
 
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4',
-    });
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
 
-    const imgWidth = 210;
-    const pageHeight = 297;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    let heightLeft = imgHeight;
-    let position = 0;
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
 
-    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
+      const imgWidth = 210;
+      const pageHeight = 297;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
 
-    while (heightLeft >= 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
       pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
       heightLeft -= pageHeight;
-    }
 
-    pdf.save(`news-report-${id}.pdf`);
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      pdf.save(`news-report-${id}.pdf`);
+    } catch (error) {
+      console.error('PDF generation failed:', error);
+    } finally {
+      setIsGeneratingPDF(false);
+    }
   };
 
   if (isLoading) {
@@ -169,7 +184,7 @@ export default function NewsReportPage() {
           </p>
           {is404 && (
             <p className="text-sm text-muted-foreground text-center max-w-md">
-              뉴스 분석 페이지에서 "관련 뉴스 AI 종합 분석" 버튼을 클릭하여 레포트를 생성해주세요.
+              뉴스 분석 페이지에서 &quot;관련 뉴스 AI 종합 분석&quot; 버튼을 클릭하여 레포트를 생성해주세요.
             </p>
           )}
           <Button onClick={() => router.back()}>
@@ -194,9 +209,13 @@ export default function NewsReportPage() {
           <ArrowLeft className="h-4 w-4" />
           뒤로가기
         </Button>
-        <Button onClick={generatePDF} className="flex items-center gap-2">
-          <Download className="h-4 w-4" />
-          PDF로 다운로드
+        <Button onClick={generatePDF} disabled={isGeneratingPDF} className="flex items-center gap-2">
+          {isGeneratingPDF ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Download className="h-4 w-4" />
+          )}
+          {isGeneratingPDF ? 'PDF 생성 중...' : 'PDF로 다운로드'}
         </Button>
       </div>
 

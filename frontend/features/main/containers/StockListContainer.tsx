@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useStockStore } from "@/store/stock-store";
 import { useStockData } from "../hooks/useStockData";
@@ -73,24 +73,31 @@ export function StockListContainer({
   // 검색 필터링
   const { filteredStocks } = useStockSearch(stocks, searchQuery);
 
-  // 관심 종목 필터링
-  const favoriteStocks = filteredStocks.filter((stock) =>
-    watchlist.includes(stock.symbol)
+  // 관심 종목 필터링 (메모이제이션)
+  const favoriteStocks = useMemo(
+    () => filteredStocks.filter((stock) => watchlist.includes(stock.symbol)),
+    [filteredStocks, watchlist]
   );
 
-  // 현재 탭에 따른 표시 종목
-  const displayStocks = activeTab === "all" ? filteredStocks : favoriteStocks;
+  // 현재 탭에 따른 표시 종목 (메모이제이션)
+  const displayStocks = useMemo(
+    () => (activeTab === "all" ? filteredStocks : favoriteStocks),
+    [activeTab, filteredStocks, favoriteStocks]
+  );
 
-  // 관심 종목 토글
-  const toggleWatchlist = (e: React.MouseEvent, symbol: string) => {
-    e.stopPropagation(); // 클릭 이벤트 전파 방지
+  // 관심 종목 토글 (콜백 메모이제이션)
+  const toggleWatchlist = useCallback(
+    (e: React.MouseEvent, symbol: string) => {
+      e.stopPropagation(); // 클릭 이벤트 전파 방지
 
-    if (watchlist.includes(symbol)) {
-      removeFromWatchlist(symbol);
-    } else {
-      addToWatchlist(symbol);
-    }
-  };
+      if (watchlist.includes(symbol)) {
+        removeFromWatchlist(symbol);
+      } else {
+        addToWatchlist(symbol);
+      }
+    },
+    [watchlist, removeFromWatchlist, addToWatchlist]
+  );
 
   return (
     <Card>

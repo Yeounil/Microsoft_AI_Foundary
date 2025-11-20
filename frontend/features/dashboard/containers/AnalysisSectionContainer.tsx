@@ -17,8 +17,8 @@ export function AnalysisSectionContainer({
 
   if (isLoading) {
     return (
-      <div className="space-y-4 h-[1080px] flex items-center justify-center">
-        <Card className="w-full h-full">
+      <div className="space-y-4 min-h-[300px] md:min-h-[400px] lg:min-h-[600px] flex items-center justify-center">
+        <Card className="w-full">
           <CardContent className="flex h-full items-center justify-center">
             <p className="text-sm text-muted-foreground">
               분석 데이터를 불러오는 중...
@@ -30,7 +30,7 @@ export function AnalysisSectionContainer({
   }
 
   return (
-    <div className="h-[930px] flex flex-col gap-4">
+    <div className="flex flex-col gap-3 md:gap-4 lg:gap-6 lg:min-h-[800px]">
       <AIAnalysisCard analysis={analysisData} />
       <BasicDataCard analysis={analysisData} />
       <RiskAnalysisCard analysis={analysisData} />

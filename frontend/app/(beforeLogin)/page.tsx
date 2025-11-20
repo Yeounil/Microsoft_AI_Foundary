@@ -1,7 +1,7 @@
 'use client';
 
 import Link from "next/link"
-import { ChevronDown, TrendingUp, Sparkles, BookOpen, BarChart3 } from "lucide-react"
+import { ChevronDown, TrendingUp, Sparkles, BookOpen } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Image from "next/image";
@@ -69,7 +69,7 @@ export default function Home() {
       </section>
 
       {/* Real-time Charts Feature */}
-      <section id="charts-section" className="border-t border-border bg-muted/30 px-4 min-h-[calc(100vh-4rem)] flex items-center scroll-mt-16">
+      <section id="charts-section" className="border-border px-4 min-h-[calc(100vh-4rem)] flex items-center scroll-mt-16">
         <div className="container mx-auto max-w-6xl py-20">
           <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
             {/* Text Content */}

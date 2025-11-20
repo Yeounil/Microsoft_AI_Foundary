@@ -15,6 +15,8 @@ import {
   ChartMode,
   filterBasicModeData,
 } from "@/features/dashboard/services/dashboardChartService";
+import { useStockStore } from "@/store/stock-store";
+import { logger } from "@/lib/logger";
 
 type SeriesType =
   | ISeriesApi<"Candlestick">
@@ -50,10 +52,12 @@ export function useHistoricalData(
     previousClose: null,
   });
 
+  const { updateStockInfo } = useStockStore();
+
   // Historical 데이터 로드
   const loadHistoricalData = useCallback(async () => {
     if (!seriesRef.current) {
-      console.warn("[Chart] Series not ready for data loading");
+      logger.warn("[Chart] Series not ready for data loading");
       return;
     }
 
@@ -81,18 +85,25 @@ export function useHistoricalData(
         ? "1d"
         : chartInterval;
 
-      console.log(
+      logger.debug(
         `[Chart] Loading historical data: ${symbol}, period: ${period}, apiInterval: ${apiInterval}, chartInterval: ${chartInterval}, mode: ${chartMode}, enhancedType: ${enhancedChartType}`
       );
 
       // ChartDataLoader 사용 (자동으로 Intraday API 라우팅)
-      const candleData = await ChartDataLoader.loadHistoricalData(
+      const result = await ChartDataLoader.loadHistoricalData(
         symbol,
         period as LoaderChartPeriod,
         apiInterval as LoaderChartInterval
       );
 
-      console.log(`[Chart] Received ${candleData.length} candles from API`);
+      const candleData = result.candles;
+
+      // Update stock store with company name
+      if (result.companyName) {
+        updateStockInfo({ company_name: result.companyName });
+      }
+
+      logger.debug(`[Chart] Received ${candleData.length} candles from API`);
 
       if (candleData.length > 0) {
         // 데이터 처리
@@ -101,7 +112,7 @@ export function useHistoricalData(
         // Basic 모드일 때 데이터 필터링
         if (chartMode === "basic") {
           processedData = filterBasicModeData(candleData, timeRange);
-          console.log(
+          logger.debug(
             `[Chart] Filtered data: ${candleData.length} -> ${processedData.length}`
           );
         }
@@ -110,17 +121,17 @@ export function useHistoricalData(
         if (chartMode === "enhanced") {
           if (chartInterval === "1wk") {
             processedData = ChartDataLoader.aggregateToWeekly(processedData);
-            console.log(
+            logger.debug(
               `[Chart] Aggregated to weekly: ${candleData.length} -> ${processedData.length} candles`
             );
           } else if (chartInterval === "1mo") {
             processedData = ChartDataLoader.aggregateToMonthly(processedData);
-            console.log(
+            logger.debug(
               `[Chart] Aggregated to monthly: ${candleData.length} -> ${processedData.length} candles`
             );
           } else if (chartInterval === "1y") {
             processedData = ChartDataLoader.aggregateToYearly(processedData);
-            console.log(
+            logger.debug(
               `[Chart] Aggregated to yearly: ${candleData.length} -> ${processedData.length} candles`
             );
           }
@@ -194,21 +205,21 @@ export function useHistoricalData(
             }
           }
 
-          console.log(
+          logger.debug(
             `[Chart] Successfully loaded ${processedData.length} data points`
           );
         } catch (error) {
           console.error("[Chart] Failed to set data:", error);
         }
       } else {
-        console.warn("[Chart] No data returned from API");
+        logger.warn("[Chart] No data returned from API");
       }
     } catch (error) {
       console.error("[Chart] Failed to load historical data:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [seriesRef, chartRef, symbol, timeRange, interval, chartType, chartMode, enhancedChartType]);
+  }, [seriesRef, chartRef, symbol, timeRange, interval, chartType, chartMode, enhancedChartType, updateStockInfo]);
 
   // Historical 데이터 로드
   useEffect(() => {

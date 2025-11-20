@@ -6,6 +6,7 @@
 import { ChartDataLoader, ChartInterval } from "./chart-data-loader";
 import { FMPWebSocketClient } from "../websocket/fmp-websocket-client";
 import { CandleData } from "../websocket/types";
+import { logger } from "../logger";
 
 export interface SynchronizerOptions {
   syncIntervalMs?: number; // 동기화 주기 (기본: 60초)
@@ -85,7 +86,7 @@ export class ChartSynchronizer {
       );
 
       if (recentCandles.length === 0) {
-        console.warn(`No recent candles loaded for ${this.symbol}`);
+        logger.warn(`No recent candles loaded for ${this.symbol}`);
         return false;
       }
 
@@ -96,7 +97,7 @@ export class ChartSynchronizer {
       const wsCandle = this.wsClient.getCandle(this.symbol);
 
       if (this.needsCorrection(wsCandle, latestCandle)) {
-        console.log(
+        logger.debug(
           `[Sync] Correcting candle for ${this.symbol}`,
           latestCandle
         );
@@ -161,7 +162,7 @@ export class ChartSynchronizer {
       this.syncNow();
     }, this.options.syncIntervalMs);
 
-    console.log(
+    logger.info(
       `[Sync] Periodic sync started for ${this.symbol} (interval: ${this.options.syncIntervalMs}ms)`
     );
   }
@@ -173,7 +174,7 @@ export class ChartSynchronizer {
     if (this.syncTimer) {
       clearInterval(this.syncTimer);
       this.syncTimer = null;
-      console.log(`[Sync] Periodic sync stopped for ${this.symbol}`);
+      logger.info(`[Sync] Periodic sync stopped for ${this.symbol}`);
     }
   }
 
@@ -189,7 +190,7 @@ export class ChartSynchronizer {
 
         // 마지막 동기화로부터 30초 이상 경과 시 동기화
         if (timeSinceLastSync > 30000) {
-          console.log(
+          logger.debug(
             `[Sync] Tab became visible, syncing ${this.symbol} (${Math.round(timeSinceLastSync / 1000)}s since last sync)`
           );
           this.syncNow();

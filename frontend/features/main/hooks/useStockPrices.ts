@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import apiClient from "@/lib/api-client";
 import { createPricesMap, StockQuote } from "../services/stockListService";
 import { StockBase } from "./useStockData";
+import { logger } from "@/lib/logger";
 
 /**
  * StockPrices Hook
@@ -21,7 +22,7 @@ export function useStockPrices(allStocks: StockBase[]) {
         // 시가총액 상위 100개 (또는 전체)
         const topSymbols = allStocks.slice(0, 100).map((s) => s.symbol);
 
-        console.log(
+        logger.info(
           "[useStockPrices] Loading prices for top 100 stocks via backend..."
         );
         const response = await apiClient.getBatchQuotes(topSymbols);
@@ -32,8 +33,8 @@ export function useStockPrices(allStocks: StockBase[]) {
           );
 
           setStockPrices(pricesMap);
-          console.log(
-            `[useStockPrices] ✅ Loaded ${response.quotes.length} prices`
+          logger.info(
+            `[useStockPrices] Loaded ${response.quotes.length} prices`
           );
         }
       } catch (error) {

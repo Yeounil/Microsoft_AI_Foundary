@@ -214,15 +214,40 @@ async def verify_token_endpoint(current_user: Dict[str, Any] = Depends(get_curre
 @router.post("/refresh", response_model=Token)
 async def refresh_token(refresh_request: RefreshTokenRequest, request: Request):
     """리프레시 토큰을 사용하여 새로운 액세스 토큰 발급"""
+    import logging
+    logger = logging.getLogger(__name__)
+
     user_service = SupabaseUserService()
     token_service = RefreshTokenService()
 
     # 리프레시 토큰 JWT 검증
-    username = verify_token(refresh_request.refresh_token, token_type="refresh")
-    if username is None:
+    try:
+        username = verify_token(refresh_request.refresh_token, token_type="refresh")
+        if username is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid refresh token",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    except jwt.ExpiredSignatureError:
+        logger.warning("Refresh token expired")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token expired",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except jwt.InvalidTokenError as e:
+        logger.warning(f"Invalid refresh token: {e}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except Exception as e:
+        logger.error(f"Token verification error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token verification failed",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -235,15 +260,25 @@ async def refresh_token(refresh_request: RefreshTokenRequest, request: Request):
         )
 
     # DB에서 Refresh Token 검증
-    is_valid = await token_service.verify_refresh_token(
-        user_id=user['id'],
-        refresh_token=refresh_request.refresh_token
-    )
+    try:
+        is_valid = await token_service.verify_refresh_token(
+            user_id=user['id'],
+            refresh_token=refresh_request.refresh_token
+        )
 
-    if not is_valid:
+        if not is_valid:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Refresh token is invalid or expired",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Refresh token DB verification error: {e}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Refresh token is invalid or expired",
+            detail="Token verification failed",
             headers={"WWW-Authenticate": "Bearer"},
         )
 

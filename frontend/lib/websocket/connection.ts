@@ -21,7 +21,9 @@ export class WebSocketConnection {
   private reconnectAttempts = 0;
   private maxReconnectAttempts: number;
   private reconnectDelay: number;
+  private maxReconnectDelay: number;
   private loginTimeout: number;
+  private isOnline = true;
 
   // 로그인 응답 대기
   private loginResolver: ((success: boolean) => void) | null = null;
@@ -39,9 +41,10 @@ export class WebSocketConnection {
       options.wsUrl ||
       process.env.NEXT_PUBLIC_WS_URL ||
       "wss://websockets.financialmodelingprep.com";
-    this.maxReconnectAttempts = options.maxReconnectAttempts || 5;
-    this.reconnectDelay = options.reconnectDelay || 2000;
-    this.loginTimeout = options.loginTimeout || 3000;
+    this.maxReconnectAttempts = options.maxReconnectAttempts || 10;
+    this.reconnectDelay = options.reconnectDelay || 1000;
+    this.maxReconnectDelay = options.maxReconnectDelay || 30000;
+    this.loginTimeout = options.loginTimeout || 5000;
     this.logger = logger;
 
     if (!this.apiKey) {
@@ -52,6 +55,26 @@ export class WebSocketConnection {
       this.logger.debug(
         `API key loaded: ${this.apiKey.substring(0, 10)}...`
       );
+    }
+
+    // 브라우저 환경에서만 online/offline 이벤트 리스너 등록
+    if (typeof window !== 'undefined') {
+      this.isOnline = navigator.onLine;
+
+      window.addEventListener('online', () => {
+        this.logger.info('Network is online');
+        this.isOnline = true;
+        // 오프라인에서 온라인으로 전환 시 재연결 시도
+        if (!this._isConnected && !this._isConnecting) {
+          this.reconnectAttempts = 0; // 재시도 카운터 리셋
+          this.connect();
+        }
+      });
+
+      window.addEventListener('offline', () => {
+        this.logger.warn('Network is offline');
+        this.isOnline = false;
+      });
     }
   }
 
@@ -268,19 +291,26 @@ export class WebSocketConnection {
    * 재연결 처리
    */
   private async handleReconnect() {
+    // 오프라인 상태면 재연결 시도하지 않음
+    if (!this.isOnline) {
+      this.logger.info('Offline - waiting for network to resume');
+      return;
+    }
+
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       this.logger.error("Max reconnection attempts reached");
       return;
     }
 
     this.reconnectAttempts++;
-    // 첫 재시도는 빠르게 (500ms), 이후 exponential backoff
-    const baseDelay =
-      this.reconnectAttempts === 1 ? 500 : this.reconnectDelay;
-    const delay = baseDelay * Math.pow(2, Math.max(0, this.reconnectAttempts - 2));
+
+    // Exponential backoff with jitter
+    const baseDelay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
+    const jitter = Math.random() * 0.3 * baseDelay; // 0-30% jitter
+    const delay = Math.min(baseDelay + jitter, this.maxReconnectDelay);
 
     this.logger.info(
-      `Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`
+      `Reconnecting in ${Math.round(delay)}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`
     );
 
     setTimeout(async () => {
@@ -290,6 +320,13 @@ export class WebSocketConnection {
         this.logger.error("Reconnection failed:", error);
       }
     }, delay);
+  }
+
+  /**
+   * 네트워크 온라인 상태 확인
+   */
+  get isNetworkOnline(): boolean {
+    return this.isOnline;
   }
 
   /**

@@ -19,11 +19,11 @@ export function ChartModeSelector({
       value={chartMode}
       onValueChange={(v) => onChartModeChange(v as ChartMode)}
     >
-      <TabsList className="h-9">
-        <TabsTrigger value="enhanced" className="text-xs">
+      <TabsList className="h-10 sm:h-9">
+        <TabsTrigger value="enhanced" className="text-xs px-3 py-2 min-w-[70px] min-h-[36px]">
           Enhanced
         </TabsTrigger>
-        <TabsTrigger value="basic" className="text-xs">
+        <TabsTrigger value="basic" className="text-xs px-3 py-2 min-w-[50px] min-h-[36px]">
           Basic
         </TabsTrigger>
       </TabsList>

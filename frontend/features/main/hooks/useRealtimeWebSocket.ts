@@ -11,6 +11,7 @@ import {
   getIntervalMs,
 } from "../services/chartService";
 import { PriceInfo } from "./useHistoricalData";
+import { logger } from "@/lib/logger";
 
 type SeriesType =
   | ISeriesApi<"Candlestick">
@@ -56,14 +57,14 @@ export function useRealtimeWebSocket(
         // 모든 기존 구독 해제 (깨끗한 시작)
         const currentSubscriptions = status.subscriptions;
         if (currentSubscriptions.length > 0) {
-          console.log(
+          logger.debug(
             `[Chart] Cleaning up old subscriptions: ${currentSubscriptions.join(", ")}`
           );
           await client.unsubscribe(currentSubscriptions);
         }
 
         if (!status.isConnected) {
-          console.log(`[Chart] Connecting WebSocket...`);
+          logger.info(`[Chart] Connecting WebSocket...`);
           await client.connect();
         }
 
@@ -112,15 +113,15 @@ export function useRealtimeWebSocket(
 
         // 현재 종목만 구독
         const intervalMs = getIntervalMs(interval);
-        console.log(
-          `[Chart] 📡 Subscribing ONLY ${symbol} (${interval}, ${intervalMs}ms)`
+        logger.debug(
+          `[Chart] Subscribing ONLY ${symbol} (${interval}, ${intervalMs}ms)`
         );
 
         await client.subscribe(symbol, intervalMs);
         client.onCandle(symbol, handleCandle);
 
         setIsRealtime(true);
-        console.log(`[Chart] ✅ Realtime active for ${symbol}`);
+        logger.info(`[Chart] Realtime active for ${symbol}`);
       } catch (error) {
         console.error("[Chart WebSocket] Setup failed:", error);
         setIsRealtime(false);
@@ -131,7 +132,7 @@ export function useRealtimeWebSocket(
 
     // Cleanup
     return () => {
-      console.log(`[Chart] 🔌 Cleanup for ${symbol}`);
+      logger.debug(`[Chart] Cleanup for ${symbol}`);
       mounted = false;
 
       if (handleCandle) {

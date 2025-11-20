@@ -41,7 +41,7 @@ export function NewsList({
 
   if (isLoading) {
     return (
-      <div className="flex h-[1050px] items-center justify-center">
+      <div className="flex h-[calc(100vh-280px)] md:h-[calc(100vh-200px)] lg:h-[900px] min-h-[400px] max-h-[1100px] items-center justify-center">
         <div className="text-sm text-muted-foreground">
           뉴스를 불러오는 중...
         </div>
@@ -52,7 +52,7 @@ export function NewsList({
   // 에러 상태 (관심종목에 없는 종목 검색)
   if (error) {
     return (
-      <div className="flex h-[1050px] items-center justify-center">
+      <div className="flex h-[calc(100vh-280px)] md:h-[calc(100vh-200px)] lg:h-[900px] min-h-[400px] max-h-[1100px] items-center justify-center">
         <div className="text-center space-y-3">
           <div className="text-sm font-medium text-destructive">
             {error.message}
@@ -68,7 +68,7 @@ export function NewsList({
   // 빈 관심종목 상태
   if (isWatchlistTab && watchlistLength === 0) {
     return (
-      <div className="flex h-[1050px] items-center justify-center">
+      <div className="flex h-[calc(100vh-280px)] md:h-[calc(100vh-200px)] lg:h-[900px] min-h-[400px] max-h-[1100px] items-center justify-center">
         <div className="text-center space-y-3">
           <div className="text-sm font-medium text-muted-foreground">
             관심종목을 추가해주세요
@@ -83,7 +83,7 @@ export function NewsList({
 
   if (news.length === 0) {
     return (
-      <div className="flex h-[1050px] items-center justify-center">
+      <div className="flex h-[calc(100vh-280px)] md:h-[calc(100vh-200px)] lg:h-[900px] min-h-[400px] max-h-[1100px] items-center justify-center">
         <div className="text-center space-y-2">
           <div className="text-sm text-muted-foreground">
             {selectedStock
@@ -96,10 +96,12 @@ export function NewsList({
   }
 
   return (
-    <div className="flex flex-col h-[1050px]">
-      <div className="flex-1 overflow-y-auto space-y-3 mb-4 pt-4">
+    <div className="flex flex-col h-[calc(100vh-300px)] md:h-[1050px] min-h-[400px]">
+      <div className="flex-1 overflow-y-auto space-y-3 mb-4 pt-4 stagger-animate">
         {news.map((item, index) => (
-          <NewsCard key={item.id || index} article={item} index={index} />
+          <div key={item.id || index} className="transform transition-all duration-300">
+            <NewsCard article={item} index={index} />
+          </div>
         ))}
       </div>
 

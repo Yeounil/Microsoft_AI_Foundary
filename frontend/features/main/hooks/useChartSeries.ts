@@ -7,6 +7,7 @@ import {
   type ISeriesApi,
 } from "lightweight-charts";
 import { ChartType } from "../services/chartService";
+import { logger } from "@/lib/logger";
 
 type SeriesType =
   | ISeriesApi<"Candlestick">
@@ -36,7 +37,7 @@ export function useChartSeries(
         }
       } catch {
         // 이미 제거된 경우 무시
-        console.warn("[Chart] Series already removed or invalid");
+        logger.warn("[Chart] Series already removed or invalid");
       } finally {
         seriesRef.current = null;
       }

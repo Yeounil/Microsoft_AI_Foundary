@@ -58,18 +58,18 @@ export function EnhancedChartSelector({
   )?.label || "분단위";
 
   return (
-    <div className="flex items-center gap-2 flex-wrap">
+    <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-hide pb-2 -mx-1 px-1">
       {/* 분단위 탭 - 클릭 시 셀렉트박스로 변환 */}
       {chartType === "minute" ? (
         <Select value={minuteInterval} onValueChange={onMinuteIntervalChange}>
-          <SelectTrigger className="w-[85px] h-9 text-xs bg-primary text-primary-foreground hover:bg-primary/90">
+          <SelectTrigger className="w-[75px] sm:w-[85px] h-9 sm:h-8 text-xs bg-primary text-primary-foreground hover:bg-primary/90 shrink-0 min-h-[36px]">
             <SelectValue>
               {currentMinuteLabel}
             </SelectValue>
           </SelectTrigger>
-          <SelectContent className="w-[85px] min-w-[85px]">
+          <SelectContent className="w-[75px] sm:w-[85px] min-w-[75px] sm:min-w-[85px]">
             {MINUTE_INTERVALS.map((item) => (
-              <SelectItem key={item.value} value={item.value} className="text-xs">
+              <SelectItem key={item.value} value={item.value} className="text-xs min-h-[36px]">
                 {item.label}
               </SelectItem>
             ))}
@@ -80,7 +80,7 @@ export function EnhancedChartSelector({
           variant="outline"
           size="sm"
           onClick={handleMinuteTabClick}
-          className="w-[85px] h-9 text-xs"
+          className="w-[65px] sm:w-[85px] h-9 sm:h-8 text-xs shrink-0 min-h-[36px]"
         >
           분단위
         </Button>
@@ -93,7 +93,7 @@ export function EnhancedChartSelector({
           variant={chartType === type.value ? "default" : "outline"}
           size="sm"
           onClick={() => handlePeriodClick(type.value)}
-          className="text-xs"
+          className="text-xs h-9 sm:h-8 px-3 sm:px-3 shrink-0 min-w-[44px] min-h-[36px]"
         >
           {type.label}
         </Button>

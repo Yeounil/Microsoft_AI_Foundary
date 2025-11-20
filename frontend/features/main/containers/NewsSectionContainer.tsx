@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -73,7 +73,6 @@ export function NewsSectionContainer({
     watchlistNewsData,
     isLoadingWatchlist,
     watchlistError,
-    isStockNotInWatchlist,
     categoryNewsData,
     isLoadingCategory,
   } = useNewsQuery(
@@ -88,34 +87,40 @@ export function NewsSectionContainer({
     categoryTab
   );
 
-  // 종목 선택 시 페이지 리셋
-  const handleStockSelect = (stock: string) => {
-    handleSelectStock(stock);
-    setCurrentPage(1);
-  };
+  // 종목 선택 시 페이지 리셋 (콜백 메모이제이션)
+  const handleStockSelect = useCallback(
+    (stock: string) => {
+      handleSelectStock(stock);
+      setCurrentPage(1);
+    },
+    [handleSelectStock]
+  );
 
-  // 종목 클리어 시 페이지 리셋
-  const handleStockClear = () => {
+  // 종목 클리어 시 페이지 리셋 (콜백 메모이제이션)
+  const handleStockClear = useCallback(() => {
     handleClearStock();
     setCurrentPage(1);
-  };
+  }, [handleClearStock]);
 
-  // 메인 탭 변경 핸들러
-  const handleMainTabChange = (tab: "hot" | "favorites") => {
+  // 메인 탭 변경 핸들러 (콜백 메모이제이션)
+  const handleMainTabChange = useCallback((tab: "hot" | "favorites") => {
     setMainTab(tab);
     setCurrentPage(1);
-  };
+  }, []);
 
-  // 카테고리 탭 변경 핸들러
-  const handleCategoryTabChange = (category: string) => {
-    if (categoryTab === category) {
-      // 이미 선택된 카테고리를 다시 클릭하면 해제
-      setCategoryTab(null);
-    } else {
-      setCategoryTab(category);
-    }
-    setCurrentPage(1);
-  };
+  // 카테고리 탭 변경 핸들러 (콜백 메모이제이션)
+  const handleCategoryTabChange = useCallback(
+    (category: string) => {
+      if (categoryTab === category) {
+        // 이미 선택된 카테고리를 다시 클릭하면 해제
+        setCategoryTab(null);
+      } else {
+        setCategoryTab(category);
+      }
+      setCurrentPage(1);
+    },
+    [categoryTab]
+  );
 
   // 현재 표시할 뉴스 데이터와 로딩 상태 결정
   const currentNewsData = useMemo(() => {
@@ -166,27 +171,27 @@ export function NewsSectionContainer({
         <div className="flex gap-2 mb-3">
           <Button
             variant={mainTab === "hot" ? "default" : "outline"}
-            className="flex-1"
+            className="flex-1 min-h-[44px] text-sm md:text-base"
             onClick={() => handleMainTabChange("hot")}
           >
             Hot 뉴스
           </Button>
           <Button
             variant={mainTab === "favorites" ? "default" : "outline"}
-            className="flex-1"
+            className="flex-1 min-h-[44px] text-sm md:text-base"
             onClick={() => handleMainTabChange("favorites")}
           >
             관심종목
           </Button>
         </div>
 
-        {/* 두 번째 탭 그룹: 카테고리 */}
-        <div className="flex flex-wrap gap-2 mb-4">
+        {/* 두 번째 탭 그룹: 카테고리 - 모바일에서 가로 스크롤 */}
+        <div className="flex gap-2 mb-4 overflow-x-auto pb-2 -mx-2 px-2 scrollbar-hide">
           {CATEGORY_ORDER.map((categoryKey) => (
             <Button
               key={categoryKey}
               variant={categoryTab === categoryKey ? "default" : "outline"}
-              className="flex-1 min-w-20"
+              className="flex-shrink-0 min-w-fit px-3 py-2 min-h-[40px] text-sm md:flex-1 md:min-w-20"
               onClick={() => handleCategoryTabChange(categoryKey)}
             >
               {CATEGORY_LABELS[categoryKey]}

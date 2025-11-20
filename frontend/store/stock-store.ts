@@ -24,9 +24,10 @@ interface StockState {
 
   // Actions
   selectStock: (symbol: string) => Promise<void>;
+  updateStockInfo: (info: { company_name?: string; current_price?: number }) => void;
   loadChartData: (symbol: string, period?: string, interval?: string) => Promise<void>;
   loadWatchlist: () => Promise<void>;
-  addToWatchlist: (symbol: string, companyName?: string) => Promise<void>;
+  addToWatchlist: (symbol: string) => Promise<void>;
   removeFromWatchlist: (symbol: string) => Promise<void>;
   subscribeToRealtime: (symbols: string[]) => void;
   unsubscribeFromRealtime: (symbols: string[]) => void;
@@ -45,13 +46,13 @@ export const useStockStore = create<StockState>((set, get) => ({
   isLoadingChart: false,
   error: null,
 
-  // Removed: getStockData API is no longer used
+  // Select stock (company_name will be updated by chart data)
   selectStock: async (symbol) => {
-    // Simply set the selected stock symbol without API call
+    const upperSymbol = symbol.toUpperCase();
     set({
       selectedStock: {
-        symbol: symbol.toUpperCase(),
-        company_name: symbol.toUpperCase(), // Will be updated by chart data
+        symbol: upperSymbol,
+        company_name: upperSymbol,
         current_price: 0,
         pe_ratio: undefined,
         eps: undefined,
@@ -66,6 +67,16 @@ export const useStockStore = create<StockState>((set, get) => ({
       isLoadingStock: false,
       error: null,
     });
+  },
+
+  // Update stock info (called from chart data loader)
+  updateStockInfo: (info: { company_name?: string; current_price?: number }) => {
+    set((state) => ({
+      selectedStock: state.selectedStock ? {
+        ...state.selectedStock,
+        ...info,
+      } : null,
+    }));
   },
 
   loadChartData: async (symbol, period, interval) => {
@@ -101,7 +112,7 @@ export const useStockStore = create<StockState>((set, get) => ({
     }
   },
 
-  addToWatchlist: async (symbol, companyName) => {
+  addToWatchlist: async (symbol) => {
     const upperSymbol = symbol.toUpperCase();
 
     // Get user ID from auth store
@@ -118,7 +129,7 @@ export const useStockStore = create<StockState>((set, get) => ({
     }));
 
     try {
-      await apiClient.addFavorite(upperSymbol, user.id, companyName);
+      await apiClient.addFavorite(upperSymbol, user.id);
 
       // Note: WebSocket 구독은 실제로 차트를 볼 때 수행됨
       // 관심 종목 추가 시에는 구독하지 않음

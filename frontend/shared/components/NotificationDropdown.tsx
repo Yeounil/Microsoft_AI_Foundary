@@ -34,19 +34,6 @@ export function NotificationDropdown() {
     }
   };
 
-  const getNotificationColor = (type: Notification['type']) => {
-    switch (type) {
-      case 'success':
-        return 'bg-green-50 hover:bg-green-100 border-green-200';
-      case 'warning':
-        return 'bg-yellow-50 hover:bg-yellow-100 border-yellow-200';
-      case 'error':
-        return 'bg-red-50 hover:bg-red-100 border-red-200';
-      default:
-        return 'bg-blue-50 hover:bg-blue-100 border-blue-200';
-    }
-  };
-
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();

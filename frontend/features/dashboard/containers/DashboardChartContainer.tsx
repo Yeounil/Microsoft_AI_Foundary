@@ -2,8 +2,12 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
 import { useStockStore } from "@/store/stock-store";
 import { useLoadingStore } from "@/store/loading-store";
+import { useChartSettingsStore } from "@/store/chart-settings-store";
+import { logger } from "@/lib/logger";
 import { useChartInitialization } from "@/features/main/hooks/useChartInitialization";
 import { useChartSeries } from "@/features/main/hooks/useChartSeries";
 import { useHistoricalData } from "@/features/main/hooks/useHistoricalData";
@@ -38,22 +42,43 @@ interface DashboardChartContainerProps {
 export function DashboardChartContainer({
   symbol,
 }: DashboardChartContainerProps) {
-  // UI 상태
-  const [chartType, setChartType] = useState<ChartType>("candle");
-  const [chartMode, setChartMode] = useState<ChartMode>("enhanced");
+  // 차트 설정 스토어에서 저장된 설정 불러오기
+  const {
+    settings,
+    setChartType: saveChartType,
+    setChartMode: saveChartMode,
+    setBasicTimeRange: saveBasicTimeRange,
+    setEnhancedChartType: saveEnhancedChartType,
+    setEnhancedMinuteInterval: saveEnhancedMinuteInterval,
+  } = useChartSettingsStore();
+
+  // UI 상태 (저장된 설정으로 초기화)
+  const [chartType, setChartType] = useState<ChartType>(settings.chartType);
+  const [chartMode, setChartMode] = useState<ChartMode>(settings.chartMode);
 
   // Basic 모드 상태
-  const [basicTimeRange, setBasicTimeRange] = useState<TimeRange>("1D");
+  const [basicTimeRange, setBasicTimeRange] = useState<TimeRange>(settings.basicTimeRange);
 
   // Enhanced 모드 상태
   const [enhancedChartType, setEnhancedChartType] =
-    useState<EnhancedChartType>("day");
+    useState<EnhancedChartType>(settings.enhancedChartType);
   const [enhancedMinuteInterval, setEnhancedMinuteInterval] =
-    useState<ChartInterval>("5m");
+    useState<ChartInterval>(settings.enhancedMinuteInterval);
 
   const { selectedStock, watchlist, addToWatchlist, removeFromWatchlist } =
     useStockStore();
   const { setChartLoading } = useLoadingStore();
+
+  // 설정 변경 시 저장
+  const handleChartTypeChange = useCallback((type: ChartType) => {
+    setChartType(type);
+    saveChartType(type);
+  }, [saveChartType]);
+
+  const handleChartModeChange = useCallback((mode: ChartMode) => {
+    setChartMode(mode);
+    saveChartMode(mode);
+  }, [saveChartMode]);
 
   const isInWatchlist = watchlist.includes(symbol);
 
@@ -131,33 +156,60 @@ export function DashboardChartContainer({
       if (isInWatchlist) {
         await removeFromWatchlist(symbol);
       } else {
-        await addToWatchlist(symbol, selectedStock?.company_name);
+        await addToWatchlist(symbol);
       }
     } catch (error) {
-      console.error('Failed to toggle watchlist:', error);
+      logger.error('Failed to toggle watchlist:', error);
     }
-  }, [isInWatchlist, symbol, selectedStock, addToWatchlist, removeFromWatchlist]);
+  }, [isInWatchlist, symbol, addToWatchlist, removeFromWatchlist]);
 
   // Basic 모드 시간 범위 변경
   const handleBasicTimeRangeChange = useCallback((range: TimeRange) => {
     setBasicTimeRange(range);
-  }, []);
+    saveBasicTimeRange(range);
+  }, [saveBasicTimeRange]);
 
   // Enhanced 모드 차트 타입 변경
   const handleEnhancedChartTypeChange = useCallback(
     (type: EnhancedChartType) => {
       setEnhancedChartType(type);
+      saveEnhancedChartType(type);
     },
-    []
+    [saveEnhancedChartType]
   );
 
   // Enhanced 모드 분단위 간격 변경
   const handleEnhancedMinuteIntervalChange = useCallback(
     (newInterval: ChartInterval) => {
       setEnhancedMinuteInterval(newInterval);
+      saveEnhancedMinuteInterval(newInterval);
     },
-    []
+    [saveEnhancedMinuteInterval]
   );
+
+  // 차트 이미지 다운로드
+  const handleDownloadChart = useCallback(async () => {
+    if (!chartContainerRef.current) return;
+
+    try {
+      const [html2canvasModule] = await Promise.all([
+        import('html2canvas')
+      ]);
+      const html2canvas = html2canvasModule.default;
+
+      const canvas = await html2canvas(chartContainerRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+      });
+
+      const link = document.createElement('a');
+      link.download = `${symbol}_chart_${new Date().toISOString().split('T')[0]}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (error) {
+      logger.error('Failed to download chart:', error);
+    }
+  }, [symbol]);
 
   // Basic 모드일 때 차트 스크롤/줌 비활성화
   useEffect(() => {
@@ -170,8 +222,8 @@ export function DashboardChartContainer({
   }, [chartMode, chartRef]);
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="overflow-hidden">
+      <CardHeader className="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
         {/* 헤더: 가격 정보 */}
         <DashboardChartHeader
           symbol={symbol}
@@ -185,20 +237,31 @@ export function DashboardChartContainer({
           onToggleWatchlist={toggleWatchlist}
         />
 
-        {/* 차트 모드 선택 + 차트 타입 선택 */}
-        <div className="flex items-center gap-3 mt-4">
-          <ChartModeSelector
-            chartMode={chartMode}
-            onChartModeChange={setChartMode}
-          />
-          <ChartTypeSelector
-            chartType={chartType}
-            onChartTypeChange={setChartType}
-          />
+        {/* 차트 모드 선택 + 차트 타입 선택 - 모바일에서 세로 스택 */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+            <ChartModeSelector
+              chartMode={chartMode}
+              onChartModeChange={handleChartModeChange}
+            />
+            <ChartTypeSelector
+              chartType={chartType}
+              onChartTypeChange={handleChartTypeChange}
+            />
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDownloadChart}
+            className="w-full sm:w-auto h-10 sm:h-9 text-xs min-h-[44px] sm:min-h-0"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            차트 저장
+          </Button>
         </div>
 
         {/* Chart Mode에 따른 다른 UI */}
-        <div className="mt-4">
+        <div>
           {chartMode === "basic" ? (
             // Basic 모드: TimeRange 버튼만 표시
             <TimeRangeSelector
@@ -216,7 +279,7 @@ export function DashboardChartContainer({
           )}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
         <ChartCanvas chartContainerRef={chartContainerRef} isLoading={isLoading} />
       </CardContent>
     </Card>

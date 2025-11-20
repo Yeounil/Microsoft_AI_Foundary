@@ -13,13 +13,11 @@ interface RiskBarProps {
 
 export function RiskBar({ label, level }: RiskBarProps) {
   const progress = getRiskProgress(level);
-  const size = 180;
-  const strokeWidth = 16;
+  const size = 120;
+  const strokeWidth = 8;
   const radius = (size - strokeWidth) / 2;
-  const circumference = radius * Math.PI; // 반원이므로 전체 둘레의 절반
 
   // 퍼센테이지를 각도로 변환 (180도 = 100%)
-  // 왼쪽(180도)에서 오른쪽(0도)으로 - 아래쪽 반원
   const angle = (progress / 100) * 180;
 
   // Arc path 생성 함수
@@ -31,71 +29,75 @@ export function RiskBar({ label, level }: RiskBarProps) {
   };
 
   // 극좌표를 직교좌표로 변환
-  function polarToCartesian(centerX: number, centerY: number, radius: number, angleInDegrees: number) {
+  function polarToCartesian(centerX: number, centerY: number, r: number, angleInDegrees: number) {
     const angleInRadians = ((angleInDegrees + 180) * Math.PI) / 180.0;
     return {
-      x: centerX + radius * Math.cos(angleInRadians),
-      y: centerY + radius * Math.sin(angleInRadians),
+      x: centerX + r * Math.cos(angleInRadians),
+      y: centerY + r * Math.sin(angleInRadians),
     };
   }
 
+  // 색상 결정 - 더 부드러운 그라데이션 색상
+  const getColor = (p: number) => {
+    if (p <= 20) return "#10b981"; // emerald-500
+    if (p <= 40) return "#34d399"; // emerald-400
+    if (p <= 60) return "#fbbf24"; // amber-400
+    if (p <= 80) return "#fb923c"; // orange-400
+    return "#f87171"; // red-400
+  };
+
+  const color = getColor(progress);
+
   return (
-    <div className="flex flex-col items-center space-y-4 min-w-[200px]">
-      <div className="flex justify-center">
-        <svg width={size} height={size * 0.65} viewBox={`0 0 ${size} ${size * 0.65}`} className="overflow-visible">
-          {/* 배경 트랙 (단일 회색) */}
+    <div className="flex flex-col items-center gap-3 p-4 rounded-xl bg-card/50 border border-border/50 backdrop-blur-sm transition-all hover:bg-card/80">
+      {/* 레이블 */}
+      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label}</span>
+
+      {/* 게이지 차트 */}
+      <div className="relative">
+        <svg width={size} height={size * 0.55} viewBox={`0 0 ${size} ${size * 0.55}`}>
+          {/* 배경 트랙 */}
           <path
             d={createArc(0, 180)}
             fill="none"
             stroke="hsl(var(--muted))"
             strokeWidth={strokeWidth}
             strokeLinecap="round"
-            opacity={0.3}
+            opacity={0.2}
           />
 
-          {/* 현재 값을 나타내는 채워진 arc */}
+          {/* 현재 값 arc */}
           <path
             d={createArc(0, angle)}
             fill="none"
-            stroke={
-              progress <= 33
-                ? "#22c55e"
-                : progress <= 50
-                ? "#84cc16"
-                : progress <= 66
-                ? "#eab308"
-                : progress <= 80
-                ? "#f97316"
-                : "#ef4444"
-            }
+            stroke={color}
             strokeWidth={strokeWidth}
             strokeLinecap="round"
             className="transition-all duration-700 ease-out"
-            style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))" }}
+            style={{
+              filter: `drop-shadow(0 0 6px ${color}40)`,
+            }}
           />
 
-          {/* 중앙 퍼센테이지 텍스트 */}
+          {/* 중앙 값 표시 */}
           <text
             x={size / 2}
-            y={size / 2 - 5}
+            y={size / 2}
             textAnchor="middle"
-            className="text-3xl font-bold fill-foreground"
+            className="text-xl font-bold fill-foreground"
           >
-            {progress}%
+            {progress}
           </text>
         </svg>
       </div>
 
-      {/* 하단 레이블과 Badge */}
-      <div className="flex flex-col items-center gap-2">
-        <span className="text-sm font-semibold text-foreground/90">{label}</span>
-        <Badge
-          variant={getRiskBadgeVariant(level)}
-          className="text-xs px-3 py-1 font-medium"
-        >
-          {getRiskText(level)}
-        </Badge>
-      </div>
+      {/* 리스크 레벨 Badge - 더 현대적인 스타일 */}
+      <Badge
+        variant={getRiskBadgeVariant(level)}
+        className="text-[10px] px-2.5 py-0.5 font-medium"
+      >
+        {getRiskText(level)}
+      </Badge>
     </div>
   );
 }

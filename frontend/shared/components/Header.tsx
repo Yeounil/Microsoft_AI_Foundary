@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuthStore } from "@/store/auth-store";
 import { NotificationDropdown } from "./NotificationDropdown";
+import { ThemeToggle } from "./ThemeToggle";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -61,7 +62,7 @@ export default function Header() {
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 w-full border-b bg-white transition-all",
+        "sticky top-0 z-50 w-full border-b bg-background transition-all",
         isScrolled && "shadow-sm"
       )}
     >
@@ -80,17 +81,17 @@ export default function Header() {
               </span>
             </Link>
 
-            {/* Desktop Navigation - Hidden */}
+            {/* Desktop Navigation - Hidden (using bottom nav and sidebar instead) */}
             <nav className="hidden">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "text-sm font-medium transition-colors hover:text-primary cursor-pointer",
+                    "text-sm font-medium transition-colors hover:text-primary cursor-pointer px-3 py-2 rounded-md min-h-[44px] flex items-center",
                     pathname === item.href
-                      ? "text-foreground"
-                      : "text-muted-foreground"
+                      ? "text-foreground bg-primary/10"
+                      : "text-muted-foreground hover:bg-muted"
                   )}
                 >
                   {item.label}
@@ -101,10 +102,10 @@ export default function Header() {
 
           {/* Search and Actions */}
           <div className="flex items-center gap-4">
-            {/* Search Bar */}
+            {/* Search Bar - Show on tablet and up */}
             <form
               onSubmit={handleSearch}
-              className="hidden lg:flex items-center"
+              className="hidden md:flex items-center"
             >
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -113,10 +114,13 @@ export default function Header() {
                   placeholder="종목명 및 코드 검색"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-[300px] pl-9"
+                  className="w-[200px] lg:w-[300px] xl:w-[400px] pl-9"
                 />
               </div>
             </form>
+
+            {/* Theme Toggle */}
+            <ThemeToggle />
 
             {/* Notification Dropdown */}
             {isAuthenticated && <NotificationDropdown />}
@@ -125,7 +129,7 @@ export default function Header() {
             {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
+                  <Button variant="ghost" className="min-h-[44px] min-w-[44px] p-2">
                     <User className="h-5 w-5" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -172,8 +176,7 @@ export default function Header() {
             {/* Mobile Menu Button */}
             <Button
               variant="ghost"
-              size="icon"
-              className="md:hidden"
+              className="md:hidden min-h-[44px] min-w-[44px] p-2"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
               {isMobileMenuOpen ? (
@@ -185,41 +188,81 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Mobile Full Screen Overlay Menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden border-t py-4">
-            {/* Mobile Search */}
-            <form onSubmit={handleSearch} className="mb-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="종목명 및 코드 검색"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9"
-                />
-              </div>
-            </form>
-
-            {/* Mobile Nav Items - Hidden */}
-            <nav className="hidden">
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
+          <div className="fixed inset-0 z-50 bg-background md:hidden animate-fade-in">
+            <div className="flex flex-col h-full">
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b">
+                <span className="text-lg font-bold text-green-600">Green Wire</span>
+                <button
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className={cn(
-                    "block px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                    pathname === item.href
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
+                  className="p-2 rounded-full hover:bg-muted min-h-[44px] min-w-[44px]"
                 >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              {/* Mobile Search */}
+              <form onSubmit={handleSearch} className="p-4 border-b">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    type="search"
+                    placeholder="종목명 및 코드 검색"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-9 h-12"
+                    inputMode="search"
+                    autoComplete="off"
+                  />
+                </div>
+              </form>
+
+              {/* Navigation Items */}
+              <nav className="flex-1 p-4 space-y-2">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={cn(
+                      "flex items-center px-4 py-4 text-lg font-medium rounded-lg transition-colors min-h-[56px]",
+                      pathname === item.href
+                        ? "bg-primary/10 text-primary"
+                        : "text-foreground hover:bg-muted"
+                    )}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </nav>
+
+              {/* User Info */}
+              {isAuthenticated && user && (
+                <div className="p-4 border-t">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <User className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{user.username}</p>
+                      <p className="text-sm text-muted-foreground">{user.email}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      handleLogout();
+                    }}
+                    className="flex items-center gap-2 w-full px-4 py-3 text-red-600 rounded-lg hover:bg-red-50 min-h-[48px]"
+                  >
+                    <LogOut className="h-5 w-5" />
+                    로그아웃
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

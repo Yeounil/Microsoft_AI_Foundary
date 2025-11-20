@@ -7,7 +7,7 @@ import { CardFooter } from "@/components/ui/card";
  */
 export function LoginFormFooter() {
   return (
-    <CardFooter className="flex flex-col gap-4 text-center text-sm">
+    <CardFooter className="flex flex-col gap-4 text-center text-base md:text-lg px-6 pb-8">
       <p className="text-muted-foreground">
         계정이 없으신가요?{" "}
         <Link

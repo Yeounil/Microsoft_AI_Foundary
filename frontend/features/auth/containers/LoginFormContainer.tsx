@@ -15,7 +15,7 @@ export function LoginFormContainer() {
     useLoginForm();
 
   return (
-    <Card className="w-full max-w-md">
+    <Card className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl">
       <LoginFormHeader />
       <form onSubmit={handleSubmit}>
         <LoginFormFields

@@ -5,6 +5,7 @@
 
 import apiClient from "../api-client";
 import { CandleData } from "../websocket/types";
+import { logger } from "../logger";
 
 export type ChartPeriod = "1d" | "7d" | "1w" | "1mo" | "3mo" | "6mo" | "1y" | "5y" | "max" | "all";
 export type ChartInterval =
@@ -22,6 +23,11 @@ export interface ChartDataResponse {
   data: CandleData[];
   period: ChartPeriod;
   interval: ChartInterval;
+}
+
+export interface HistoricalDataResult {
+  candles: CandleData[];
+  companyName?: string;
 }
 
 /**
@@ -75,7 +81,7 @@ export class ChartDataLoader {
       const toDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
       const fromDate = fromDateObj.toISOString().split('T')[0]; // YYYY-MM-DD
 
-      console.log(`Loading intraday data: ${symbol}, period: ${period}, interval: ${interval} → ${fmpInterval}, from: ${fromDate}, to: ${toDate}`);
+      logger.debug(`Loading intraday data: ${symbol}, period: ${period}, interval: ${interval} → ${fmpInterval}, from: ${fromDate}, to: ${toDate}`);
 
       const response = await apiClient.getIntradayData(symbol, fmpInterval, fromDate, toDate);
 
@@ -92,7 +98,7 @@ export class ChartDataLoader {
         return [];
       }
 
-      console.log(`Loaded ${dataArray.length} intraday candles for ${symbol}`);
+      logger.debug(`Loaded ${dataArray.length} intraday candles for ${symbol}`);
 
       // 백엔드가 반환한 데이터를 그대로 사용 (백엔드에서 필터링 처리)
       // 프론트엔드 필터링은 제거 (백엔드가 날짜 범위를 무시하는 경우가 있음)
@@ -110,34 +116,41 @@ export class ChartDataLoader {
     symbol: string,
     period: ChartPeriod = "1d",
     interval: ChartInterval = "1d"
-  ): Promise<CandleData[]> {
+  ): Promise<HistoricalDataResult> {
     try {
       // 1D, 1W, 1M 기간 + 분/시간 단위 인터벌 → Intraday API 사용
       if (
         (period === "1d" || period === "7d" || period === "1w" || period === "1mo") &&
         ["1m", "5m", "15m", "30m", "1h"].includes(interval)
       ) {
-        console.log(`Using Intraday API for ${symbol} (period: ${period}, interval: ${interval})`);
-        return await this.loadIntradayData(symbol, interval, period);
+        logger.debug(`Using Intraday API for ${symbol} (period: ${period}, interval: ${interval})`);
+        const candles = await this.loadIntradayData(symbol, interval, period);
+        return { candles };
       }
 
       // 기존 로직 (일/주/월봉)
       const response = await apiClient.getChartData(symbol, period, interval);
 
       // API 응답 형식 정규화
+      let candles: CandleData[];
       if (Array.isArray(response)) {
-        return this.normalizeChartData(response);
+        candles = this.normalizeChartData(response);
       } else if (response.data && Array.isArray(response.data)) {
-        return this.normalizeChartData(response.data);
+        candles = this.normalizeChartData(response.data);
       } else if (response.chart_data && Array.isArray(response.chart_data)) {
-        return this.normalizeChartData(response.chart_data);
+        candles = this.normalizeChartData(response.chart_data);
       } else {
         console.error("Unexpected chart data format:", response);
-        return [];
+        candles = [];
       }
+
+      return {
+        candles,
+        companyName: response.company_name,
+      };
     } catch (error) {
       console.error(`Failed to load chart data for ${symbol}:`, error);
-      return [];
+      return { candles: [] };
     }
   }
 

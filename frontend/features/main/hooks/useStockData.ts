@@ -1,5 +1,6 @@
 import { useMemo, useEffect } from "react";
 import { convertToStockItems } from "../services/stockListService";
+import { logger } from "@/lib/logger";
 
 interface StockBase {
   symbol: string;
@@ -26,8 +27,8 @@ export function useStockData({
   const allStocks = useMemo(() => {
     if (supportedStocks.length > 0) {
       const stocks = convertToStockItems(supportedStocks);
-      console.log(
-        `[useStockData] ✅ Received ${stocks.length} stocks from MainPage`
+      logger.info(
+        `[useStockData] Received ${stocks.length} stocks from MainPage`
       );
       return stocks;
     }
@@ -38,7 +39,7 @@ export function useStockData({
   useEffect(() => {
     if (allStocks.length > 0 && onSelectStock && !selectedSymbol) {
       onSelectStock(allStocks[0].symbol);
-      console.log(`[useStockData] Auto-selected first stock: ${allStocks[0].symbol}`);
+      logger.debug(`[useStockData] Auto-selected first stock: ${allStocks[0].symbol}`);
     }
   }, [allStocks, onSelectStock, selectedSymbol]);
 

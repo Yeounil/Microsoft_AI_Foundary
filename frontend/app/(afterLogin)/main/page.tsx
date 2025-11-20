@@ -1,10 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { ImprovedStockList } from "@/features/main/components/StockList";
-import { NewsSection } from "@/features/main/components/NewsSection";
+import { useState, useEffect, Suspense, lazy } from "react";
 import { TickerTapeWidget } from "@/features/main/components/TickerTape";
 import apiClient from "@/lib/api-client";
+import { logger } from "@/lib/logger";
+import { AnimatedSection } from "@/shared/components/ProgressiveLoader";
+import { LoadingSpinner } from "@/shared/components/LoadingSpinner";
+
+// Lazy load heavy components
+const ImprovedStockList = lazy(() =>
+  import("@/features/main/components/StockList").then(mod => ({ default: mod.ImprovedStockList }))
+);
+const NewsSection = lazy(() =>
+  import("@/features/main/components/NewsSection").then(mod => ({ default: mod.NewsSection }))
+);
 
 export default function MainPage() {
   const [supportedStocks, setSupportedStocks] = useState<string[]>([]);
@@ -15,22 +24,22 @@ export default function MainPage() {
   useEffect(() => {
     const loadSupportedStocks = async () => {
       try {
-        console.log('[MainPage] Loading WebSocket supported stocks...');
+        logger.info('[MainPage] Loading WebSocket supported stocks...');
         const response = await apiClient.getSupportedStocks();
 
         if (response.all_symbols && Array.isArray(response.all_symbols)) {
           setSupportedStocks(response.all_symbols);
-          console.log(`[MainPage] ✅ Loaded ${response.all_symbols.length} stocks`);
+          logger.info(`[MainPage] Loaded ${response.all_symbols.length} stocks`);
         }
 
         if (response.categories && typeof response.categories === 'object') {
           setCategories(response.categories);
-          console.log(`[MainPage] ✅ Loaded ${Object.keys(response.categories).length} categories`);
+          logger.info(`[MainPage] Loaded ${Object.keys(response.categories).length} categories`);
         }
 
         setIsLoadingStocks(false);
       } catch (error) {
-        console.error('[MainPage] Failed to load stocks:', error);
+        logger.error('[MainPage] Failed to load stocks:', error);
         setIsLoadingStocks(false);
       }
     };
@@ -39,28 +48,42 @@ export default function MainPage() {
   }, []);
 
   return (
-    <div className="container px-4 py-6 m-auto">
+    <div className="container px-3 py-4 md:px-4 md:py-6 m-auto">
       {/* TradingView Ticker Tape */}
-      <TickerTapeWidget />
+      <AnimatedSection animation="fade-in" duration={300}>
+        <TickerTapeWidget />
+      </AnimatedSection>
 
-      {/* Main Content Grid */}
-      <div className="grid gap-6 lg:grid-cols-[6fr_4fr]">
-        {/* Left Side - News (60%) */}
-        <div>
-          <NewsSection
-            availableStocks={supportedStocks}
-            isLoadingStocks={isLoadingStocks}
-            categories={categories}
-          />
-        </div>
+      {/* Main Content Grid - News first on all devices (뉴스 분석이 메인) */}
+      <div className="grid gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-[6fr_4fr]">
+        {/* News Section - Always first */}
+        <AnimatedSection animation="fade-up" delay={100}>
+          <Suspense fallback={
+            <div className="flex items-center justify-center py-16 bg-card rounded-lg border">
+              <LoadingSpinner size="lg" />
+            </div>
+          }>
+            <NewsSection
+              availableStocks={supportedStocks}
+              isLoadingStocks={isLoadingStocks}
+              categories={categories}
+            />
+          </Suspense>
+        </AnimatedSection>
 
-        {/* Right Side - Stock List (35%) */}
-        <div>
-          <ImprovedStockList
-            supportedStocks={supportedStocks}
-            isLoadingStocks={isLoadingStocks}
-          />
-        </div>
+        {/* Stock List - Always second */}
+        <AnimatedSection animation="fade-up" delay={200}>
+          <Suspense fallback={
+            <div className="flex items-center justify-center py-16 bg-card rounded-lg border">
+              <LoadingSpinner size="lg" />
+            </div>
+          }>
+            <ImprovedStockList
+              supportedStocks={supportedStocks}
+              isLoadingStocks={isLoadingStocks}
+            />
+          </Suspense>
+        </AnimatedSection>
       </div>
     </div>
   );

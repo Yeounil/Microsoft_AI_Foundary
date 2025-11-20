@@ -29,14 +29,14 @@ export function TimeRangeSelector({
   onTimeRangeChange,
 }: TimeRangeSelectorProps) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex gap-1.5 sm:gap-2 overflow-x-auto scrollbar-hide pb-2 -mx-1 px-1">
       {TIME_RANGES.map((range) => (
         <Button
           key={range}
           variant={timeRange === range ? "default" : "outline"}
           size="sm"
           onClick={() => onTimeRangeChange(range)}
-          className="text-xs transition-all duration-200 hover:shadow-sm"
+          className="text-xs h-9 sm:h-8 px-2.5 sm:px-3 min-w-[44px] transition-all duration-200 hover:shadow-sm whitespace-nowrap shrink-0"
         >
           {getTimeRangeLabel(range)}
         </Button>

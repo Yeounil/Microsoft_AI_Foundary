@@ -8,6 +8,7 @@ import { getFMPWebSocketClient } from "../lib/websocket/fmp-websocket-client";
 import { ChartDataLoader, ChartInterval, ChartPeriod } from "../lib/chart/chart-data-loader";
 import { ChartSynchronizer } from "../lib/chart/chart-synchronizer";
 import { CandleData } from "../lib/websocket/types";
+import { logger } from "../lib/logger";
 
 export interface UseRealtimeChartOptions {
   enableRealtime?: boolean; // 실시간 업데이트 활성화 (기본: true)
@@ -64,16 +65,16 @@ export function useRealtimeChart(
         interval
       );
 
-      if (historicalData.length === 0) {
+      if (historicalData.candles.length === 0) {
         setError("No data available");
         return;
       }
 
-      setData(historicalData);
+      setData(historicalData.candles);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to load data";
       setError(errorMessage);
-      console.error("Failed to load historical data:", err);
+      logger.error("Failed to load historical data:", err);
     } finally {
       setIsLoading(false);
     }
@@ -84,7 +85,7 @@ export function useRealtimeChart(
    */
   const startRealtimeUpdates = useCallback(async () => {
     if (!enableRealtime) {
-      console.log("Realtime updates disabled");
+      logger.info("Realtime updates disabled");
       return;
     }
 
@@ -119,7 +120,7 @@ export function useRealtimeChart(
       wsClient.onCandle(symbol, candleCallbackRef.current);
 
       setIsRealtime(true);
-      console.log(`Realtime updates started for ${symbol}`);
+      logger.info(`Realtime updates started for ${symbol}`);
 
       // 동기화 시작
       if (enableSync) {
@@ -142,12 +143,12 @@ export function useRealtimeChart(
         });
 
         synchronizerRef.current = synchronizer;
-        console.log(`Synchronizer started for ${symbol}`);
+        logger.info(`Synchronizer started for ${symbol}`);
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to start realtime updates";
       setError(errorMessage);
-      console.error("Failed to start realtime updates:", err);
+      logger.error("Failed to start realtime updates:", err);
     }
   }, [symbol, interval, enableRealtime, enableSync, syncIntervalMs]);
 
@@ -173,7 +174,7 @@ export function useRealtimeChart(
     }
 
     setIsRealtime(false);
-    console.log(`Realtime updates stopped for ${symbol}`);
+    logger.info(`Realtime updates stopped for ${symbol}`);
   }, [symbol]);
 
   /**

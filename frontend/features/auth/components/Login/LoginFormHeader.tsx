@@ -10,9 +10,9 @@ import {
  */
 export function LoginFormHeader() {
   return (
-    <CardHeader className="space-y-2 text-center">
-      <CardTitle className="text-2xl font-bold">로그인</CardTitle>
-      <CardDescription>
+    <CardHeader className="space-y-3 text-center px-6 pt-8 pb-6">
+      <CardTitle className="text-3xl md:text-4xl font-bold">로그인</CardTitle>
+      <CardDescription className="text-base md:text-lg">
         계정에 로그인하여 AI 금융 분석 서비스를 이용하세요
       </CardDescription>
     </CardHeader>

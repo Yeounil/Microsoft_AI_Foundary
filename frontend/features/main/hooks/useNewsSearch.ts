@@ -37,14 +37,15 @@ export function useNewsSearch(
   const selectedStock = currentTabSearch.selectedStock;
 
   // Set initial stock if provided (only for dashboard pages, not for main page tabs)
-  useEffect(() => {
-    if (initialStock && activeTab === "hot") {
-      setHotTabSearch({
-        searchQuery: initialStock,
-        selectedStock: initialStock,
-      });
-    }
-  }, [initialStock, activeTab]);
+  // Initialize state directly instead of using useEffect to avoid cascading renders
+  const [initialized, setInitialized] = useState(false);
+  if (!initialized && initialStock && activeTab === "hot") {
+    setHotTabSearch({
+      searchQuery: initialStock,
+      selectedStock: initialStock,
+    });
+    setInitialized(true);
+  }
 
   // Filter stocks based on search query (memoized)
   const filteredStocks = useMemo(

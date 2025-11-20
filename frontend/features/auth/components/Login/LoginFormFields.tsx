@@ -23,14 +23,14 @@ export function LoginFormFields({
   onChange,
 }: LoginFormFieldsProps) {
   return (
-    <CardContent className="space-y-4">
+    <CardContent className="space-y-6 px-6 pb-8">
       {error && (
-        <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+        <div className="rounded-lg bg-destructive/10 p-4 text-sm md:text-base text-destructive">
           {error}
         </div>
       )}
-      <div className="space-y-2">
-        <Label htmlFor="username">사용자명</Label>
+      <div className="space-y-3">
+        <Label htmlFor="username" className="text-base md:text-lg">사용자명</Label>
         <Input
           id="username"
           type="text"
@@ -39,10 +39,11 @@ export function LoginFormFields({
           onChange={onChange}
           required
           disabled={isLoading}
+          className="h-11 md:h-12 text-base"
         />
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="password">비밀번호</Label>
+      <div className="space-y-3">
+        <Label htmlFor="password" className="text-base md:text-lg">비밀번호</Label>
         <Input
           id="password"
           type="password"
@@ -51,12 +52,13 @@ export function LoginFormFields({
           onChange={onChange}
           required
           disabled={isLoading}
+          className="h-11 md:h-12 text-base"
         />
       </div>
-      <Button className="w-full" size="lg" type="submit" disabled={isLoading}>
+      <Button className="w-full h-11 md:h-12 text-base md:text-lg" type="submit" disabled={isLoading}>
         {isLoading ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
             로그인 중...
           </>
         ) : (

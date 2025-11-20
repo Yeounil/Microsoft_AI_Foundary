@@ -149,12 +149,12 @@ export default function WatchlistPage() {
 
             <Button
               variant="ghost"
-              size="icon"
               onClick={(e) => {
                 e.stopPropagation();
                 handleRemoveStock(symbol);
               }}
               disabled={isRemoving}
+              className="min-h-[44px] min-w-[44px] p-2"
             >
               {isRemoving ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -169,9 +169,9 @@ export default function WatchlistPage() {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">나의 관심 종목</h1>
+    <div className="container mx-auto py-6 px-3 md:py-8 md:px-4">
+      <div className="mb-6 md:mb-8">
+        <h1 className="text-2xl md:text-3xl font-bold mb-2">나의 관심 종목</h1>
         <p className="text-muted-foreground">
           관심 종목을 추가하고 실시간으로 가격 변화를 확인하세요
         </p>
@@ -183,7 +183,7 @@ export default function WatchlistPage() {
           <CardTitle>종목 추가</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -192,22 +192,25 @@ export default function WatchlistPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddStock()}
-                className="pl-9"
+                className="pl-9 h-11"
               />
             </div>
             <Button
               onClick={handleAddStock}
               disabled={!searchQuery.trim() || isSearching}
+              className="w-full sm:w-auto min-h-[44px] whitespace-nowrap"
             >
               {isSearching ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  추가 중...
+                  <span className="hidden sm:inline">추가 중...</span>
+                  <span className="sm:hidden">추가 중...</span>
                 </>
               ) : (
                 <>
                   <Star className="mr-2 h-4 w-4" />
-                  관심 종목 추가
+                  <span className="hidden sm:inline">관심 종목 추가</span>
+                  <span className="sm:hidden">추가</span>
                 </>
               )}
             </Button>
@@ -229,7 +232,7 @@ export default function WatchlistPage() {
 
       {/* 관심 종목 리스트 */}
       {watchlist.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
           {watchlist.map((symbol) => (
             <WatchlistItemCard key={symbol} symbol={symbol} />
           ))}

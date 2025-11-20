@@ -1,7 +1,7 @@
+import { memo } from "react";
 import Link from "next/link";
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -18,7 +18,7 @@ interface NewsCardProps {
  * NewsCard Component
  * 개별 뉴스 기사를 카드 형태로 표시합니다.
  */
-export function NewsCard({ article, index }: NewsCardProps) {
+export const NewsCard = memo(function NewsCard({ article, index }: NewsCardProps) {
   const sentiment = getSentiment(article.positive_score);
   const SentimentIcon = sentiment.icon;
 
@@ -28,7 +28,7 @@ export function NewsCard({ article, index }: NewsCardProps) {
       href={`/news-analysis/${article.id}`}
       className="block"
     >
-      <Card className="cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 h-[180px] py-2">
+      <Card className="cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98] min-h-responsive-card py-2">
         <CardHeader className="pb-2 pt-3 space-y-2">
           {/* 제목과 감정 태그 */}
           <div className="flex items-start justify-between gap-2">
@@ -80,4 +80,4 @@ export function NewsCard({ article, index }: NewsCardProps) {
       </Card>
     </Link>
   );
-}
+});

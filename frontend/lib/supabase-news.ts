@@ -4,6 +4,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { NewsArticle } from "@/types";
+import { logger } from "@/lib/logger";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
@@ -81,7 +82,7 @@ export async function getNewsArticles(
     }
 
     if (!data) {
-      console.warn("[Supabase] No news articles found");
+      logger.warn("[Supabase] No news articles found");
       return [];
     }
 

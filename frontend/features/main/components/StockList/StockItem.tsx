@@ -1,3 +1,4 @@
+import { memo } from "react";
 import Link from "next/link";
 import { Star, TrendingUp, TrendingDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,7 @@ interface StockItemProps {
  * StockItem Component
  * 개별 종목 행을 표시합니다.
  */
-export function StockItem({
+export const StockItem = memo(function StockItem({
   stock,
   isSelected,
   isInWatchlist,
@@ -24,30 +25,30 @@ export function StockItem({
 }: StockItemProps) {
   return (
     <div
-      className={`flex items-center justify-between rounded-lg border border-border p-4 transition-all duration-200 hover:bg-muted/50 hover:shadow-sm cursor-pointer ${
+      className={`flex items-center justify-between rounded-lg border border-border p-3 sm:p-4 transition-all duration-200 hover:bg-muted/50 hover:shadow-sm cursor-pointer active:scale-[0.98] touch-manipulation ${
         isSelected ? "bg-primary/10 border-primary shadow-sm" : ""
       }`}
       onClick={() => onSelect(stock.symbol)}
     >
-      <div className="flex-1">
+      <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold truncate max-w-[200px]">{stock.name}</h3>
-          <span className="text-xs text-muted-foreground">
+          <h3 className="font-semibold truncate text-sm sm:text-base">{stock.name}</h3>
+          <span className="text-[10px] sm:text-xs text-muted-foreground shrink-0">
             {stock.symbol}
           </span>
         </div>
         <div className="mt-1 flex items-center gap-2">
           {stock.isLoading || stock.price === null ? (
-            <span className="text-sm text-muted-foreground animate-pulse">
+            <span className="text-xs sm:text-sm text-muted-foreground animate-pulse">
               가격 로딩 중...
             </span>
           ) : (
             <>
-              <span className="text-sm font-medium">
+              <span className="text-xs sm:text-sm font-medium">
                 ${stock.price.toFixed(2)}
               </span>
               <span
-                className={`flex items-center text-xs gap-2 ${
+                className={`flex items-center text-[10px] sm:text-xs gap-1 ${
                   stock.change >= 0 ? "text-green-600" : "text-red-600"
                 }`}
               >
@@ -63,12 +64,12 @@ export function StockItem({
           )}
         </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
         <Button
           size="sm"
           variant="ghost"
           onClick={(e) => onToggleWatchlist(e, stock.symbol)}
-          className="h-8 w-8 p-0"
+          className="h-9 w-9 sm:h-8 sm:w-8 p-0 min-h-[36px] min-w-[36px]"
         >
           <Star
             className={`h-4 w-4 ${
@@ -81,10 +82,11 @@ export function StockItem({
           variant="outline"
           asChild
           onClick={(e) => e.stopPropagation()}
+          className="h-9 sm:h-8 px-2 sm:px-3 text-xs min-h-[36px]"
         >
           <Link href={`/dashboard/${stock.symbol}`}>상세</Link>
         </Button>
       </div>
     </div>
   );
-}
+});

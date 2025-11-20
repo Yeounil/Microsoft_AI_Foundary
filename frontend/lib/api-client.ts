@@ -95,10 +95,17 @@ class ApiClient {
       throw new Error('No refresh token available');
     }
 
-    this.refreshPromise = this.client
-      .post<AuthTokens>('/api/v2/auth/refresh', {
-        refresh_token: refreshToken,
-      })
+    // Use axios directly without interceptors to avoid sending expired token
+    this.refreshPromise = axios
+      .post<AuthTokens>(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v2/auth/refresh`,
+        { refresh_token: refreshToken },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      )
       .then((response) => {
         this.setTokens(response.data);
         return response.data.access_token;
@@ -332,7 +339,7 @@ class ApiClient {
     return response.data;
   }
 
-  async addFavorite(symbol: string, userId: string, companyName?: string) {
+  async addFavorite(symbol: string, userId: string) {
     const response = await this.client.post('/api/v2/recommendations/interests', {
       user_id: userId,
       interest: symbol,

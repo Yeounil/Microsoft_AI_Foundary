@@ -11,8 +11,16 @@ import { RegisterFormFooter } from "../components/Register/RegisterFormFooter";
  * 회원가입 폼의 모든 로직과 상태를 관리하는 Container 컴포넌트입니다.
  */
 export function RegisterFormContainer() {
-  const { formData, isLoading, displayError, handleSubmit, handleChange } =
-    useRegisterForm();
+  const {
+    formData,
+    isLoading,
+    displayError,
+    handleSubmit,
+    handleChange,
+    handleBlur,
+    validationState,
+    isFormValid,
+  } = useRegisterForm();
 
   return (
     <Card className="w-full max-w-md">
@@ -23,6 +31,9 @@ export function RegisterFormContainer() {
           isLoading={isLoading}
           displayError={displayError}
           onChange={handleChange}
+          onBlur={handleBlur}
+          validationState={validationState}
+          isFormValid={isFormValid}
         />
       </form>
       <RegisterFormFooter />

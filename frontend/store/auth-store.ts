@@ -42,11 +42,12 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             error: null
           });
-        } catch (error: any) {
+        } catch (error: unknown) {
           let errorMessage = '로그인 중 오류가 발생했습니다';
 
           // 401 에러인 경우 사용자 친화적인 메시지 표시
-          if (error?.response?.status === 401) {
+          const axiosError = error as { response?: { status?: number } };
+          if (axiosError?.response?.status === 401) {
             errorMessage = '아이디 또는 비밀번호를 확인해주세요';
           } else {
             errorMessage = extractErrorMessage(error);
@@ -68,11 +69,12 @@ export const useAuthStore = create<AuthState>()(
           await apiClient.register(data);
           // Auto login after registration
           await get().login({ username: data.username, password: data.password });
-        } catch (error: any) {
+        } catch (error: unknown) {
           let errorMessage = '회원가입 중 오류가 발생했습니다';
 
           // 409 에러인 경우 (중복)
-          if (error?.response?.status === 409) {
+          const axiosError = error as { response?: { status?: number } };
+          if (axiosError?.response?.status === 409) {
             errorMessage = '이미 사용 중인 아이디 또는 이메일입니다';
           } else {
             errorMessage = extractErrorMessage(error);

@@ -33,15 +33,20 @@ export function DashboardChartHeader({
   const isPositive = (priceChange ?? 0) >= 0;
 
   return (
-    <div className="flex items-start justify-between">
+    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
       <div>
         {/* Title Section */}
         {isLoading ? (
           <Skeleton className="h-9 w-64 mb-2" />
         ) : (
           <div className="flex items-center gap-3">
-            <CardTitle className="text-2xl font-bold">
-              {companyName || symbol}
+            <CardTitle className="text-xl md:text-2xl font-bold">
+              {symbol}
+              {companyName && (
+                <span className="ml-2 text-base md:text-lg font-normal text-muted-foreground">
+                  {companyName}
+                </span>
+              )}
             </CardTitle>
             {isRealtime && (
               <span className="flex items-center gap-1 text-xs text-green-600">
@@ -54,18 +59,18 @@ export function DashboardChartHeader({
 
         {/* Price Section */}
         {isLoading ? (
-          <div className="mt-2 flex items-center gap-4">
-            <Skeleton className="h-7 w-32" />
-            <Skeleton className="h-5 w-24" />
+          <div className="mt-1.5 sm:mt-2 flex items-center gap-2 sm:gap-4">
+            <Skeleton className="h-6 sm:h-7 w-24 sm:w-32" />
+            <Skeleton className="h-4 sm:h-5 w-20 sm:w-24" />
           </div>
         ) : (
-          <div className="mt-2 flex items-center gap-4">
-            <span className="text-lg font-semibold">
+          <div className="mt-1.5 sm:mt-2 flex items-center gap-2 sm:gap-4">
+            <span className="text-base sm:text-lg font-semibold">
               ${currentPrice?.toFixed(2) || "0.00"}
             </span>
             {priceChange !== undefined && priceChangePercent !== undefined && (
               <span
-                className={`text-sm font-medium ${
+                className={`text-xs sm:text-sm font-medium ${
                   isPositive ? "text-green-600" : "text-red-600"
                 }`}
               >
@@ -77,19 +82,18 @@ export function DashboardChartHeader({
           </div>
         )}
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center">
         <Button
           variant="ghost"
-          size="sm"
           onClick={onToggleWatchlist}
-          className="flex items-center gap-2"
+          className="flex items-center gap-1.5 sm:gap-2 min-h-10 sm:min-h-11 px-2 sm:px-3 text-xs sm:text-sm"
         >
           <Star
-            className={`h-4 w-4 ${
+            className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${
               isInWatchlist ? "fill-yellow-400 text-yellow-400" : ""
             }`}
           />
-          관심 종목 {isInWatchlist ? "제거" : "추가"}
+          <span className="hidden sm:inline">관심 종목</span> {isInWatchlist ? "제거" : "추가"}
         </Button>
       </div>
     </div>

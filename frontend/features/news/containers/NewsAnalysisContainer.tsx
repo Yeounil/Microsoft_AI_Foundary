@@ -57,9 +57,10 @@ export function NewsAnalysisContainer({
 
       // 레포트 페이지로 이동
       router.push(`/news-report/${newsData.symbol}`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to generate report:", err);
-      alert(err.response?.data?.detail || "레포트 생성 중 오류가 발생했습니다.");
+      const axiosError = err as { response?: { data?: { detail?: string } } };
+      alert(axiosError.response?.data?.detail || "레포트 생성 중 오류가 발생했습니다.");
       setIsGeneratingReport(false);
     }
   };
