@@ -2,8 +2,6 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
 import { useDevice } from "@/hooks/useDevice";
 import { useStockStore } from "@/store/stock-store";
 import { useLoadingStore } from "@/store/loading-store";
@@ -195,30 +193,6 @@ export function DashboardChartContainer({
     [saveEnhancedMinuteInterval]
   );
 
-  // 차트 이미지 다운로드
-  const handleDownloadChart = useCallback(async () => {
-    if (!chartContainerRef.current) return;
-
-    try {
-      const [html2canvasModule] = await Promise.all([
-        import('html2canvas')
-      ]);
-      const html2canvas = html2canvasModule.default;
-
-      const canvas = await html2canvas(chartContainerRef.current, {
-        backgroundColor: '#ffffff',
-        scale: 2,
-      });
-
-      const link = document.createElement('a');
-      link.download = `${symbol}_chart_${new Date().toISOString().split('T')[0]}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-    } catch (error) {
-      logger.error('Failed to download chart:', error);
-    }
-  }, [symbol]);
-
   // Basic 모드일 때 차트 스크롤/줌 비활성화
   useEffect(() => {
     if (chartRef.current) {
@@ -267,7 +241,6 @@ export function DashboardChartContainer({
             onChartTypeChange={handleChartTypeChange}
             timeRange={basicTimeRange}
             onTimeRangeChange={handleBasicTimeRangeChange}
-            onDownload={handleDownloadChart}
           />
         ) : (
           <>
@@ -283,15 +256,6 @@ export function DashboardChartContainer({
                   onChartTypeChange={handleChartTypeChange}
                 />
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDownloadChart}
-                className="w-full sm:w-auto h-10 sm:h-9 text-xs min-h-[44px] sm:min-h-0"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                차트 저장
-              </Button>
             </div>
 
             {/* Chart Mode에 따른 다른 UI */}

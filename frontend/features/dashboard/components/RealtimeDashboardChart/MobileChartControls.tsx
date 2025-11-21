@@ -1,7 +1,6 @@
 "use client";
 
-import { Download, BarChart3, LineChart, AreaChart, Sparkles, Settings2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { BarChart3, LineChart, AreaChart, Sparkles, Settings2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -20,7 +19,6 @@ interface MobileChartControlsProps {
   onChartTypeChange: (type: ChartType) => void;
   timeRange: TimeRange;
   onTimeRangeChange: (range: TimeRange) => void;
-  onDownload: () => void;
 }
 
 const chartTypeIcons = {
@@ -44,7 +42,6 @@ export function MobileChartControls({
   onChartTypeChange,
   timeRange,
   onTimeRangeChange,
-  onDownload,
 }: MobileChartControlsProps) {
   return (
     <div className="flex gap-2 items-center">
@@ -105,15 +102,6 @@ export function MobileChartControls({
         </Select>
       )}
 
-      {/* 다운로드 버튼 */}
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={onDownload}
-        className="ml-auto min-h-[48px] min-w-[48px] touch-manipulation active:scale-95 transition-transform"
-      >
-        <Download className="h-4 w-4" />
-      </Button>
     </div>
   );
 }
