@@ -240,7 +240,7 @@ export default function HelpPage() {
                     차트 데이터는 어디서 제공되나요?
                   </AccordionTrigger>
                   <AccordionContent>
-                    차트 데이터는 Yahoo Finance API를 통해 제공됩니다.
+                    차트 데이터는 해당 종목의 5개년 치 데이터가 제공됩니다.
                     실시간 데이터는 별도의 WebSocket 서버를 통해 제공됩니다.
                   </AccordionContent>
                 </AccordionItem>

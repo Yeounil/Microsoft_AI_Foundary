@@ -357,6 +357,23 @@ class ApiClient {
     const response = await this.client.request<T>(config);
     return response.data;
   }
+
+  // Generic HTTP methods
+  get<T = unknown>(url: string, config?: AxiosRequestConfig) {
+    return this.client.get<T>(url, config);
+  }
+
+  post<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig) {
+    return this.client.post<T>(url, data, config);
+  }
+
+  put<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig) {
+    return this.client.put<T>(url, data, config);
+  }
+
+  delete<T = unknown>(url: string, config?: AxiosRequestConfig) {
+    return this.client.delete<T>(url, config);
+  }
 }
 
 const apiClient = new ApiClient();
