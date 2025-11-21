@@ -49,7 +49,7 @@ export function RiskBar({ label, level }: RiskBarProps) {
   const color = getColor(progress);
 
   return (
-    <div className="flex flex-col items-center gap-3 p-4 rounded-xl bg-card/50 border border-border/50 backdrop-blur-sm transition-all hover:bg-card/80">
+    <div className="flex flex-col items-center gap-3 p-3 md:p-4 rounded-xl bg-card/50 border border-border/50 backdrop-blur-sm transition-all hover:bg-card/80 w-full md:w-auto max-w-[180px] md:max-w-none mx-auto">
       {/* 레이블 */}
       <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label}</span>
 

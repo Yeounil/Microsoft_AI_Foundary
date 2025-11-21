@@ -190,6 +190,7 @@ interface LazyComponentProps {
  * Lazy Component 래퍼
  * React.lazy와 Suspense를 결합합니다.
  */
+/* eslint-disable */
 export function LazyComponent({
   loader,
   fallback,

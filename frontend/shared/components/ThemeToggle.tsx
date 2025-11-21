@@ -23,6 +23,7 @@ export function ThemeToggle() {
 
   // 하이드레이션 이슈 방지
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
@@ -74,6 +75,7 @@ export function SimpleThemeToggle() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 

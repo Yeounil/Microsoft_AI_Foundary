@@ -7,7 +7,9 @@ import { Button } from '@/components/ui/button';
 import { DashboardChartContainer } from '@/features/dashboard/containers/DashboardChartContainer';
 import { AnalysisSectionContainer } from '@/features/dashboard/containers/AnalysisSectionContainer';
 import { SimpleNewsSection } from '@/features/main/components/NewsSection/SimpleNewsSection';
+import { MobileTabs } from '@/features/dashboard/components/MobileTabs';
 import { useStockStore } from '@/store/stock-store';
+import { useDevice } from '@/hooks/useDevice';
 import { AnimatedSection } from '@/shared/components/ProgressiveLoader';
 
 export default function DashboardPage() {
@@ -15,6 +17,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const symbol = params.symbol as string;
   const { selectStock } = useStockStore();
+  const { isMobile } = useDevice();
 
   useEffect(() => {
     if (symbol) {
@@ -42,18 +45,23 @@ export default function DashboardPage() {
           <DashboardChartContainer symbol={symbol.toUpperCase()} />
         </AnimatedSection>
 
-        {/* Analysis and News - Mobile: stack, Desktop: side by side */}
-        <div className="grid gap-4 md:gap-6 lg:grid-cols-2">
-          {/* Left Side - Analysis (50%) */}
-          <AnimatedSection animation="fade-up" delay={100}>
-            <AnalysisSectionContainer symbol={symbol.toUpperCase()} />
-          </AnimatedSection>
+        {/* 모바일: 탭 레이아웃 */}
+        {isMobile ? (
+          <MobileTabs symbol={symbol.toUpperCase()} />
+        ) : (
+          /* 태블릿/데스크탑: 그리드 레이아웃 */
+          <div className="grid gap-4 md:gap-6 lg:grid-cols-2">
+            {/* Left Side - Analysis (50%) */}
+            <AnimatedSection animation="fade-up" delay={100}>
+              <AnalysisSectionContainer symbol={symbol.toUpperCase()} />
+            </AnimatedSection>
 
-          {/* Right Side - News (50%) */}
-          <AnimatedSection animation="fade-up" delay={200}>
-            <SimpleNewsSection symbol={symbol.toUpperCase()} />
-          </AnimatedSection>
-        </div>
+            {/* Right Side - News (50%) */}
+            <AnimatedSection animation="fade-up" delay={200}>
+              <SimpleNewsSection symbol={symbol.toUpperCase()} />
+            </AnimatedSection>
+          </div>
+        )}
       </div>
     </div>
   );

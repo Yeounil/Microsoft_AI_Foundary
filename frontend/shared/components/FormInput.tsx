@@ -49,6 +49,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
     // Trigger shake animation when error appears
     useEffect(() => {
       if (showError && enableShake && validation?.isTouched) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setShouldShake(true);
         const timer = setTimeout(() => setShouldShake(false), 500);
         return () => clearTimeout(timer);

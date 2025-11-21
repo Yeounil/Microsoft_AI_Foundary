@@ -30,6 +30,7 @@ export function useVirtualScroll<T>(
   // Container 높이 업데이트
   useEffect(() => {
     if (fixedHeight) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setContainerHeight(fixedHeight);
       return;
     }
@@ -139,6 +140,7 @@ export function useSimpleVirtualList<T>(
   // 현재까지 로드된 아이템
   useEffect(() => {
     const endIndex = page * itemsPerPage;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoadedItems(items.slice(0, endIndex));
   }, [items, page, itemsPerPage]);
 

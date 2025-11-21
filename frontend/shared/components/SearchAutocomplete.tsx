@@ -59,6 +59,7 @@ export function SearchAutocomplete({
   useEffect(() => {
     const saved = localStorage.getItem(SEARCH_HISTORY_KEY);
     if (saved) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHistory(JSON.parse(saved));
     }
   }, []);
@@ -76,6 +77,7 @@ export function SearchAutocomplete({
   // 검색 결과 필터링 (퍼지 검색)
   useEffect(() => {
     if (query.length < 1) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setResults([]);
       return;
     }

@@ -43,8 +43,13 @@ export function useChartInitialization(
         },
         width: containerWidth,
         height: containerHeight,
+        autoSize: true, // 자동 크기 조정 활성화
         grid: {
-          vertLines: { color: "#e5e5e5" },
+          // 모바일에서 세로 그리드 숨김으로 차트 가시성 향상
+          vertLines: {
+            color: "#e5e5e5",
+            visible: !isMobile,
+          },
           horzLines: { color: "#e5e5e5" },
         },
         crosshair: {
@@ -60,20 +65,27 @@ export function useChartInitialization(
             labelBackgroundColor: '#374151',
           },
         },
+        // 모바일에서 왼쪽 프라이스 스케일 숨김
+        leftPriceScale: {
+          visible: false,
+          borderVisible: false,
+        },
         rightPriceScale: {
           borderColor: "#e5e5e5",
+          borderVisible: !isMobile,
           scaleMargins: {
-            top: 0.1,
-            bottom: 0.1,
+            top: isMobile ? 0.05 : 0.1,
+            bottom: isMobile ? 0.1 : 0.1,
           },
         },
         timeScale: {
           borderColor: "#e5e5e5",
-          timeVisible: true,
+          borderVisible: !isMobile,
+          timeVisible: !isMobile, // 모바일에서 시간 표시 간소화
           secondsVisible: false,
-          rightOffset: isMobile ? 5 : 10,
-          barSpacing: isMobile ? 4 : 6,
-          minBarSpacing: isMobile ? 2 : 3,
+          rightOffset: isMobile ? 3 : 10,
+          barSpacing: isMobile ? 3 : 6, // 모바일에서 바 간격 축소
+          minBarSpacing: isMobile ? 1 : 3,
           fixLeftEdge: true,
           fixRightEdge: true,
         },
@@ -110,10 +122,26 @@ export function useChartInitialization(
         }
       }, 100);
 
+      // ResizeObserver로 컨테이너 크기 변화 감지 (더 정확한 반응형 처리)
+      let resizeObserver: ResizeObserver | null = null;
+      if (typeof ResizeObserver !== 'undefined') {
+        resizeObserver = new ResizeObserver((entries) => {
+          for (const entry of entries) {
+            const { width, height } = entry.contentRect;
+            if (width > 0 && height > 0) {
+              chart.applyOptions({ width, height });
+              chart.timeScale().fitContent();
+            }
+          }
+        });
+        resizeObserver.observe(chartContainerRef.current);
+      }
+
       window.addEventListener("resize", handleResize);
 
       return () => {
         window.removeEventListener("resize", handleResize);
+        resizeObserver?.disconnect();
         chart.remove();
       };
     } catch (error) {

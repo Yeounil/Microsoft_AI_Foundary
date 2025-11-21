@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
+import { useDevice } from "@/hooks/useDevice";
 import { useStockStore } from "@/store/stock-store";
 import { useLoadingStore } from "@/store/loading-store";
 import { useChartSettingsStore } from "@/store/chart-settings-store";
@@ -29,6 +30,8 @@ import {
   type EnhancedChartType,
 } from "../components/RealtimeDashboardChart/EnhancedChartSelector";
 import { ChartCanvas } from "../components/RealtimeDashboardChart/ChartCanvas";
+import { MobileChartHeader } from "../components/RealtimeDashboardChart/MobileChartHeader";
+import { MobileChartControls } from "../components/RealtimeDashboardChart/MobileChartControls";
 
 interface DashboardChartContainerProps {
   symbol: string;
@@ -42,6 +45,9 @@ interface DashboardChartContainerProps {
 export function DashboardChartContainer({
   symbol,
 }: DashboardChartContainerProps) {
+  // 디바이스 타입 감지
+  const { isMobile } = useDevice();
+
   // 차트 설정 스토어에서 저장된 설정 불러오기
   const {
     settings,
@@ -52,9 +58,11 @@ export function DashboardChartContainer({
     setEnhancedMinuteInterval: saveEnhancedMinuteInterval,
   } = useChartSettingsStore();
 
-  // UI 상태 (저장된 설정으로 초기화)
+  // UI 상태 (저장된 설정으로 초기화, 모바일에서는 Basic 모드 기본)
   const [chartType, setChartType] = useState<ChartType>(settings.chartType);
-  const [chartMode, setChartMode] = useState<ChartMode>(settings.chartMode);
+  const [chartMode, setChartMode] = useState<ChartMode>(
+    isMobile ? "basic" : settings.chartMode
+  );
 
   // Basic 모드 상태
   const [basicTimeRange, setBasicTimeRange] = useState<TimeRange>(settings.basicTimeRange);
@@ -224,63 +232,99 @@ export function DashboardChartContainer({
   return (
     <Card className="overflow-hidden">
       <CardHeader className="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
-        {/* 헤더: 가격 정보 */}
-        <DashboardChartHeader
-          symbol={symbol}
-          companyName={selectedStock?.company_name}
-          currentPrice={priceInfo.currentPrice ?? undefined}
-          priceChange={priceInfo.priceChange}
-          priceChangePercent={priceInfo.priceChangePercent}
-          isRealtime={isRealtime}
-          isLoading={isLoading}
-          isInWatchlist={isInWatchlist}
-          onToggleWatchlist={toggleWatchlist}
-        />
+        {/* 모바일 헤더 */}
+        {isMobile ? (
+          <MobileChartHeader
+            symbol={symbol}
+            currentPrice={priceInfo.currentPrice ?? undefined}
+            priceChange={priceInfo.priceChange}
+            priceChangePercent={priceInfo.priceChangePercent}
+            isLoading={isLoading}
+            isInWatchlist={isInWatchlist}
+            onToggleWatchlist={toggleWatchlist}
+          />
+        ) : (
+          /* 데스크탑 헤더 */
+          <DashboardChartHeader
+            symbol={symbol}
+            companyName={selectedStock?.company_name}
+            currentPrice={priceInfo.currentPrice ?? undefined}
+            priceChange={priceInfo.priceChange}
+            priceChangePercent={priceInfo.priceChangePercent}
+            isRealtime={isRealtime}
+            isLoading={isLoading}
+            isInWatchlist={isInWatchlist}
+            onToggleWatchlist={toggleWatchlist}
+          />
+        )}
 
-        {/* 차트 모드 선택 + 차트 타입 선택 - 모바일에서 세로 스택 */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
-            <ChartModeSelector
-              chartMode={chartMode}
-              onChartModeChange={handleChartModeChange}
-            />
-            <ChartTypeSelector
-              chartType={chartType}
-              onChartTypeChange={handleChartTypeChange}
-            />
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDownloadChart}
-            className="w-full sm:w-auto h-10 sm:h-9 text-xs min-h-[44px] sm:min-h-0"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            차트 저장
-          </Button>
-        </div>
+        {/* 모바일: 컴팩트 컨트롤 / 데스크탑: 기존 컨트롤 */}
+        {isMobile ? (
+          <MobileChartControls
+            chartMode={chartMode}
+            onChartModeChange={handleChartModeChange}
+            chartType={chartType}
+            onChartTypeChange={handleChartTypeChange}
+            timeRange={basicTimeRange}
+            onTimeRangeChange={handleBasicTimeRangeChange}
+            onDownload={handleDownloadChart}
+          />
+        ) : (
+          <>
+            {/* 차트 모드 선택 + 차트 타입 선택 */}
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+                <ChartModeSelector
+                  chartMode={chartMode}
+                  onChartModeChange={handleChartModeChange}
+                />
+                <ChartTypeSelector
+                  chartType={chartType}
+                  onChartTypeChange={handleChartTypeChange}
+                />
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadChart}
+                className="w-full sm:w-auto h-10 sm:h-9 text-xs min-h-[44px] sm:min-h-0"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                차트 저장
+              </Button>
+            </div>
 
-        {/* Chart Mode에 따른 다른 UI */}
-        <div>
-          {chartMode === "basic" ? (
-            // Basic 모드: TimeRange 버튼만 표시
-            <TimeRangeSelector
-              timeRange={basicTimeRange}
-              onTimeRangeChange={handleBasicTimeRangeChange}
-            />
-          ) : (
-            // Enhanced 모드: 분단위/일/주/월/년 선택
-            <EnhancedChartSelector
-              chartType={enhancedChartType}
-              onChartTypeChange={handleEnhancedChartTypeChange}
-              minuteInterval={enhancedMinuteInterval}
-              onMinuteIntervalChange={handleEnhancedMinuteIntervalChange}
-            />
-          )}
-        </div>
+            {/* Chart Mode에 따른 다른 UI */}
+            <div>
+              {chartMode === "basic" ? (
+                <TimeRangeSelector
+                  timeRange={basicTimeRange}
+                  onTimeRangeChange={handleBasicTimeRangeChange}
+                />
+              ) : (
+                <EnhancedChartSelector
+                  chartType={enhancedChartType}
+                  onChartTypeChange={handleEnhancedChartTypeChange}
+                  minuteInterval={enhancedMinuteInterval}
+                  onMinuteIntervalChange={handleEnhancedMinuteIntervalChange}
+                />
+              )}
+            </div>
+          </>
+        )}
+
+        {/* Enhanced 모드 선택기 (모바일에서도 표시) */}
+        {isMobile && chartMode === "enhanced" && (
+          <EnhancedChartSelector
+            chartType={enhancedChartType}
+            onChartTypeChange={handleEnhancedChartTypeChange}
+            minuteInterval={enhancedMinuteInterval}
+            onMinuteIntervalChange={handleEnhancedMinuteIntervalChange}
+          />
+        )}
       </CardHeader>
       <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
-        <ChartCanvas chartContainerRef={chartContainerRef} isLoading={isLoading} />
+        <ChartCanvas chartContainerRef={chartContainerRef} isLoading={isLoading} isMobile={isMobile} />
       </CardContent>
     </Card>
   );

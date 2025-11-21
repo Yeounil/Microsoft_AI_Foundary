@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { StockAnalysis } from "@/types";
@@ -6,7 +7,7 @@ interface AIAnalysisCardProps {
   analysis: StockAnalysis;
 }
 
-export function AIAnalysisCard({ analysis }: AIAnalysisCardProps) {
+export const AIAnalysisCard = memo(function AIAnalysisCard({ analysis }: AIAnalysisCardProps) {
   return (
     <Card className="flex-1 flex flex-col">
       <CardHeader className="pb-2">
@@ -16,7 +17,7 @@ export function AIAnalysisCard({ analysis }: AIAnalysisCardProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-2 flex-1 flex flex-col justify-center">
-        <div className="grid gap-3 grid-cols-2">
+        <div className="grid gap-3 grid-cols-1 md:grid-cols-2">
           <ScoreItem
             label="AI 투자 점수"
             value={analysis.ai_score}
@@ -44,7 +45,7 @@ export function AIAnalysisCard({ analysis }: AIAnalysisCardProps) {
       </CardContent>
     </Card>
   );
-}
+});
 
 function ScoreItem({ label, value }: { label: string; value: number }) {
   return (

@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { StockAnalysis } from "@/types";
 import { RiskBar } from "./RiskBar";
@@ -6,7 +7,7 @@ interface RiskAnalysisCardProps {
   analysis: StockAnalysis;
 }
 
-export function RiskAnalysisCard({ analysis }: RiskAnalysisCardProps) {
+export const RiskAnalysisCard = memo(function RiskAnalysisCard({ analysis }: RiskAnalysisCardProps) {
   return (
     <Card className="flex-1 flex flex-col min-h-80">
       <CardHeader className="pb-3">
@@ -15,7 +16,7 @@ export function RiskAnalysisCard({ analysis }: RiskAnalysisCardProps) {
           AI 기반 위험 요소 평가
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 flex gap-10 justify-center items-center py-8 px-6">
+      <CardContent className="flex-1 flex flex-col md:flex-row gap-6 md:gap-10 justify-center items-center py-6 md:py-8 px-4 md:px-6">
         <RiskBar
           label="시장 리스크"
           level={analysis.risk_analysis?.market_risk || "low"}
@@ -31,4 +32,4 @@ export function RiskAnalysisCard({ analysis }: RiskAnalysisCardProps) {
       </CardContent>
     </Card>
   );
-}
+});
