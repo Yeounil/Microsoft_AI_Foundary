@@ -81,7 +81,7 @@ export const StockItem = memo(function StockItem({
           variant="outline"
           asChild
           onClick={(e) => e.stopPropagation()}
-          className="hidden lg:flex h-8 px-3 text-xs"
+          className="flex h-8 px-2 md:px-3 text-xs min-h-[36px] touch-manipulation active:scale-95 transition-transform"
         >
           <Link href={`/dashboard/${stock.symbol}`}>상세</Link>
         </Button>
