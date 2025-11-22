@@ -152,6 +152,26 @@ class ApiClient {
     return response.data;
   }
 
+  // Social Login methods
+  async getSocialAuthUrl(provider: 'kakao' | 'google' | 'naver', state?: string) {
+    const response = await this.client.get(`/api/v2/social-auth/${provider}/authorize`, {
+      params: state ? { state } : undefined,
+    });
+    return response.data;
+  }
+
+  async socialLogin(provider: 'kakao' | 'google' | 'naver', code: string, state?: string) {
+    const response = await this.client.post<AuthTokens>(
+      `/api/v2/social-auth/${provider}/login`,
+      { code, state },
+      {
+        headers: { 'X-Skip-Auth-Retry': 'true' }
+      }
+    );
+    this.setTokens(response.data);
+    return response.data;
+  }
+
   // Stock methods
   async getAllTradableStocks(marketCapMoreThan?: number, limit?: number) {
     const response = await this.client.get('/api/v1/stocks/list', {

@@ -7,7 +7,7 @@ from typing import Dict, Any
 
 from app.core.config import settings
 from app.api import stocks, stock_data
-from app.api import auth_supabase, analysis_supabase, news_supabase, recommendations_supabase, news_v1, analysis_v1, embeddings, websocket_realtime, news_ai_score, news_translation, news_report_v1
+from app.api import auth_supabase, social_auth, analysis_supabase, news_supabase, recommendations_supabase, news_v1, analysis_v1, embeddings, websocket_realtime, news_ai_score, news_translation, news_report_v1
 from app.services.news_scheduler import get_scheduler
 from app.db.supabase_client import get_supabase
 
@@ -79,6 +79,7 @@ app.include_router(news_report_v1.router, prefix="/api/v1/news-report", tags=["n
 
 # Main Supabase API routes
 app.include_router(auth_supabase.router, prefix="/api/v2/auth", tags=["authentication"])
+app.include_router(social_auth.router, prefix="/api/v2/social-auth", tags=["social-authentication"])
 app.include_router(analysis_supabase.router, prefix="/api/v2/analysis", tags=["analysis"])
 app.include_router(news_supabase.router, prefix="/api/v2/news", tags=["news"])
 app.include_router(recommendations_supabase.router, prefix="/api/v2/recommendations", tags=["recommendations"])

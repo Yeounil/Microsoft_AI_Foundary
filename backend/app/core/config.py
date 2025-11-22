@@ -48,6 +48,21 @@ class Settings(BaseSettings):
     # Pinecone Vector DB
     pinecone_api_key: Optional[str] = os.getenv("PINECONE_API_KEY")
 
+    # Social Login - Kakao
+    kakao_client_id: str = os.getenv("KAKAO_CLIENT_ID", "")
+    kakao_client_secret: str = os.getenv("KAKAO_CLIENT_SECRET", "")
+    kakao_redirect_uri: str = os.getenv("KAKAO_REDIRECT_URI", "http://localhost:3000/auth/kakao/callback")
+
+    # Social Login - Google (for future)
+    google_client_id: str = os.getenv("GOOGLE_CLIENT_ID", "")
+    google_client_secret: str = os.getenv("GOOGLE_CLIENT_SECRET", "")
+    google_redirect_uri: str = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:3000/auth/google/callback")
+
+    # Social Login - Naver (for future)
+    naver_oauth_client_id: str = os.getenv("NAVER_OAUTH_CLIENT_ID", "")
+    naver_oauth_client_secret: str = os.getenv("NAVER_OAUTH_CLIENT_SECRET", "")
+    naver_oauth_redirect_uri: str = os.getenv("NAVER_OAUTH_REDIRECT_URI", "http://localhost:3000/auth/naver/callback")
+
     class Config:
         env_file = ".env"
         extra = "ignore"

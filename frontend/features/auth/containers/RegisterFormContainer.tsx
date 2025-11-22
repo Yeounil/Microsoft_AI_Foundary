@@ -5,6 +5,7 @@ import { useRegisterForm } from "../hooks/useRegisterForm";
 import { RegisterFormHeader } from "../components/Register/RegisterFormHeader";
 import { RegisterFormFields } from "../components/Register/RegisterFormFields";
 import { RegisterFormFooter } from "../components/Register/RegisterFormFooter";
+import { SocialLoginSection } from "../components/SocialLogin/SocialLoginSection";
 
 /**
  * RegisterFormContainer
@@ -25,17 +26,20 @@ export function RegisterFormContainer() {
   return (
     <Card className="w-full max-w-md">
       <RegisterFormHeader />
-      <form onSubmit={handleSubmit}>
-        <RegisterFormFields
-          formData={formData}
-          isLoading={isLoading}
-          displayError={displayError}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          validationState={validationState}
-          isFormValid={isFormValid}
-        />
-      </form>
+      <div className="p-6 pt-0 space-y-6">
+        <form onSubmit={handleSubmit}>
+          <RegisterFormFields
+            formData={formData}
+            isLoading={isLoading}
+            displayError={displayError}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            validationState={validationState}
+            isFormValid={isFormValid}
+          />
+        </form>
+        <SocialLoginSection />
+      </div>
       <RegisterFormFooter />
     </Card>
   );

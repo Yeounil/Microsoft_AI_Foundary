@@ -5,6 +5,7 @@ import { useLoginForm } from "../hooks/useLoginForm";
 import { LoginFormHeader } from "../components/Login/LoginFormHeader";
 import { LoginFormFields } from "../components/Login/LoginFormFields";
 import { LoginFormFooter } from "../components/Login/LoginFormFooter";
+import { SocialLoginSection } from "../components/SocialLogin/SocialLoginSection";
 
 /**
  * LoginFormContainer
@@ -17,14 +18,17 @@ export function LoginFormContainer() {
   return (
     <Card className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl">
       <LoginFormHeader />
-      <form onSubmit={handleSubmit}>
-        <LoginFormFields
-          formData={formData}
-          isLoading={isLoading}
-          error={error}
-          onChange={handleChange}
-        />
-      </form>
+      <div className="p-6 pt-0 space-y-6">
+        <form onSubmit={handleSubmit}>
+          <LoginFormFields
+            formData={formData}
+            isLoading={isLoading}
+            error={error}
+            onChange={handleChange}
+          />
+        </form>
+        <SocialLoginSection />
+      </div>
       <LoginFormFooter />
     </Card>
   );
