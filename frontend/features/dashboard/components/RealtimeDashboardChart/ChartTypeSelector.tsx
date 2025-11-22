@@ -21,7 +21,7 @@ export function ChartTypeSelector({
         variant={chartType === "candle" ? "default" : "ghost"}
         size="sm"
         onClick={() => onChartTypeChange("candle")}
-        className="h-10 sm:h-9 px-2.5 sm:px-3 text-xs min-w-[44px]"
+        className="h-10 sm:h-9 px-2.5 sm:px-3 text-xs min-w-11"
       >
         캔들
       </Button>
@@ -29,7 +29,7 @@ export function ChartTypeSelector({
         variant={chartType === "line" ? "default" : "ghost"}
         size="sm"
         onClick={() => onChartTypeChange("line")}
-        className="h-10 sm:h-9 px-2.5 sm:px-3 text-xs min-w-[44px]"
+        className="h-10 sm:h-9 px-2.5 sm:px-3 text-xs min-w-11"
       >
         라인
       </Button>
@@ -37,7 +37,7 @@ export function ChartTypeSelector({
         variant={chartType === "area" ? "default" : "ghost"}
         size="sm"
         onClick={() => onChartTypeChange("area")}
-        className="h-10 sm:h-9 px-2.5 sm:px-3 text-xs min-w-[44px]"
+        className="h-10 sm:h-9 px-2.5 sm:px-3 text-xs min-w-11"
       >
         영역
       </Button>

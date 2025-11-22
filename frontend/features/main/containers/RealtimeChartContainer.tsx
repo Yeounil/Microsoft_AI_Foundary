@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useLoadingStore } from "@/store/loading-store";
+import { useDevice } from "@/hooks/useDevice";
 import { useChartInitialization } from "../hooks/useChartInitialization";
 import { useChartSeries } from "../hooks/useChartSeries";
 import { useHistoricalData } from "../hooks/useHistoricalData";
@@ -35,6 +36,9 @@ export function RealtimeChartContainer({
   symbol,
 }: RealtimeChartContainerProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
+
+  // 디바이스 타입 감지
+  const { isMobile, isTablet } = useDevice();
 
   // UI 상태
   const [chartType, setChartType] = useState<ChartType>("candle");
@@ -93,7 +97,9 @@ export function RealtimeChartContainer({
     interval,
     chartType,
     chartMode,
-    enhancedChartType // Enhanced 차트 타입도 전달
+    enhancedChartType, // Enhanced 차트 타입도 전달
+    isMobile, // 모바일 여부 전달
+    isTablet // 태블릿 여부 전달
   );
   const { isRealtime } = useRealtimeWebSocket(
     chartRef,

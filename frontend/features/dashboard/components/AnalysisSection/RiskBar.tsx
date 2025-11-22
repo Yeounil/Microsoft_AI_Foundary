@@ -13,29 +13,6 @@ interface RiskBarProps {
 
 export function RiskBar({ label, level }: RiskBarProps) {
   const progress = getRiskProgress(level);
-  const size = 120;
-  const strokeWidth = 8;
-  const radius = (size - strokeWidth) / 2;
-
-  // 퍼센테이지를 각도로 변환 (180도 = 100%)
-  const angle = (progress / 100) * 180;
-
-  // Arc path 생성 함수
-  const createArc = (startAngle: number, endAngle: number) => {
-    const start = polarToCartesian(size / 2, size / 2, radius, endAngle);
-    const end = polarToCartesian(size / 2, size / 2, radius, startAngle);
-    const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
-    return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`;
-  };
-
-  // 극좌표를 직교좌표로 변환
-  function polarToCartesian(centerX: number, centerY: number, r: number, angleInDegrees: number) {
-    const angleInRadians = ((angleInDegrees + 180) * Math.PI) / 180.0;
-    return {
-      x: centerX + r * Math.cos(angleInRadians),
-      y: centerY + r * Math.sin(angleInRadians),
-    };
-  }
 
   // 색상 결정 - 더 부드러운 그라데이션 색상
   const getColor = (p: number) => {
@@ -46,58 +23,54 @@ export function RiskBar({ label, level }: RiskBarProps) {
     return "#f87171"; // red-400
   };
 
+  const getBackgroundColor = (p: number) => {
+    if (p <= 20) return "rgb(16 185 129 / 0.1)"; // emerald-500 with opacity
+    if (p <= 40) return "rgb(52 211 153 / 0.1)"; // emerald-400 with opacity
+    if (p <= 60) return "rgb(251 191 36 / 0.1)"; // amber-400 with opacity
+    if (p <= 80) return "rgb(251 146 60 / 0.1)"; // orange-400 with opacity
+    return "rgb(248 113 113 / 0.1)"; // red-400 with opacity
+  };
+
   const color = getColor(progress);
+  const bgColor = getBackgroundColor(progress);
 
   return (
-    <div className="flex flex-col items-center gap-3 p-3 md:p-4 rounded-xl bg-card/50 border border-border/50 backdrop-blur-sm transition-all hover:bg-card/80 w-full md:w-auto max-w-[180px] md:max-w-none mx-auto">
-      {/* 레이블 */}
-      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label}</span>
-
-      {/* 게이지 차트 */}
-      <div className="relative">
-        <svg width={size} height={size * 0.55} viewBox={`0 0 ${size} ${size * 0.55}`}>
-          {/* 배경 트랙 */}
-          <path
-            d={createArc(0, 180)}
-            fill="none"
-            stroke="hsl(var(--muted))"
-            strokeWidth={strokeWidth}
-            strokeLinecap="round"
-            opacity={0.2}
-          />
-
-          {/* 현재 값 arc */}
-          <path
-            d={createArc(0, angle)}
-            fill="none"
-            stroke={color}
-            strokeWidth={strokeWidth}
-            strokeLinecap="round"
-            className="transition-all duration-700 ease-out"
-            style={{
-              filter: `drop-shadow(0 0 6px ${color}40)`,
-            }}
-          />
-
-          {/* 중앙 값 표시 */}
-          <text
-            x={size / 2}
-            y={size / 2}
-            textAnchor="middle"
-            className="text-xl font-bold fill-foreground"
-          >
-            {progress}
-          </text>
-        </svg>
+    <div className="flex flex-col gap-2 p-4 rounded-lg bg-card/50 border border-border/50 backdrop-blur-sm transition-all hover:bg-card/80 w-full">
+      {/* 상단: 레이블과 값 */}
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-semibold text-muted-foreground">{label}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-lg font-bold" style={{ color }}>{progress}</span>
+          <span className="text-sm text-muted-foreground">/ 100</span>
+        </div>
       </div>
 
-      {/* 리스크 레벨 Badge - 더 현대적인 스타일 */}
-      <Badge
-        variant={getRiskBadgeVariant(level)}
-        className="text-[10px] px-2.5 py-0.5 font-medium"
-      >
-        {getRiskText(level)}
-      </Badge>
+      {/* 프로그레스 바 */}
+      <div className="relative w-full h-2 bg-muted/30 rounded-full overflow-hidden">
+        <div
+          className="absolute inset-y-0 left-0 rounded-full transition-all duration-700 ease-out"
+          style={{
+            width: `${progress}%`,
+            backgroundColor: color,
+            boxShadow: `0 0 8px ${color}40`,
+          }}
+        />
+      </div>
+
+      {/* 리스크 레벨 Badge */}
+      <div className="flex justify-between items-center">
+        <Badge
+          variant={getRiskBadgeVariant(level)}
+          className="text-[10px] px-2 py-0.5 font-medium"
+        >
+          {getRiskText(level)}
+        </Badge>
+
+        {/* 추가 컨텍스트 정보 */}
+        <span className="text-xs text-muted-foreground">
+          {progress <= 40 ? "안정적" : progress <= 70 ? "주의필요" : "위험"}
+        </span>
+      </div>
     </div>
   );
 }

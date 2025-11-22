@@ -44,11 +44,11 @@ export function DashboardChartContainer({
   symbol,
 }: DashboardChartContainerProps) {
   // 디바이스 타입 감지
-  const { isMobile } = useDevice();
+  const { isMobile, isTablet } = useDevice();
 
   // 차트 설정 스토어에서 저장된 설정 불러오기
   const {
-    settings,
+    getSettings,
     setChartType: saveChartType,
     setChartMode: saveChartMode,
     setBasicTimeRange: saveBasicTimeRange,
@@ -56,11 +56,12 @@ export function DashboardChartContainer({
     setEnhancedMinuteInterval: saveEnhancedMinuteInterval,
   } = useChartSettingsStore();
 
-  // UI 상태 (저장된 설정으로 초기화, 모바일에서는 Basic 모드 기본)
+  // 디바이스별 설정 가져오기
+  const settings = getSettings(isMobile);
+
+  // UI 상태 (디바이스별 저장된 설정으로 초기화)
   const [chartType, setChartType] = useState<ChartType>(settings.chartType);
-  const [chartMode, setChartMode] = useState<ChartMode>(
-    isMobile ? "basic" : settings.chartMode
-  );
+  const [chartMode, setChartMode] = useState<ChartMode>(settings.chartMode);
 
   // Basic 모드 상태
   const [basicTimeRange, setBasicTimeRange] = useState<TimeRange>(settings.basicTimeRange);
@@ -75,16 +76,16 @@ export function DashboardChartContainer({
     useStockStore();
   const { setChartLoading } = useLoadingStore();
 
-  // 설정 변경 시 저장
+  // 설정 변경 시 저장 (디바이스 구분)
   const handleChartTypeChange = useCallback((type: ChartType) => {
     setChartType(type);
-    saveChartType(type);
-  }, [saveChartType]);
+    saveChartType(type, isMobile);
+  }, [saveChartType, isMobile]);
 
   const handleChartModeChange = useCallback((mode: ChartMode) => {
     setChartMode(mode);
-    saveChartMode(mode);
-  }, [saveChartMode]);
+    saveChartMode(mode, isMobile);
+  }, [saveChartMode, isMobile]);
 
   const isInWatchlist = watchlist.includes(symbol);
 
@@ -136,7 +137,9 @@ export function DashboardChartContainer({
     interval,
     chartType,
     chartMode,
-    enhancedChartType // Enhanced 차트 타입도 전달
+    enhancedChartType, // Enhanced 차트 타입도 전달
+    isMobile, // 모바일 여부 전달
+    isTablet // 태블릿 여부 전달
   );
 
   // 실시간 WebSocket 연결 (1D일 때만)
@@ -172,25 +175,25 @@ export function DashboardChartContainer({
   // Basic 모드 시간 범위 변경
   const handleBasicTimeRangeChange = useCallback((range: TimeRange) => {
     setBasicTimeRange(range);
-    saveBasicTimeRange(range);
-  }, [saveBasicTimeRange]);
+    saveBasicTimeRange(range, isMobile);
+  }, [saveBasicTimeRange, isMobile]);
 
   // Enhanced 모드 차트 타입 변경
   const handleEnhancedChartTypeChange = useCallback(
     (type: EnhancedChartType) => {
       setEnhancedChartType(type);
-      saveEnhancedChartType(type);
+      saveEnhancedChartType(type, isMobile);
     },
-    [saveEnhancedChartType]
+    [saveEnhancedChartType, isMobile]
   );
 
   // Enhanced 모드 분단위 간격 변경
   const handleEnhancedMinuteIntervalChange = useCallback(
     (newInterval: ChartInterval) => {
       setEnhancedMinuteInterval(newInterval);
-      saveEnhancedMinuteInterval(newInterval);
+      saveEnhancedMinuteInterval(newInterval, isMobile);
     },
-    [saveEnhancedMinuteInterval]
+    [saveEnhancedMinuteInterval, isMobile]
   );
 
   // Basic 모드일 때 차트 스크롤/줌 비활성화
@@ -287,7 +290,7 @@ export function DashboardChartContainer({
           />
         )}
       </CardHeader>
-      <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+      <CardContent className="px-0 pl-3 sm:pl-4 md:pl-6 pt-0">
         <ChartCanvas chartContainerRef={chartContainerRef} isLoading={isLoading} isMobile={isMobile} />
       </CardContent>
     </Card>

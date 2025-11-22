@@ -23,7 +23,7 @@ export function ChartCanvas({ chartContainerRef, isLoading = false, isMobile = f
         // 모바일: 35vh, 태블릿: 40vh, 데스크탑: 450px
         "min-h-[300px] h-[35vh] sm:h-[380px] md:h-[40vh] lg:h-[450px] max-h-[500px]",
         // 모바일에서 네거티브 마진으로 전체 너비 활용
-        isMobile && "-mx-3"
+        isMobile && "-mx-3 pl-5"
       )}
     >
       <div
@@ -31,7 +31,10 @@ export function ChartCanvas({ chartContainerRef, isLoading = false, isMobile = f
         className={cn(
           "w-full h-full",
           // 모바일에서 패딩 제거
-          isMobile ? "px-0" : ""
+          isMobile ? "px-0" : "",
+          // 차트 테이블 커스터마이징 예시
+          "[&_td:last-child]:cursor-none",     
+          "[&_td:last-child]:pointer-events-none"
         )}
       />
 

@@ -236,6 +236,7 @@ export function NewsSectionContainer({
           error={mainTab === "favorites" ? watchlistError : undefined}
           isWatchlistTab={mainTab === "favorites"}
           watchlistLength={watchlist.length}
+          isMainPage={!initialStock}  // initialStock이 없으면 메인페이지로 간주
         />
       </CardContent>
     </Card>

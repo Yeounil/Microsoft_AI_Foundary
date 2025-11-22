@@ -64,7 +64,7 @@ export function NotificationDropdown() {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-[380px] p-0">
+      <PopoverContent align="end" className="w-[calc(100vw-2rem)] max-w-[380px] sm:w-[380px] p-0 translate-x-4">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3">
           <h3 className="font-semibold text-sm">
@@ -99,7 +99,7 @@ export function NotificationDropdown() {
         <Separator />
 
         {/* Notification List */}
-        <ScrollArea className="h-[400px]">
+        <ScrollArea className="h-[300px] sm:h-[400px]">
           {notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <Bell className="h-12 w-12 text-muted-foreground mb-2" />
@@ -121,7 +121,7 @@ export function NotificationDropdown() {
                     {/* Notification Type Indicator */}
                     <div
                       className={cn(
-                        "mt-1 h-2 w-2 rounded-full flex-shrink-0",
+                        "mt-1 h-2 w-2 rounded-full shrink-0",
                         notification.type === 'success' && "bg-green-500",
                         notification.type === 'warning' && "bg-yellow-500",
                         notification.type === 'error' && "bg-red-500",
@@ -134,7 +134,7 @@ export function NotificationDropdown() {
                       <div className="flex items-start justify-between gap-2 mb-1">
                         <p className="font-medium text-sm">{notification.title}</p>
                         {!notification.isRead && (
-                          <div className="h-2 w-2 rounded-full bg-primary flex-shrink-0" />
+                          <div className="h-2 w-2 rounded-full bg-primary shrink-0" />
                         )}
                       </div>
                       <p className="text-xs text-muted-foreground line-clamp-2 mb-1">

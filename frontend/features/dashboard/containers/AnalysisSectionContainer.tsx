@@ -30,7 +30,7 @@ export function AnalysisSectionContainer({
   }
 
   return (
-    <div className="flex flex-col gap-3 md:gap-4 lg:gap-6 lg:min-h-[800px]">
+    <div className="flex flex-col gap-3 lg:min-h-[800px]">
       <AIAnalysisCard analysis={analysisData} />
       <BasicDataCard analysis={analysisData} />
       <RiskAnalysisCard analysis={analysisData} />

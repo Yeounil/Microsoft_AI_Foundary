@@ -19,6 +19,7 @@ interface NewsListProps {
   error?: Error | null;
   isWatchlistTab?: boolean;
   watchlistLength?: number;
+  isMainPage?: boolean;  // 메인페이지 여부를 나타내는 prop 추가
 }
 
 /**
@@ -35,6 +36,7 @@ export function NewsList({
   error,
   isWatchlistTab = false,
   watchlistLength = 0,
+  isMainPage = false,
 }: NewsListProps) {
   // 다음 페이지가 있는지 확인
   const hasNextPage = news.length === itemsPerPage;
@@ -96,8 +98,8 @@ export function NewsList({
   }
 
   return (
-    <div className="flex flex-col md:h-[870px] lg:h-[1080px] min-h-[400px]">
-      <div className="flex-1 overflow-y-auto space-y-4 mb-4 pt-4 stagger-animate">
+    <div className={`flex flex-col h-[600px] ${isMainPage ? 'md:h-[860px]' : 'md:h-[880px]'} lg:h-[1050px] min-h-[400px]`}>
+      <div className="flex-1 overflow-y-auto space-y-3 mb-4 pt-2 stagger-animate">
         {news.map((item, index) => (
           <div key={item.id || index} className="transform transition-all duration-300">
             <NewsCard article={item} index={index} />

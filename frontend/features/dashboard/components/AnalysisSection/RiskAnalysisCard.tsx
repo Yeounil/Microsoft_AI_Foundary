@@ -16,7 +16,7 @@ export const RiskAnalysisCard = memo(function RiskAnalysisCard({ analysis }: Ris
           AI 기반 위험 요소 평가
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col md:flex-row gap-6 md:gap-10 justify-center items-center py-6 md:py-8 px-4 md:px-6">
+      <CardContent className="flex-1 flex flex-col gap-3 py-4 px-4">
         <RiskBar
           label="시장 리스크"
           level={analysis.risk_analysis?.market_risk || "low"}

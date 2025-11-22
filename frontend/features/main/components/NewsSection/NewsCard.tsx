@@ -37,8 +37,8 @@ export const NewsCard = memo(function NewsCard({ article, index }: NewsCardProps
       href={`/news-analysis/${article.id}`}
       className="block"
     >
-      <Card className="cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98] min-h-[100px] md:min-h-[110px] lg:min-h-[120px] py-2 md:py-2.5">
-        <CardHeader className="pb-2 pt-2 md:pt-2.5 space-y-2 md:space-y-2.5 px-3 md:px-6">
+      <Card className="cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98] min-h-[90px] md:min-h-[110px] lg:min-h-[120px] py-1.5 md:py-2.5">
+        <CardHeader className="pb-1.5 pt-1.5 md:pt-2.5 space-y-1.5 md:space-y-2.5 px-3 md:px-6">
           {/* 타블릿: 날짜 + 감정 상태 (상단) */}
           <div className="hidden md:flex lg:hidden items-center justify-between gap-2">
             <span className="text-xs text-muted-foreground">{formattedDate}</span>

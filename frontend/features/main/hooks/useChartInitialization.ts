@@ -10,6 +10,7 @@ export function useChartInitialization(
   chartContainerRef: RefObject<HTMLDivElement | null>
 ) {
   const chartRef = useRef<IChartApi | null>(null);
+  const visibleRangeRef = useRef<{ from: number; to: number } | null>(null);
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
@@ -19,13 +20,36 @@ export function useChartInitialization(
     const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
     const handleResize = () => {
-      if (chartContainerRef.current) {
-        chartRef.current?.applyOptions({
+      if (chartContainerRef.current && chartRef.current) {
+        // 현재 visible range 저장
+        let currentRange: { from: number; to: number } | null = null;
+        try {
+          const timeScale = chartRef.current.timeScale();
+          const logicalRange = timeScale.getVisibleLogicalRange();
+          if (logicalRange) {
+            currentRange = { from: logicalRange.from, to: logicalRange.to };
+          }
+        } catch (e) {
+          // 초기 로드 시 range가 없을 수 있음
+        }
+
+        // 차트 크기 업데이트
+        chartRef.current.applyOptions({
           width: chartContainerRef.current.clientWidth,
           height: chartContainerRef.current.clientHeight,
         });
-        // 리사이즈 후 차트 fit
-        chartRef.current?.timeScale().fitContent();
+
+        // visible range 복원 또는 fitContent
+        if (currentRange) {
+          try {
+            chartRef.current.timeScale().setVisibleLogicalRange(currentRange);
+          } catch (e) {
+            chartRef.current.timeScale().fitContent();
+          }
+        } else {
+          // 처음 로드 시에만 fitContent
+          chartRef.current.timeScale().fitContent();
+        }
       }
     };
 
@@ -39,7 +63,7 @@ export function useChartInitialization(
           background: { type: ColorType.Solid, color: "transparent" },
           textColor: "#71717a",
           fontFamily: "'Inter', 'Noto Sans KR', sans-serif",
-          fontSize: isMobile ? 10 : 12,
+          fontSize: isMobile ? 11 : 12,
         },
         width: containerWidth,
         height: containerHeight,
@@ -81,11 +105,11 @@ export function useChartInitialization(
         timeScale: {
           borderColor: "#e5e5e5",
           borderVisible: !isMobile,
-          timeVisible: !isMobile, // 모바일에서 시간 표시 간소화
+          timeVisible: true, // 모바일에서도 시간 표시
           secondsVisible: false,
           rightOffset: isMobile ? 3 : 10,
-          barSpacing: isMobile ? 3 : 6, // 모바일에서 바 간격 축소
-          minBarSpacing: isMobile ? 1 : 3,
+          barSpacing: isMobile ? 5 : 6, // 모바일에서 바 간격 적절히 조정
+          minBarSpacing: isMobile ? 2 : 3,
           fixLeftEdge: true,
           fixRightEdge: true,
         },
@@ -129,8 +153,36 @@ export function useChartInitialization(
           for (const entry of entries) {
             const { width, height } = entry.contentRect;
             if (width > 0 && height > 0) {
+              // 현재 visible range 저장
+              let currentRange: { from: number; to: number } | null = null;
+              try {
+                const timeScale = chart.timeScale();
+                const logicalRange = timeScale.getVisibleLogicalRange();
+                if (logicalRange) {
+                  currentRange = { from: logicalRange.from, to: logicalRange.to };
+                  visibleRangeRef.current = currentRange;
+                }
+              } catch (e) {
+                // 초기 로드 시 range가 없을 수 있음
+              }
+
+              // 차트 크기 업데이트
               chart.applyOptions({ width, height });
-              chart.timeScale().fitContent();
+
+              // visible range 복원
+              if (currentRange || visibleRangeRef.current) {
+                try {
+                  const rangeToApply = currentRange || visibleRangeRef.current;
+                  if (rangeToApply) {
+                    chart.timeScale().setVisibleLogicalRange(rangeToApply);
+                  }
+                } catch (e) {
+                  chart.timeScale().fitContent();
+                }
+              } else {
+                // 처음 로드 시에만 fitContent
+                chart.timeScale().fitContent();
+              }
             }
           }
         });

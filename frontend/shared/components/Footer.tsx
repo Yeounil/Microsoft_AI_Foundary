@@ -9,7 +9,7 @@ export default function Footer() {
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <TrendingUp className="h-6 w-6 text-primary" color="green" />
-              <span className="text-xl font-bold hidden sm:inline text-green-600">
+              <span className="text-xl font-bold sm:inline text-green-600">
                 Green Wire
               </span>
             </div>
@@ -21,7 +21,7 @@ export default function Footer() {
           {/* Right: Copyright & Investment Warning */}
           <div className="flex flex-col items-start md:items-end gap-3">
             <p className="text-sm text-muted-foreground">
-              © 2024 Green Wire. All rights reserved.
+              © 2025 Green Wire. All rights reserved.
             </p>
 
             {/* Investment Warning */}

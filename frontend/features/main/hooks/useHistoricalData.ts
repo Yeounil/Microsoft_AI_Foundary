@@ -42,7 +42,9 @@ export function useHistoricalData(
   interval: ChartInterval,
   chartType: ChartType,
   chartMode?: ChartMode,
-  enhancedChartType?: string // Enhanced 차트 타입 추가
+  enhancedChartType?: string, // Enhanced 차트 타입 추가
+  isMobile?: boolean, // 모바일 여부
+  isTablet?: boolean // 태블릿 여부
 ) {
   const [isLoading, setIsLoading] = useState(true); // Start with loading state
   const [priceInfo, setPriceInfo] = useState<PriceInfo>({
@@ -178,20 +180,54 @@ export function useHistoricalData(
           } else {
             // Enhanced 모드: interval에 따라 보이는 캔들 개수 조정
             if (processedData.length > 0) {
-              // interval에 따른 기본 표시 캔들 개수
-              const visibleCountMap: Record<string, number> = {
-                "1m": 120,   // 2시간치
-                "5m": 80,    // 6시간 40분치
-                "15m": 50,   // 12시간 30분치
-                "30m": 40,   // 20시간치
-                "1h": 24,    // 24시간치
-                "1d": 90,    // 3개월치
-                "1wk": 52,   // 1년치
-                "1mo": 24,   // 2년치
-                "1y": 10,    // 10년치
+              // 디바이스별 interval에 따른 표시 캔들 개수
+              const getVisibleCount = (interval: string): number => {
+                if (isMobile) {
+                  // 모바일: 더 적은 캔들로 더 크게 표시
+                  const mobileCountMap: Record<string, number> = {
+                    "1m": 60,    // 1시간치 (데스크탑의 50%)
+                    "5m": 40,    // 3시간 20분치
+                    "15m": 25,   // 6시간 15분치
+                    "30m": 20,   // 10시간치
+                    "1h": 12,    // 12시간치
+                    "1d": 30,    // 1개월치 (90 -> 30)
+                    "1wk": 20,   // 20주치 (52 -> 20)
+                    "1mo": 12,   // 1년치 (24 -> 12)
+                    "1y": 5,     // 5년치 (10 -> 5)
+                  };
+                  return mobileCountMap[interval] || 30;
+                } else if (isTablet) {
+                  // 태블릿: 중간
+                  const tabletCountMap: Record<string, number> = {
+                    "1m": 90,    // 1시간 30분치
+                    "5m": 60,    // 5시간치
+                    "15m": 40,   // 10시간치
+                    "30m": 30,   // 15시간치
+                    "1h": 18,    // 18시간치
+                    "1d": 60,    // 2개월치
+                    "1wk": 36,   // 36주치
+                    "1mo": 18,   // 1년 반치
+                    "1y": 7,     // 7년치
+                  };
+                  return tabletCountMap[interval] || 60;
+                } else {
+                  // 데스크탑: 기존 설정
+                  const desktopCountMap: Record<string, number> = {
+                    "1m": 120,   // 2시간치
+                    "5m": 80,    // 6시간 40분치
+                    "15m": 50,   // 12시간 30분치
+                    "30m": 40,   // 20시간치
+                    "1h": 24,    // 24시간치
+                    "1d": 90,    // 3개월치
+                    "1wk": 52,   // 1년치
+                    "1mo": 24,   // 2년치
+                    "1y": 10,    // 10년치
+                  };
+                  return desktopCountMap[interval] || 90;
+                }
               };
 
-              const visibleCount = visibleCountMap[chartInterval] || processedData.length;
+              const visibleCount = getVisibleCount(chartInterval);
 
               // 데이터가 visibleCount보다 많으면 확대, 적으면 전체 표시
               if (processedData.length > visibleCount) {

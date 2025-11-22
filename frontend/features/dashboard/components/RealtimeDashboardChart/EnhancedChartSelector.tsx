@@ -58,46 +58,141 @@ export function EnhancedChartSelector({
   )?.label || "분단위";
 
   return (
-    <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-hide pb-2 -mx-1 px-1">
-      {/* 분단위 탭 - 클릭 시 셀렉트박스로 변환 */}
-      {chartType === "minute" ? (
-        <Select value={minuteInterval} onValueChange={onMinuteIntervalChange}>
-          <SelectTrigger className="w-[75px] sm:w-[85px] h-9 sm:h-8 text-xs bg-primary text-primary-foreground hover:bg-primary/90 shrink-0 min-h-[36px]">
-            <SelectValue>
-              {currentMinuteLabel}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent className="w-[75px] sm:w-[85px] min-w-[75px] sm:min-w-[85px]">
-            {MINUTE_INTERVALS.map((item) => (
-              <SelectItem key={item.value} value={item.value} className="text-xs min-h-[36px]">
-                {item.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      ) : (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleMinuteTabClick}
-          className="w-[65px] sm:w-[85px] h-9 sm:h-8 text-xs shrink-0 min-h-[36px]"
-        >
-          분단위
-        </Button>
-      )}
+    <div className="w-full">
+      {/* 모바일 S (320px): gap 없는 컴팩트 레이아웃 */}
+      <div className="flex items-center justify-between min-[360px]:hidden">
+        {/* 분단위 탭 */}
+        {chartType === "minute" ? (
+          <Select value={minuteInterval} onValueChange={onMinuteIntervalChange}>
+            <SelectTrigger className="flex-1 h-9 text-xs bg-primary text-primary-foreground hover:bg-primary/90 rounded-r-none border-r-0">
+              <SelectValue>{currentMinuteLabel}</SelectValue>
+            </SelectTrigger>
+            <SelectContent className="min-w-20">
+              {MINUTE_INTERVALS.map((item) => (
+                <SelectItem key={item.value} value={item.value} className="text-xs">
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleMinuteTabClick}
+            className="flex-1 h-9 text-xs rounded-r-none border-r-0"
+          >
+            분단위
+          </Button>
+        )}
 
-      {/* 일/주/월/년 탭 */}
-      {PERIOD_TYPES.map((type) => (
-        <Button
-          key={type.value}
-          variant={chartType === type.value ? "default" : "outline"}
-          size="sm"
-          onClick={() => handlePeriodClick(type.value)}
-          className="text-xs h-9 sm:h-8 px-3 sm:px-3 shrink-0 min-w-[44px] min-h-[36px]"
-        >
-          {type.label}
-        </Button>
-      ))}
+        {/* 일/주/월/년 탭 - 간격 없이 연결 */}
+        {PERIOD_TYPES.map((type, index) => {
+          const isFirst = index === 0;
+          const isLast = index === PERIOD_TYPES.length - 1;
+          const isActive = chartType === type.value;
+
+          return (
+            <Button
+              key={type.value}
+              variant={isActive ? "default" : "outline"}
+              size="sm"
+              onClick={() => handlePeriodClick(type.value)}
+              className={`flex-1 h-9 text-xs ${
+                !isFirst && !isLast ? 'rounded-none border-r-0' : ''
+              } ${
+                isFirst ? 'rounded-l-none rounded-r-none border-r-0' : ''
+              } ${
+                isLast ? 'rounded-l-none' : ''
+              }`}
+            >
+              {type.label}
+            </Button>
+          );
+        })}
+      </div>
+
+      {/* 모바일 M (360px-450px): space-between 레이아웃 */}
+      <div className="hidden min-[360px]:flex min-[450px]:hidden items-center justify-between gap-1">
+        {/* 분단위 탭 */}
+        {chartType === "minute" ? (
+          <Select value={minuteInterval} onValueChange={onMinuteIntervalChange}>
+            <SelectTrigger className="w-[70px] h-9 text-xs bg-primary text-primary-foreground hover:bg-primary/90">
+              <SelectValue>{currentMinuteLabel}</SelectValue>
+            </SelectTrigger>
+            <SelectContent className="min-w-20">
+              {MINUTE_INTERVALS.map((item) => (
+                <SelectItem key={item.value} value={item.value} className="text-xs">
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleMinuteTabClick}
+            className="w-[70px] h-9 text-xs"
+          >
+            분단위
+          </Button>
+        )}
+
+        {/* 일/주/월/년 탭 */}
+        {PERIOD_TYPES.map((type) => (
+          <Button
+            key={type.value}
+            variant={chartType === type.value ? "default" : "outline"}
+            size="sm"
+            onClick={() => handlePeriodClick(type.value)}
+            className="h-9 text-xs px-3 min-w-[50px]"
+          >
+            {type.label}
+          </Button>
+        ))}
+      </div>
+
+      {/* 모바일 L (450px+) 및 태블릿/데스크탑: 기본 정렬 */}
+      <div className="hidden min-[450px]:flex items-center gap-2">
+        {/* 분단위 탭 */}
+        {chartType === "minute" ? (
+          <Select value={minuteInterval} onValueChange={onMinuteIntervalChange}>
+            <SelectTrigger className="w-[85px] h-9 sm:h-8 text-xs bg-primary text-primary-foreground hover:bg-primary/90">
+              <SelectValue>{currentMinuteLabel}</SelectValue>
+            </SelectTrigger>
+            <SelectContent className="min-w-[85px]">
+              {MINUTE_INTERVALS.map((item) => (
+                <SelectItem key={item.value} value={item.value} className="text-xs">
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleMinuteTabClick}
+            className="w-[85px] h-9 sm:h-8 text-xs"
+          >
+            분단위
+          </Button>
+        )}
+
+        {/* 일/주/월/년 탭 */}
+        {PERIOD_TYPES.map((type) => (
+          <Button
+            key={type.value}
+            variant={chartType === type.value ? "default" : "outline"}
+            size="sm"
+            onClick={() => handlePeriodClick(type.value)}
+            className="h-9 sm:h-8 text-xs px-3 sm:px-4 min-w-[50px] sm:min-w-[60px]"
+          >
+            {type.label}
+          </Button>
+        ))}
+      </div>
     </div>
   );
 }
