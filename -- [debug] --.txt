@@ -1,0 +1,55 @@
+-- [debug] --
+
+# stocks.py:137-143
+  """
+  📋 하루 한 번 API 호출 제한 정책:
+  - 처음 호출: 1년 데이터 API 조회 → DB 저장 ✅
+  - 당일 재호출: 에러 응답 (409 Conflict) ❌
+  - 다음날 호출: 증분 데이터만 API 조회 → DB 업데이트 ✅
+
+  목적: FMP API 할당량 절약 (Free: 250/day)
+  """
+
+  설명:
+  - FMP API는 무료 플랜이 하루 250회로 제한됨
+  - 같은 종목을 하루에 여러 번 조회하는 것을 방지하기 위한 정책
+  - 이미 오늘 AAPL 데이터를 조회했기 때문에 409 Conflict 응답
+  - 해결 방법: 차트 데이터가 필요하면 DB에서 조회하는 엔드포인트 사용:
+    - GET /api/v1/stocks/AAPL/chart?period=1y (DB 우선 조회)
+    - GET /api/v1/stocks/AAPL/indicators (DB 우선 조회)
+
+  ---
+  2. POST /api/v2/analysis/stock - 404 Not Found
+
+  위치: E:\Microsoft_AI_Foundary\backend\app\api\analysis_supabase.py:10-62
+
+  원인: 경로 오류
+
+  # analysis_supabase.py:10
+  @router.post("/stock/{symbol}")
+  async def analyze_stock(
+      symbol: str,
+      ...
+  )
+
+  설명:
+  - 엔드포인트는 /stock/{symbol} 형식으로 정의됨 (symbol 필수)
+  - 프론트엔드에서 symbol 없이 /api/v2/analysis/stock으로 호출하여 404 발생
+
+  해결 방법:
+  - ✅ 올바른 경로: POST /api/v2/analysis/stock/AAPL
+  - ❌ 잘못된 경로: POST /api/v2/analysis/stock
+
+  ---
+  요약
+
+  | 에러            | 위치                      | 원인                           | 해결 방법
+                |
+  |---------------|-------------------------|------------------------------|----------------------------------------
+  ----|
+  | 409 Conflict  | stocks.py:164-168       | 하루 한 번 API 호출 제한 정책 (의도된 동작) | DB 조회 엔드포인트 사용
+  (/chart, /indicators)       |
+  | 404 Not Found | analysis_supabase.py:10 | symbol 파라미터 누락               | 올바른 경로 사용:
+  /api/v2/analysis/stock/{symbol} |
+
+  프론트엔드에서 이 두 엔드포인트의 경로를 수정하면 해결됩니다.

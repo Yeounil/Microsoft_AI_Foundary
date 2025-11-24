@@ -4,6 +4,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { NewsArticle } from "@/types";
+import { logger } from "@/lib/logger";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
@@ -40,7 +41,7 @@ function applyDiversityAlgorithm(
 
     // 각 종목별 아티클 개수 확인
     const stocks = article.related_stocks || [];
-    let primaryStock = stocks[0];
+    const primaryStock = stocks[0];
 
     // 주 종목 초기화
     if (!stockCounts[primaryStock]) {
@@ -81,7 +82,7 @@ export async function getNewsArticles(
     }
 
     if (!data) {
-      console.warn("[Supabase] No news articles found");
+      logger.warn("[Supabase] No news articles found");
       return [];
     }
 

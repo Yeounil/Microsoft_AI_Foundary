@@ -33,8 +33,14 @@ class ApiClient {
       async (error: AxiosError) => {
         const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
 
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        // Skip retry for login/register requests
+        const skipAuthRetry = originalRequest.headers?.['X-Skip-Auth-Retry'] === 'true';
+
+        if (error.response?.status === 401 && !originalRequest._retry && !skipAuthRetry) {
           originalRequest._retry = true;
+
+          // Check if refresh token exists (user was logged in)
+          const hasRefreshToken = !!this.getRefreshToken();
 
           try {
             const newToken = await this.refreshAccessToken();
@@ -44,8 +50,8 @@ class ApiClient {
             return this.client(originalRequest);
           } catch (refreshError) {
             this.clearTokens();
-            if (typeof window !== 'undefined') {
-              // Dispatch session expired event
+            // Only dispatch session expired event if user was previously logged in
+            if (typeof window !== 'undefined' && hasRefreshToken) {
               window.dispatchEvent(new CustomEvent('session-expired'));
             }
             return Promise.reject(refreshError);
@@ -89,10 +95,17 @@ class ApiClient {
       throw new Error('No refresh token available');
     }
 
-    this.refreshPromise = this.client
-      .post<AuthTokens>('/api/v2/auth/refresh', {
-        refresh_token: refreshToken,
-      })
+    // Use axios directly without interceptors to avoid sending expired token
+    this.refreshPromise = axios
+      .post<AuthTokens>(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v2/auth/refresh`,
+        { refresh_token: refreshToken },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      )
       .then((response) => {
         this.setTokens(response.data);
         return response.data.access_token;
@@ -106,12 +119,16 @@ class ApiClient {
 
   // Auth methods
   async register(data: { username: string; email: string; password: string }) {
-    const response = await this.client.post('/api/v2/auth/register', data);
+    const response = await this.client.post('/api/v2/auth/register', data, {
+      headers: { 'X-Skip-Auth-Retry': 'true' }
+    });
     return response.data;
   }
 
   async login(data: { username?: string; email?: string; password: string }) {
-    const response = await this.client.post<AuthTokens>('/api/v2/auth/login', data);
+    const response = await this.client.post<AuthTokens>('/api/v2/auth/login', data, {
+      headers: { 'X-Skip-Auth-Retry': 'true' }
+    });
     this.setTokens(response.data);
     return response.data;
   }
@@ -132,6 +149,26 @@ class ApiClient {
 
   async getMe() {
     const response = await this.client.get('/api/v2/auth/me');
+    return response.data;
+  }
+
+  // Social Login methods
+  async getSocialAuthUrl(provider: 'kakao' | 'google' | 'naver', state?: string) {
+    const response = await this.client.get(`/api/v2/social-auth/${provider}/authorize`, {
+      params: state ? { state } : undefined,
+    });
+    return response.data;
+  }
+
+  async socialLogin(provider: 'kakao' | 'google' | 'naver', code: string, state?: string) {
+    const response = await this.client.post<AuthTokens>(
+      `/api/v2/social-auth/${provider}/login`,
+      { code, state },
+      {
+        headers: { 'X-Skip-Auth-Retry': 'true' }
+      }
+    );
+    this.setTokens(response.data);
     return response.data;
   }
 
@@ -160,12 +197,13 @@ class ApiClient {
     return response.data;
   }
 
-  async getStockData(symbol: string, period?: string, interval?: string) {
-    const response = await this.client.get(`/api/v1/stocks/${symbol}`, {
-      params: { period, interval },
-    });
-    return response.data;
-  }
+  // Removed: /api/v1/stocks/${symbol} API is no longer used
+  // async getStockData(symbol: string, period?: string, interval?: string) {
+  //   const response = await this.client.get(`/api/v1/stocks/${symbol}`, {
+  //     params: { period, interval },
+  //   });
+  //   return response.data;
+  // }
 
   async getChartData(symbol: string, period?: string, interval?: string) {
     const response = await this.client.get(`/api/v1/stocks/${symbol}/chart`, {
@@ -216,6 +254,7 @@ class ApiClient {
 
   async getFinancialNewsV1(params: {
     symbol?: string;
+    symbols?: string;
     page?: number;
     limit?: number;
     lang?: string;
@@ -223,6 +262,11 @@ class ApiClient {
     const response = await this.client.get('/api/v1/news/financial', {
       params,
     });
+    return response.data;
+  }
+
+  async getNewsById(newsId: number) {
+    const response = await this.client.get(`/api/v1/news/${newsId}`);
     return response.data;
   }
 
@@ -238,14 +282,35 @@ class ApiClient {
     return response.data;
   }
 
-  // Analysis methods
-  async analyzeStock(symbol: string, period: string = '1mo') {
-    const response = await this.client.post('/api/v2/analysis/stock', {
+  async createNewsReport(symbol: string, limit: number = 20) {
+    const response = await this.client.post('/api/v1/news-report', {
       symbol,
-      period,
+      limit,
     });
     return response.data;
   }
+
+  async getNewsReport(symbol: string) {
+    const response = await this.client.get(`/api/v1/news-report/${symbol}`);
+    return response.data;
+  }
+
+  async previewNewsForReport(symbol: string, limit: number = 20) {
+    const response = await this.client.get(`/api/v1/news-report/${symbol}/preview`, {
+      params: { limit },
+    });
+    return response.data;
+  }
+
+  // Analysis methods
+  // Removed: /api/v2/analysis/stock API is no longer used
+  // async analyzeStock(symbol: string, period: string = '1mo') {
+  //   const response = await this.client.post('/api/v2/analysis/stock', {
+  //     symbol,
+  //     period,
+  //   });
+  //   return response.data;
+  // }
 
   async analyzePortfolio(stocks: string[], weights: number[]) {
     const response = await this.client.post('/api/v2/analysis/portfolio', {
@@ -288,10 +353,79 @@ class ApiClient {
     return response.data;
   }
 
+  // User Interests (Watchlist)
+  async getFavorites() {
+    const response = await this.client.get('/api/v2/recommendations/interests');
+    return response.data;
+  }
+
+  async addFavorite(symbol: string, userId: string) {
+    const response = await this.client.post('/api/v2/recommendations/interests', {
+      user_id: userId,
+      interest: symbol,
+    });
+    return response.data;
+  }
+
+  async removeFavorite(symbol: string) {
+    const response = await this.client.delete(`/api/v2/recommendations/interests/symbol/${symbol}`);
+    return response.data;
+  }
+
+  // PDF methods
+  async generateNewsReportPDF(symbol: string, newsData: any[], analysisSummary?: string) {
+    const response = await this.client.post('/api/v2/pdf/generate/news-report', {
+      symbol,
+      news_data: newsData,
+      analysis_summary: analysisSummary,
+    });
+    return response.data;
+  }
+
+  async generateStockAnalysisPDF(symbol: string, analysisData: any) {
+    const response = await this.client.post('/api/v2/pdf/generate/stock-analysis', {
+      symbol,
+      analysis_data: analysisData,
+    });
+    return response.data;
+  }
+
+  async generateComprehensiveReportPDF(symbols: string[], reportData: any) {
+    const response = await this.client.post('/api/v2/pdf/generate/comprehensive-report', {
+      symbols,
+      report_data: reportData,
+    });
+    return response.data;
+  }
+
+  async getPDFHistory(limit: number = 20) {
+    const response = await this.client.get('/api/v2/pdf/history', {
+      params: { limit },
+    });
+    return response.data;
+  }
+
   // Generic request method
   async request<T = unknown>(config: AxiosRequestConfig): Promise<T> {
     const response = await this.client.request<T>(config);
     return response.data;
+  }
+
+  // Generic HTTP methods
+  get<T = unknown>(url: string, config?: AxiosRequestConfig) {
+    return this.client.get<T>(url, config);
+  }
+
+  post<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig) {
+    return this.client.post<T>(url, data, config);
+  }
+
+  put<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig) {
+    return this.client.put<T>(url, data, config);
+  }
+
+  delete<T = unknown>(url: string, config?: AxiosRequestConfig) {
+    return this.client.delete<T>(url, config);
   }
 }
 

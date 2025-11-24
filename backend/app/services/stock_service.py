@@ -77,7 +77,7 @@ class StockService:
             # 기간에 따른 날짜 계산
             days_map = {
                 "1d": 1, "5d": 5, "1mo": 30, "3mo": 90, "6mo": 180,
-                "1y": 365, "2y": 730, "5y": 1825, "10y": 3650
+                "1y": 365, "2y": 730, "5y": 1825, "10y": 3650, "max": 36500  # max: 100년
             }
             days = days_map.get(period, 365)
 
@@ -94,8 +94,11 @@ class StockService:
 
             if limit:
                 query = query.limit(limit)
+            elif period == "max":
+                # max일 때는 limit 없이 전체 조회
+                pass
             else:
-                query = query.limit(days)
+                query = query.limit(days * 2)  # 여유있게 2배
 
             result = query.execute()
 

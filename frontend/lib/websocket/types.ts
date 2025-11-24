@@ -77,6 +77,7 @@ export interface ConnectionOptions {
   wsUrl?: string;
   maxReconnectAttempts?: number;
   reconnectDelay?: number;
+  maxReconnectDelay?: number;
   loginTimeout?: number;
 }
 

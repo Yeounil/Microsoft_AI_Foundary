@@ -1,4 +1,4 @@
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, timezone
 from fastapi import APIRouter, HTTPException, status, Depends, Response, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
@@ -172,7 +172,7 @@ async def login(user_credentials: UserLogin, request: Request):
         await token_service.store_refresh_token(
             user_id=user['id'],
             refresh_token=refresh_token,
-            expires_at=datetime.utcnow() + refresh_token_expires,
+            expires_at=datetime.now(timezone.utc) + refresh_token_expires,
             device_info=user_agent,
             ip_address=client_ip
         )
@@ -214,15 +214,40 @@ async def verify_token_endpoint(current_user: Dict[str, Any] = Depends(get_curre
 @router.post("/refresh", response_model=Token)
 async def refresh_token(refresh_request: RefreshTokenRequest, request: Request):
     """리프레시 토큰을 사용하여 새로운 액세스 토큰 발급"""
+    import logging
+    logger = logging.getLogger(__name__)
+
     user_service = SupabaseUserService()
     token_service = RefreshTokenService()
 
     # 리프레시 토큰 JWT 검증
-    username = verify_token(refresh_request.refresh_token, token_type="refresh")
-    if username is None:
+    try:
+        username = verify_token(refresh_request.refresh_token, token_type="refresh")
+        if username is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid refresh token",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    except jwt.ExpiredSignatureError:
+        logger.warning("Refresh token expired")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token expired",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except jwt.InvalidTokenError as e:
+        logger.warning(f"Invalid refresh token: {e}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except Exception as e:
+        logger.error(f"Token verification error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token verification failed",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -235,15 +260,25 @@ async def refresh_token(refresh_request: RefreshTokenRequest, request: Request):
         )
 
     # DB에서 Refresh Token 검증
-    is_valid = await token_service.verify_refresh_token(
-        user_id=user['id'],
-        refresh_token=refresh_request.refresh_token
-    )
+    try:
+        is_valid = await token_service.verify_refresh_token(
+            user_id=user['id'],
+            refresh_token=refresh_request.refresh_token
+        )
 
-    if not is_valid:
+        if not is_valid:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Refresh token is invalid or expired",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Refresh token DB verification error: {e}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Refresh token is invalid or expired",
+            detail="Token verification failed",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -270,7 +305,7 @@ async def refresh_token(refresh_request: RefreshTokenRequest, request: Request):
             user_id=user['id'],
             old_refresh_token=refresh_request.refresh_token,
             new_refresh_token=new_refresh_token,
-            expires_at=datetime.utcnow() + refresh_token_expires,
+            expires_at=datetime.now(timezone.utc) + refresh_token_expires,
             device_info=user_agent,
             ip_address=client_ip
         )

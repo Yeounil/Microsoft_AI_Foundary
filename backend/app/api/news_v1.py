@@ -14,6 +14,7 @@ router = APIRouter()
 @router.get("/financial")
 async def get_financial_news_v1(
     symbol: Optional[str] = Query(None, description="특정 종목 심볼 (옵셔널)"),
+    symbols: Optional[str] = Query(None, description="여러 종목 심볼 (쉼표로 구분, 예: AAPL,MSFT,GOOGL)"),
     limit: int = Query(5, description="가져올 뉴스 개수"),
     page: int = Query(1, description="페이지 번호 (1부터 시작)"),
     lang: str = Query("en", description="언어 (en: 영어, kr: 한국어)")
@@ -23,8 +24,11 @@ async def get_financial_news_v1(
     조건:
     - kr_translate가 NULL이 아닌 기사만
     - ai_score가 0.5 이상인 기사만
+    - analyzed_at이 NULL이 아닌 기사만
+    - positive_score가 NULL이 아닌 기사만
     - published_at 내림차순 정렬 (최신 기사부터)
     - symbol이 제공되면 해당 종목 기사만
+    - symbols가 제공되면 해당 종목들의 기사만 (OR 조건)
     """
     try:
         from app.db.supabase_client import get_supabase
@@ -44,14 +48,25 @@ async def get_financial_news_v1(
         # 2. ai_score가 0.5 이상인 것만
         query_builder = query_builder.gte("ai_score", 0.5)
 
-        # 3. symbol이 제공되면 해당 종목만
-        if symbol:
+        # 3. analyzed_at이 NULL이 아닌 것만
+        query_builder = query_builder.not_.is_("analyzed_at", "null")
+
+        # 4. positive_score가 NULL이 아닌 것만
+        query_builder = query_builder.not_.is_("positive_score", "null")
+
+        # 5. symbol(s) 필터링
+        if symbols:
+            # 여러 종목의 경우 (쉼표로 구분)
+            symbol_list = [s.strip().upper() for s in symbols.split(",")]
+            query_builder = query_builder.in_("symbol", symbol_list)
+        elif symbol:
+            # 단일 종목의 경우
             query_builder = query_builder.eq("symbol", symbol.upper())
 
-        # 4. published_at 내림차순 정렬 (최신 기사부터)
+        # 6. published_at 내림차순 정렬 (최신 기사부터)
         query_builder = query_builder.order("published_at", desc=True)
 
-        # 5. 페이지네이션 (offset과 limit)
+        # 7. 페이지네이션 (offset과 limit)
         query_builder = query_builder.range(offset, offset + limit - 1)
 
         # 실행
@@ -61,6 +76,7 @@ async def get_financial_news_v1(
 
         return {
             "symbol": symbol,
+            "symbols": symbols,
             "language": lang,
             "page": page,
             "limit": limit,
@@ -70,6 +86,30 @@ async def get_financial_news_v1(
 
     except Exception as e:
         logger.error(f"금융 뉴스 조회 오류: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/{news_id}")
+async def get_news_by_id(news_id: int):
+    """뉴스 ID로 특정 뉴스 상세 정보 조회"""
+    try:
+        from app.db.supabase_client import get_supabase
+
+        supabase = get_supabase()
+
+        # 뉴스 ID로 조회
+        result = supabase.table("news_articles").select("*").eq("id", news_id).execute()
+
+        if not result.data or len(result.data) == 0:
+            raise HTTPException(status_code=404, detail=f"뉴스를 찾을 수 없습니다 (ID: {news_id})")
+
+        news = result.data[0]
+
+        return news
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"뉴스 조회 오류 (ID: {news_id}): {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/stock/{symbol}")

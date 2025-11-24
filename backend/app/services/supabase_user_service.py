@@ -3,7 +3,7 @@ from app.db.supabase_client import get_supabase
 from app.core.security import get_password_hash, verify_password
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 import logging
 
 logger = logging.getLogger(__name__)
@@ -177,7 +177,7 @@ class SupabaseUserService:
     async def update_user_profile(self, user_id: str, profile_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """사용자 프로필 업데이트"""
         try:
-            profile_data["updated_at"] = datetime.utcnow().isoformat()
+            profile_data["updated_at"] = datetime.now(timezone.utc).isoformat()
             
             result = self.supabase.table(self.profile_table)\
                 .update(profile_data)\

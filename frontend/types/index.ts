@@ -146,3 +146,37 @@ export interface NewsReport {
   conclusion: string;
   disclaimer: string;
 }
+
+// My Reports types (News Report API v1)
+export interface Report {
+  id: number;
+  symbol: string;
+  analyzed_count: number;
+  limit_used: number;
+  created_at: string;
+  expires_at: string;
+  is_expired: boolean;
+}
+
+export interface ReportDetail extends Report {
+  user_id: string;
+  report_data: {
+    summary?: string;
+    sentiment?: string;
+    key_points?: string[];
+    recommendations?: string[];
+    analyzed_articles?: {
+      title: string;
+      url: string;
+      published_at: string;
+      sentiment?: string;
+      impact_score?: number;
+    }[];
+    [key: string]: any;
+  };
+}
+
+export interface MyReportsResponse {
+  total_count: number;
+  reports: Report[];
+}

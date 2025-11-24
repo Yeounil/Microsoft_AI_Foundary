@@ -29,7 +29,7 @@ export class Logger {
     return LOG_LEVELS[level] >= LOG_LEVELS[this.level];
   }
 
-  private formatMessage(message: string, ...args: unknown[]): string {
+  private formatMessage(message: string): string {
     return `${this.prefix} ${message}`;
   }
 

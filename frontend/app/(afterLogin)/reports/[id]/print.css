@@ -1,0 +1,71 @@
+/* 인쇄 및 PDF 전용 스타일 */
+@media print {
+  /* 불필요한 UI 요소 숨기기 */
+  nav,
+  header.site-header,
+  footer.site-footer,
+  button,
+  .fixed,
+  .sticky,
+  [role="navigation"],
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* 페이지 설정 */
+  @page {
+    size: A4;
+    margin: 15mm;
+  }
+
+  /* 본문 스타일 조정 */
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  .container {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* 페이지 나누기 제어 */
+  .space-y-4,
+  .space-y-6 {
+    page-break-inside: avoid;
+  }
+
+  h1, h2, h3 {
+    page-break-after: avoid;
+  }
+
+  /* 카드 스타일 유지 */
+  .border {
+    border: 1px solid #e0e0e0 !important;
+  }
+
+  /* 색상 최적화 */
+  .bg-muted,
+  .bg-muted\/50 {
+    background-color: #f5f5f5 !important;
+  }
+
+  .bg-green-50 {
+    background-color: #f0fdf4 !important;
+  }
+
+  .bg-red-50 {
+    background-color: #fef2f2 !important;
+  }
+
+  /* 링크 스타일 */
+  a {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
+
+  a[href]:after {
+    content: none !important;
+  }
+}

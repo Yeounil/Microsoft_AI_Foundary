@@ -5,8 +5,9 @@
 
 import apiClient from "../api-client";
 import { CandleData } from "../websocket/types";
+import { logger } from "../logger";
 
-export type ChartPeriod = "1d" | "1w" | "1mo" | "3mo" | "1y" | "5y" | "all";
+export type ChartPeriod = "1d" | "7d" | "1w" | "1mo" | "3mo" | "6mo" | "1y" | "5y" | "max" | "all";
 export type ChartInterval =
   | "1m"
   | "5m"
@@ -24,16 +25,22 @@ export interface ChartDataResponse {
   interval: ChartInterval;
 }
 
+export interface HistoricalDataResult {
+  candles: CandleData[];
+  companyName?: string;
+}
+
 /**
  * 차트 데이터 로더 클래스
  */
 export class ChartDataLoader {
   /**
-   * 분단위 Intraday 데이터 로드 (1D 기간 전용)
+   * 분단위 Intraday 데이터 로드
    */
   static async loadIntradayData(
     symbol: string,
-    interval: ChartInterval = "1m"
+    interval: ChartInterval = "1m",
+    period: ChartPeriod = "1d"
   ): Promise<CandleData[]> {
     try {
       // interval 변환: 명시적 매핑 (1m → 1min, 5m → 5min, 1h → 1hour)
@@ -51,19 +58,71 @@ export class ChartDataLoader {
         return [];
       }
 
-      console.log(`Loading intraday data: ${symbol}, interval: ${interval} → ${fmpInterval}`);
+      // period에 따른 날짜 범위 설정
+      let now = new Date();
 
-      const response = await apiClient.getIntradayData(symbol, fmpInterval);
+      // 가장 최근 영업일로 조정 (주말 + 시장 개장 전 처리)
+      const dayOfWeek = now.getDay(); // 0 (일요일) ~ 6 (토요일)
+      const hour = now.getHours();
 
-      // API 응답 형식 정규화
-      if (response.data && Array.isArray(response.data)) {
-        // Intraday API는 이미 정규화된 형식으로 반환됨
-        console.log(`Loaded ${response.data.length} intraday candles for ${symbol}`);
-        return response.data;
+      // 주말이거나, 월요일 오전(아직 시장 미개장)인 경우 금요일로 조정
+      if (dayOfWeek === 0) {
+        // 일요일 → 금요일로 (2일 전)
+        now = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
+        logger.debug("Weekend detected (Sunday), adjusting to Friday");
+      } else if (dayOfWeek === 6) {
+        // 토요일 → 금요일로 (1일 전)
+        now = new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000);
+        logger.debug("Weekend detected (Saturday), adjusting to Friday");
+      } else if (dayOfWeek === 1 && hour < 23) {
+        // 월요일 23시 전(미국 시장 개장 전) → 금요일로 (3일 전)
+        now = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+        logger.debug("Monday before market open, adjusting to Friday");
+      }
+
+      let daysAgo = 0;  // 기본값을 0으로 변경
+
+      switch (period) {
+        case "1d":
+          daysAgo = 0;  // 1일 = 같은 날 (from_date = to_date)
+          break;
+        case "7d":
+        case "1w":
+          daysAgo = 7;
+          break;
+        case "1mo":
+          daysAgo = 30;
+          break;
+        default:
+          daysAgo = 0;
+      }
+
+      const fromDateObj = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
+      const toDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
+      const fromDate = fromDateObj.toISOString().split('T')[0]; // YYYY-MM-DD
+
+      logger.debug(`Loading intraday data: ${symbol}, period: ${period}, interval: ${interval} → ${fmpInterval}, from: ${fromDate}, to: ${toDate}`);
+
+      const response = await apiClient.getIntradayData(symbol, fmpInterval, fromDate, toDate);
+
+      // API 응답 형식 정규화 (apiClient가 이미 response.data를 반환함)
+      let dataArray: unknown[];
+      if (Array.isArray(response)) {
+        // 직접 배열로 반환된 경우
+        dataArray = response;
+      } else if (response.data && Array.isArray(response.data)) {
+        // {data: [...]} 형식으로 반환된 경우
+        dataArray = response.data;
       } else {
         console.error("Unexpected intraday data format:", response);
         return [];
       }
+
+      logger.debug(`Loaded ${dataArray.length} intraday candles for ${symbol}`);
+
+      // 백엔드가 반환한 데이터를 그대로 사용 (백엔드에서 필터링 처리)
+      // 프론트엔드 필터링은 제거 (백엔드가 날짜 범위를 무시하는 경우가 있음)
+      return this.normalizeChartData(dataArray);
     } catch (error) {
       console.error(`Failed to load intraday data for ${symbol}:`, error);
       return [];
@@ -77,31 +136,41 @@ export class ChartDataLoader {
     symbol: string,
     period: ChartPeriod = "1d",
     interval: ChartInterval = "1d"
-  ): Promise<CandleData[]> {
+  ): Promise<HistoricalDataResult> {
     try {
-      // 1D 기간 + 분단위 인터벌 → Intraday API 사용
-      if (period === "1d" && ["1m", "5m", "15m", "30m", "1h"].includes(interval)) {
-        console.log(`Using Intraday API for ${symbol} (period: ${period}, interval: ${interval})`);
-        return await this.loadIntradayData(symbol, interval);
+      // 1D, 1W, 1M 기간 + 분/시간 단위 인터벌 → Intraday API 사용
+      if (
+        (period === "1d" || period === "7d" || period === "1w" || period === "1mo") &&
+        ["1m", "5m", "15m", "30m", "1h"].includes(interval)
+      ) {
+        logger.debug(`Using Intraday API for ${symbol} (period: ${period}, interval: ${interval})`);
+        const candles = await this.loadIntradayData(symbol, interval, period);
+        return { candles };
       }
 
       // 기존 로직 (일/주/월봉)
       const response = await apiClient.getChartData(symbol, period, interval);
 
       // API 응답 형식 정규화
+      let candles: CandleData[];
       if (Array.isArray(response)) {
-        return this.normalizeChartData(response);
+        candles = this.normalizeChartData(response);
       } else if (response.data && Array.isArray(response.data)) {
-        return this.normalizeChartData(response.data);
+        candles = this.normalizeChartData(response.data);
       } else if (response.chart_data && Array.isArray(response.chart_data)) {
-        return this.normalizeChartData(response.chart_data);
+        candles = this.normalizeChartData(response.chart_data);
       } else {
         console.error("Unexpected chart data format:", response);
-        return [];
+        candles = [];
       }
+
+      return {
+        candles,
+        companyName: response.company_name,
+      };
     } catch (error) {
       console.error(`Failed to load chart data for ${symbol}:`, error);
-      return [];
+      return { candles: [] };
     }
   }
 
@@ -151,19 +220,21 @@ export class ChartDataLoader {
    */
   private static normalizeChartData(data: unknown[]): CandleData[] {
     return data
-      .map((item: any) => {
+      .map((item: unknown) => {
         try {
+          const record = item as Record<string, unknown>;
+
           // 시간 필드 정규화
           let time: number;
 
-          if (typeof item.time === "number") {
-            time = item.time;
-          } else if (typeof item.timestamp === "number") {
-            time = item.timestamp;
-          } else if (typeof item.date === "string") {
-            time = Math.floor(new Date(item.date).getTime() / 1000);
-          } else if (typeof item.time === "string") {
-            time = Math.floor(new Date(item.time).getTime() / 1000);
+          if (typeof record.time === "number") {
+            time = record.time;
+          } else if (typeof record.timestamp === "number") {
+            time = record.timestamp;
+          } else if (typeof record.date === "string") {
+            time = Math.floor(new Date(record.date).getTime() / 1000);
+          } else if (typeof record.time === "string") {
+            time = Math.floor(new Date(record.time).getTime() / 1000);
           } else {
             // 날짜를 파싱할 수 없으면 현재 시간 사용
             time = Math.floor(Date.now() / 1000);
@@ -172,11 +243,11 @@ export class ChartDataLoader {
           // OHLC 데이터 정규화
           const candle: CandleData = {
             time,
-            open: this.parseNumber(item.open || item.o || 0),
-            high: this.parseNumber(item.high || item.h || 0),
-            low: this.parseNumber(item.low || item.l || 0),
-            close: this.parseNumber(item.close || item.c || 0),
-            volume: this.parseNumber(item.volume || item.v || 0),
+            open: this.parseNumber(record.open || record.o || 0),
+            high: this.parseNumber(record.high || record.h || 0),
+            low: this.parseNumber(record.low || record.l || 0),
+            close: this.parseNumber(record.close || record.c || 0),
+            volume: this.parseNumber(record.volume || record.v || 0),
           };
 
           return candle;
@@ -192,7 +263,7 @@ export class ChartDataLoader {
   /**
    * 숫자 파싱 유틸리티
    */
-  private static parseNumber(value: any): number {
+  private static parseNumber(value: unknown): number {
     if (typeof value === "number") {
       return value;
     }
@@ -201,6 +272,140 @@ export class ChartDataLoader {
       return isNaN(parsed) ? 0 : parsed;
     }
     return 0;
+  }
+
+  /**
+   * 일봉 데이터를 주봉으로 집계
+   */
+  static aggregateToWeekly(dailyData: CandleData[]): CandleData[] {
+    if (dailyData.length === 0) return [];
+
+    const weeklyCandles: CandleData[] = [];
+    let currentWeek: CandleData | null = null;
+
+    dailyData.forEach((candle) => {
+      const date = new Date(candle.time * 1000);
+      const weekStart = new Date(date);
+      weekStart.setDate(date.getDate() - date.getDay()); // 주의 시작 (일요일)
+      weekStart.setHours(0, 0, 0, 0);
+      const weekTime = Math.floor(weekStart.getTime() / 1000);
+
+      if (!currentWeek || currentWeek.time !== weekTime) {
+        // 새로운 주 시작
+        if (currentWeek) {
+          weeklyCandles.push(currentWeek);
+        }
+        currentWeek = {
+          time: weekTime,
+          open: candle.open,
+          high: candle.high,
+          low: candle.low,
+          close: candle.close,
+          volume: candle.volume,
+        };
+      } else {
+        // 같은 주 내에서 집계
+        currentWeek.high = Math.max(currentWeek.high, candle.high);
+        currentWeek.low = Math.min(currentWeek.low, candle.low);
+        currentWeek.close = candle.close; // 마지막 종가
+        currentWeek.volume = (currentWeek.volume || 0) + (candle.volume || 0);
+      }
+    });
+
+    // 마지막 주 추가
+    if (currentWeek) {
+      weeklyCandles.push(currentWeek);
+    }
+
+    return weeklyCandles;
+  }
+
+  /**
+   * 일봉 데이터를 월봉으로 집계
+   */
+  static aggregateToMonthly(dailyData: CandleData[]): CandleData[] {
+    if (dailyData.length === 0) return [];
+
+    const monthlyCandles: CandleData[] = [];
+    let currentMonth: CandleData | null = null;
+
+    dailyData.forEach((candle) => {
+      const date = new Date(candle.time * 1000);
+      const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+      const monthTime = Math.floor(monthStart.getTime() / 1000);
+
+      if (!currentMonth || currentMonth.time !== monthTime) {
+        // 새로운 월 시작
+        if (currentMonth) {
+          monthlyCandles.push(currentMonth);
+        }
+        currentMonth = {
+          time: monthTime,
+          open: candle.open,
+          high: candle.high,
+          low: candle.low,
+          close: candle.close,
+          volume: candle.volume,
+        };
+      } else {
+        // 같은 월 내에서 집계
+        currentMonth.high = Math.max(currentMonth.high, candle.high);
+        currentMonth.low = Math.min(currentMonth.low, candle.low);
+        currentMonth.close = candle.close; // 마지막 종가
+        currentMonth.volume = (currentMonth.volume || 0) + (candle.volume || 0);
+      }
+    });
+
+    // 마지막 월 추가
+    if (currentMonth) {
+      monthlyCandles.push(currentMonth);
+    }
+
+    return monthlyCandles;
+  }
+
+  /**
+   * 일봉 데이터를 연봉으로 집계
+   */
+  static aggregateToYearly(dailyData: CandleData[]): CandleData[] {
+    if (dailyData.length === 0) return [];
+
+    const yearlyCandles: CandleData[] = [];
+    let currentYear: CandleData | null = null;
+
+    dailyData.forEach((candle) => {
+      const date = new Date(candle.time * 1000);
+      const yearStart = new Date(date.getFullYear(), 0, 1);
+      const yearTime = Math.floor(yearStart.getTime() / 1000);
+
+      if (!currentYear || currentYear.time !== yearTime) {
+        // 새로운 연도 시작
+        if (currentYear) {
+          yearlyCandles.push(currentYear);
+        }
+        currentYear = {
+          time: yearTime,
+          open: candle.open,
+          high: candle.high,
+          low: candle.low,
+          close: candle.close,
+          volume: candle.volume,
+        };
+      } else {
+        // 같은 연도 내에서 집계
+        currentYear.high = Math.max(currentYear.high, candle.high);
+        currentYear.low = Math.min(currentYear.low, candle.low);
+        currentYear.close = candle.close; // 마지막 종가
+        currentYear.volume = (currentYear.volume || 0) + (candle.volume || 0);
+      }
+    });
+
+    // 마지막 연도 추가
+    if (currentYear) {
+      yearlyCandles.push(currentYear);
+    }
+
+    return yearlyCandles;
   }
 
   /**
@@ -227,11 +432,14 @@ export class ChartDataLoader {
   static getRecommendedInterval(period: ChartPeriod): ChartInterval {
     const periodIntervalMap: Record<ChartPeriod, ChartInterval> = {
       "1d": "1m",
+      "7d": "15m",
       "1w": "15m",
       "1mo": "1h",
       "3mo": "1d",
+      "6mo": "1d",
       "1y": "1d",
       "5y": "1wk",
+      "max": "1mo",
       "all": "1mo",
     };
 

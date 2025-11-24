@@ -40,13 +40,8 @@ export class SubscriptionManager {
 
     try {
       const subscribeMessage = {
-        event: "subscribe",
-        data: {
-          ticker:
-            normalizedSymbols.length === 1
-              ? normalizedSymbols[0]
-              : normalizedSymbols,
-        },
+        action: "subscribe",
+        symbols: normalizedSymbols,
       };
 
       this.logger.debug("Sending subscribe message:", subscribeMessage);
@@ -86,10 +81,8 @@ export class SubscriptionManager {
 
     try {
       const unsubscribeMessage = {
-        event: "unsubscribe",
-        data: {
-          ticker: normalizedSymbols,
-        },
+        action: "unsubscribe",
+        symbols: normalizedSymbols,
       };
 
       const success = this.connection.send(unsubscribeMessage);

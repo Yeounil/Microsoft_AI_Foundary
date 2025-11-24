@@ -1,4 +1,4 @@
-const WebSocket = require('ws');
+import WebSocket from 'ws';
 
 const apiKey = 'd41IT9nSZJwIrRWBhfkA0lAA11fcZZ1p';
 const wsUrl = 'wss://websockets.financialmodelingprep.com';
@@ -8,14 +8,14 @@ const ws = new WebSocket(wsUrl);
 
 ws.on('open', () => {
   console.log('[Test] ✓ Connected');
-  
+
   const loginMessage = {
     event: 'login',
     data: {
       apiKey: apiKey
     }
   };
-  
+
   console.log('[Test] Sending login message:', JSON.stringify(loginMessage));
   ws.send(JSON.stringify(loginMessage));
 });
@@ -25,7 +25,7 @@ ws.on('message', (data) => {
   try {
     const parsed = JSON.parse(data);
     console.log('[Test] Parsed:', JSON.stringify(parsed, null, 2));
-  } catch (e) {
+  } catch {
     console.log('[Test] Could not parse as JSON');
   }
 });

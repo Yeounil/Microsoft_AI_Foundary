@@ -1,3 +1,5 @@
+import sys
+import asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -5,9 +7,14 @@ import logging
 from datetime import datetime
 from typing import Dict, Any
 
+# Windows에서 Playwright subprocess 지원을 위한 Event Loop Policy 설정
+if sys.platform == 'win32':
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+    print(f"[WINDOWS] Event loop policy set to: {asyncio.get_event_loop_policy().__class__.__name__}")
+
 from app.core.config import settings
 from app.api import stocks, stock_data
-from app.api import auth_supabase, analysis_supabase, news_supabase, recommendations_supabase, news_v1, analysis_v1, embeddings, rag, websocket_realtime, news_ai_score, news_translation
+from app.api import auth_supabase, social_auth, analysis_supabase, news_supabase, recommendations_supabase, news_v1, analysis_v1, embeddings, websocket_realtime, news_ai_score, news_translation, news_report_v1, pdf, subscriptions
 from app.services.news_scheduler import get_scheduler
 from app.db.supabase_client import get_supabase
 
@@ -25,6 +32,9 @@ async def lifespan(app: FastAPI):
     logger.info("=" * 60)
     logger.info("[STARTUP] AI Finance News Recommendation System starting")
     logger.info("=" * 60)
+    logger.info(f"[CONFIG] SECRET_KEY: {settings.secret_key[:10]}... (length: {len(settings.secret_key)})")
+    logger.info(f"[CONFIG] ALGORITHM: {settings.algorithm}")
+    logger.info(f"[CONFIG] ACCESS_TOKEN_EXPIRE: {settings.access_token_expire_minutes} minutes")
 
     # 뉴스 크롤링 스케줄러 시작
     try:
@@ -55,15 +65,15 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000", 
+        "http://localhost:3000",
         "http://localhost:3001",
-        "https://*.web.app",
-        "https://*.firebaseapp.com",
-        "*"  # 프로덕션에서는 구체적인 도메인으로 변경 필요
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
     ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Stock data API (still using v1 for compatibility)
@@ -72,9 +82,11 @@ app.include_router(stocks.router, prefix="/api/v1/stocks", tags=["stocks"])
 # v1 APIs (for frontend compatibility)
 app.include_router(news_v1.router, prefix="/api/v1/news", tags=["news-v1"])
 app.include_router(analysis_v1.router, prefix="/api/v1/analysis", tags=["analysis-v1"])
+app.include_router(news_report_v1.router, prefix="/api/v1/news-report", tags=["news-report-v1"])
 
 # Main Supabase API routes
 app.include_router(auth_supabase.router, prefix="/api/v2/auth", tags=["authentication"])
+app.include_router(social_auth.router, prefix="/api/v2/social-auth", tags=["social-authentication"])
 app.include_router(analysis_supabase.router, prefix="/api/v2/analysis", tags=["analysis"])
 app.include_router(news_supabase.router, prefix="/api/v2/news", tags=["news"])
 app.include_router(recommendations_supabase.router, prefix="/api/v2/recommendations", tags=["recommendations"])
@@ -82,17 +94,23 @@ app.include_router(recommendations_supabase.router, prefix="/api/v2/recommendati
 # Financial Embeddings API (Pinecone)
 app.include_router(embeddings.router, prefix="/api/v2/embeddings", tags=["embeddings"])
 
-# RAG (Retrieval Augmented Generation) API
-app.include_router(rag.router, prefix="/api/v2/rag", tags=["rag"])
+# RAG (Retrieval Augmented Generation) API - 제거됨: GPT-5 사용 최소화
+# app.include_router(rag.router, prefix="/api/v2/rag", tags=["rag"])
 
-# Real-time WebSocket API (FMP) - 비활성화: 프론트엔드에서 직접 FMP WebSocket 사용
-# app.include_router(websocket_realtime.router, prefix="/api/v2/realtime", tags=["realtime"])
+# Real-time WebSocket API (FMP)
+app.include_router(websocket_realtime.router, prefix="/api/v2/realtime", tags=["realtime"])
 
 # News AI Score API (GPT-5 기반 뉴스 영향도 평가)
 app.include_router(news_ai_score.router, prefix="/api/v2/news-ai-score", tags=["news-ai-score"])
 
 # News Translation API (Claude Sonnet API 기반 뉴스 번역)
 app.include_router(news_translation.router, prefix="/api/v2/news-translation", tags=["news-translation"])
+
+# PDF Generation API
+app.include_router(pdf.router, prefix="/api/v2/pdf", tags=["pdf"])
+
+# Email Subscription API
+app.include_router(subscriptions.router, prefix="/api/v2/subscriptions", tags=["subscriptions"])
 
 # Stock Data Collection API
 app.include_router(stock_data.router)

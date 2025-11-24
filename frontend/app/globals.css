@@ -116,7 +116,411 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
   body {
     @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior-y: contain;
+  }
+  /* Safe area support for notched devices */
+  .safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  /* Touch manipulation for better mobile performance */
+  button, a, [role="button"] {
+    touch-action: manipulation;
+  }
+  /* Global cursor-pointer for interactive elements */
+  a,
+  label[for],
+  [role="button"],
+  [role="link"],
+  [role="tab"],
+  [role="menuitem"],
+  [role="option"],
+  [role="checkbox"],
+  [role="radio"],
+  [role="switch"] {
+    @apply cursor-pointer;
+  }
+}
+
+@layer utilities {
+  /* Indeterminate progress bar animation */
+  @keyframes progress-indeterminate {
+    0% {
+      transform: translateX(-100%) scaleX(0.5);
+    }
+    50% {
+      transform: translateX(0%) scaleX(0.8);
+    }
+    100% {
+      transform: translateX(100%) scaleX(0.5);
+    }
+  }
+
+  .animate-progress-indeterminate {
+    animation: progress-indeterminate 1.5s ease-in-out infinite;
+    transform-origin: left;
+  }
+
+  /* 스크롤바 숨기기 */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* 터치 하이라이트 제거 */
+  .touch-none-highlight {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* 반응형 유틸리티 클래스 */
+  /* Container max-width for ultra-wide screens */
+  .container-max {
+    @apply max-w-7xl mx-auto;
+  }
+
+  /* Safe area for notched devices */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Responsive text utilities */
+  .text-responsive-sm {
+    @apply text-xs md:text-sm;
+  }
+
+  .text-responsive-base {
+    @apply text-sm md:text-base;
+  }
+
+  .text-responsive-lg {
+    @apply text-base md:text-lg lg:text-xl;
+  }
+
+  .text-responsive-xl {
+    @apply text-lg md:text-xl lg:text-2xl;
+  }
+
+  .text-responsive-2xl {
+    @apply text-xl md:text-2xl lg:text-3xl;
+  }
+
+  /* Card responsive padding */
+  .card-padding {
+    @apply p-3 md:p-4 lg:p-6;
+  }
+
+  /* Responsive gap utilities */
+  .gap-responsive {
+    @apply gap-3 md:gap-4 lg:gap-6;
+  }
+
+  /* Responsive height utilities */
+  .h-responsive-chart {
+    @apply h-[300px] md:h-[400px] lg:h-[500px];
+  }
+
+  .min-h-responsive-card {
+    @apply min-h-[140px] md:min-h-[160px] lg:min-h-[180px];
+  }
+
+  /* Responsive grid utilities */
+  .grid-responsive-2 {
+    @apply grid grid-cols-1 md:grid-cols-2;
+  }
+
+  .grid-responsive-3 {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3;
+  }
+
+  .grid-responsive-4 {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+  }
+
+  /* Touch target minimum size (44x44px for accessibility) */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  .touch-target-sm {
+    @apply min-h-[36px] min-w-[36px];
+  }
+
+  /* Interactive element base styles */
+  .interactive {
+    @apply min-h-[44px] min-w-[44px] cursor-pointer transition-colors;
+  }
+
+  /* Mobile-optimized spacing */
+  .spacing-mobile {
+    @apply py-3 px-4;
+  }
+
+  /* Prevent text selection on interactive elements */
+  .no-select {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Page transition animations */
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fade-in-down {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slide-in-right {
+    from {
+      opacity: 0;
+      transform: translateX(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out;
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.3s ease-out;
+  }
+
+  .animate-fade-in-down {
+    animation: fade-in-down 0.3s ease-out;
+  }
+
+  .animate-slide-in-right {
+    animation: slide-in-right 0.3s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scale-in 0.2s ease-out;
+  }
+
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.3s ease-out;
+  }
+
+  /* Staggered animation for lists */
+  .stagger-animate > * {
+    animation: fade-in-up 0.3s ease-out backwards;
+  }
+
+  .stagger-animate > *:nth-child(1) { animation-delay: 0ms; }
+  .stagger-animate > *:nth-child(2) { animation-delay: 50ms; }
+  .stagger-animate > *:nth-child(3) { animation-delay: 100ms; }
+  .stagger-animate > *:nth-child(4) { animation-delay: 150ms; }
+  .stagger-animate > *:nth-child(5) { animation-delay: 200ms; }
+  .stagger-animate > *:nth-child(n+6) { animation-delay: 250ms; }
+
+  /* Price change animations */
+  @keyframes price-up {
+    0% {
+      background-color: rgb(34 197 94 / 0.3);
+    }
+    100% {
+      background-color: transparent;
+    }
+  }
+
+  @keyframes price-down {
+    0% {
+      background-color: rgb(239 68 68 / 0.3);
+    }
+    100% {
+      background-color: transparent;
+    }
+  }
+
+  .animate-price-up {
+    animation: price-up 1s ease-out;
+  }
+
+  .animate-price-down {
+    animation: price-down 1s ease-out;
+  }
+
+  /* Hover effects */
+  .hover-lift {
+    @apply transition-transform duration-200 hover:-translate-y-0.5;
+  }
+
+  .hover-scale {
+    @apply transition-transform duration-200 hover:scale-105;
+  }
+
+  .hover-glow {
+    @apply transition-shadow duration-200 hover:shadow-md;
+  }
+
+  /* Card hover effect */
+  .card-hover {
+    @apply transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98];
+  }
+
+  /* Smooth scrolling container */
+  .scroll-smooth {
+    scroll-behavior: smooth;
+  }
+
+  /* Focus visible styles */
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+  }
+
+  /* Error shake animation */
+  @keyframes shake {
+    0%, 100% {
+      transform: translateX(0);
+    }
+    10%, 30%, 50%, 70%, 90% {
+      transform: translateX(-4px);
+    }
+    20%, 40%, 60%, 80% {
+      transform: translateX(4px);
+    }
+  }
+
+  .animate-shake {
+    animation: shake 0.5s ease-in-out;
+  }
+
+  /* Error slide down animation */
+  @keyframes slide-down {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+      max-height: 0;
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+      max-height: 100px;
+    }
+  }
+
+  .animate-slide-down {
+    animation: slide-down 0.3s ease-out forwards;
+  }
+
+  /* Error pulse animation */
+  @keyframes error-pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgb(239 68 68 / 0.4);
+    }
+    70% {
+      box-shadow: 0 0 0 6px rgb(239 68 68 / 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgb(239 68 68 / 0);
+    }
+  }
+
+  .animate-error-pulse {
+    animation: error-pulse 0.6s ease-out;
+  }
+
+  /* 모바일 최적화 유틸리티 */
+  .hide-mobile {
+    @apply lg:block hidden;
+  }
+
+  .hide-desktop {
+    @apply lg:hidden block;
+  }
+
+  .compact-padding {
+    @apply p-2 md:p-3 lg:p-4;
+  }
+
+  .compact-padding-x {
+    @apply px-2 md:px-3 lg:px-4;
+  }
+
+  .compact-padding-y {
+    @apply py-2 md:py-3 lg:py-4;
+  }
+
+  /* 터치 타겟 최적화 */
+  .touch-target-responsive {
+    @apply min-h-[44px] min-w-[44px] lg:min-h-[36px] lg:min-w-[36px];
+  }
+
+  /* 모바일 최적화 그리드 갭 */
+  .gap-mobile-optimized {
+    @apply gap-2 md:gap-4 lg:gap-6;
+  }
+
+  /* 모바일 텍스트 크기 */
+  .text-xs-mobile {
+    @apply text-[10px] sm:text-xs;
+  }
+
+  .text-sm-mobile {
+    @apply text-xs sm:text-sm;
+  }
+
+  .text-base-mobile {
+    @apply text-sm sm:text-base;
   }
 }

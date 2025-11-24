@@ -107,19 +107,27 @@ export class FMPWebSocketClient {
    * 메시지 핸들러
    */
   private handleMessage(message: FMPMessage) {
-    // 실시간 가격 데이터 처리
-    if (
-      "s" in message &&
-      typeof message.s === "string" &&
-      message.lp !== undefined
-    ) {
-      const priceMessage = message as FMPWebSocketMessage;
+    // 백엔드 API 형식 처리
+    if ("type" in message && message.type === "price_update" && "symbol" in message) {
+      const backendMessage = message as any;
+
+      // 백엔드 형식을 FMP 형식으로 변환
+      const priceMessage: FMPWebSocketMessage = {
+        s: backendMessage.symbol,
+        t: backendMessage.timestamp,
+        lp: backendMessage.last_price,
+        ls: backendMessage.last_size,
+        ap: backendMessage.ask_price,
+        as: backendMessage.ask_size,
+        bp: backendMessage.bid_price,
+        bs: backendMessage.bid_size,
+        type: backendMessage.data_type,
+      };
+
       const symbol = priceMessage.s.toUpperCase();
 
-      // FMP timestamp는 나노초 단위 (1762958806918000000)
       let timestamp = priceMessage.t;
       if (timestamp && timestamp > 1e15) {
-        // 나노초를 밀리초로 변환
         timestamp = Math.floor(timestamp / 1000000);
       }
 
@@ -135,6 +143,35 @@ export class FMPWebSocketClient {
       this.triggerMessageCallbacks(symbol, priceMessage);
 
       // 캔들 데이터 생성/업데이트
+      const intervalMs = this.subscriptionManager.getInterval(symbol);
+      if (intervalMs) {
+        this.candleAggregator.updateFromTick(symbol, priceMessage, intervalMs);
+      }
+    }
+    // FMP 직접 연결 형식 (하위 호환)
+    else if (
+      "s" in message &&
+      typeof message.s === "string" &&
+      message.lp !== undefined
+    ) {
+      const priceMessage = message as FMPWebSocketMessage;
+      const symbol = priceMessage.s.toUpperCase();
+
+      let timestamp = priceMessage.t;
+      if (timestamp && timestamp > 1e15) {
+        timestamp = Math.floor(timestamp / 1000000);
+      }
+
+      const timeStr = timestamp
+        ? new Date(timestamp).toLocaleTimeString()
+        : 'No timestamp';
+
+      this.logger.debug(
+        `Price data: ${symbol} = $${priceMessage.lp} (time: ${timeStr})`
+      );
+
+      this.triggerMessageCallbacks(symbol, priceMessage);
+
       const intervalMs = this.subscriptionManager.getInterval(symbol);
       if (intervalMs) {
         this.candleAggregator.updateFromTick(symbol, priceMessage, intervalMs);

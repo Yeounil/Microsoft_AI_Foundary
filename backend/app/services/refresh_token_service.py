@@ -2,7 +2,7 @@
 Refresh Token 관리 서비스
 Supabase Cloud DB에 Refresh Token을 저장하고 관리
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any
 import hashlib
 from app.core.config import settings
@@ -87,7 +87,7 @@ class RefreshTokenService:
 
         # 만료 시간 확인
         expires_at = datetime.fromisoformat(token_data["expires_at"].replace("Z", "+00:00"))
-        if expires_at < datetime.utcnow():
+        if expires_at < datetime.now(timezone.utc):
             # 만료된 토큰은 자동으로 폐기 처리
             await self.revoke_refresh_token(user_id, refresh_token)
             return False
@@ -114,7 +114,7 @@ class RefreshTokenService:
         response = self.supabase.table("refresh_tokens")\
             .update({
                 "is_revoked": True,
-                "revoked_at": datetime.utcnow().isoformat()
+                "revoked_at": datetime.now(timezone.utc).isoformat()
             })\
             .eq("user_id", user_id)\
             .eq("token_hash", token_hash)\
@@ -135,7 +135,7 @@ class RefreshTokenService:
         response = self.supabase.table("refresh_tokens")\
             .update({
                 "is_revoked": True,
-                "revoked_at": datetime.utcnow().isoformat()
+                "revoked_at": datetime.now(timezone.utc).isoformat()
             })\
             .eq("user_id", user_id)\
             .eq("is_revoked", False)\
@@ -157,7 +157,7 @@ class RefreshTokenService:
             .select("id, device_info, ip_address, created_at, expires_at")\
             .eq("user_id", user_id)\
             .eq("is_revoked", False)\
-            .gt("expires_at", datetime.utcnow().isoformat())\
+            .gt("expires_at", datetime.now(timezone.utc).isoformat())\
             .order("created_at", desc=True)\
             .execute()
 
@@ -171,11 +171,11 @@ class RefreshTokenService:
             삭제된 토큰 개수
         """
         # 30일 이전에 폐기된 토큰 또는 만료된 토큰 삭제
-        cutoff_date = (datetime.utcnow() - timedelta(days=30)).isoformat()
+        cutoff_date = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
 
         response = self.supabase.table("refresh_tokens")\
             .delete()\
-            .or_(f"expires_at.lt.{datetime.utcnow().isoformat()},and(is_revoked.eq.true,revoked_at.lt.{cutoff_date})")\
+            .or_(f"expires_at.lt.{datetime.now(timezone.utc).isoformat()},and(is_revoked.eq.true,revoked_at.lt.{cutoff_date})")\
             .execute()
 
         return len(response.data) if response.data else 0

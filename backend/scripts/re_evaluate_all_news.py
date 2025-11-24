@@ -99,6 +99,7 @@ class NewsReEvaluator:
             print(f"🏷️  종목: {symbol}")
         if limit:
             print(f"📊 제한: 최대 {limit}개")
+        print(f"📑 정렬: 최신 뉴스부터 (published_at 내림차순)")
         print(f"⚙️  배치 크기: {batch_size}개 동시 처리")
         print(f"⏱️  딜레이: {delay}초")
         print("=" * 80)
@@ -215,15 +216,16 @@ class NewsReEvaluator:
         limit: Optional[int],
         unevaluated_only: bool
     ) -> List[Dict]:
-        """대상 뉴스 조회"""
+        """대상 뉴스 조회 (최신 뉴스부터 내림차순)"""
         try:
+            # 최신 뉴스부터 먼저 분석하도록 published_at 기준 내림차순 정렬
             query = self.supabase.table("news_articles")\
                 .select("id, title, description, body, symbol, published_at, ai_score, analyzed_at, ai_analyzed_text")\
                 .order("published_at", desc=True)
 
-            # 미평가만 (ai_analyzed_text 또는 postive_score가 NULL인 경우)
+            # 미평가만 (ai_analyzed_text 또는 positive_score가 NULL인 경우)
             if unevaluated_only:
-                # ai_analyzed_text가 NULL이거나 postive_score가 NULL인 뉴스
+                # ai_analyzed_text가 NULL이거나 positive_score가 NULL인 뉴스
                 query = query.is_("ai_analyzed_text", "null")
 
             # 종목 필터

@@ -21,7 +21,9 @@ export class WebSocketConnection {
   private reconnectAttempts = 0;
   private maxReconnectAttempts: number;
   private reconnectDelay: number;
+  private maxReconnectDelay: number;
   private loginTimeout: number;
+  private isOnline = true;
 
   // 로그인 응답 대기
   private loginResolver: ((success: boolean) => void) | null = null;
@@ -31,27 +33,35 @@ export class WebSocketConnection {
   private messageHandlers: ((message: FMPMessage) => void)[] = [];
 
   constructor(options: ConnectionOptions, logger: Logger) {
-    this.apiKey =
-      options.apiKey ||
-      process.env.NEXT_PUBLIC_FMP_API_KEY ||
-      "";
+    this.apiKey = ""; // 백엔드가 관리
     this.wsUrl =
       options.wsUrl ||
       process.env.NEXT_PUBLIC_WS_URL ||
-      "wss://websockets.financialmodelingprep.com";
-    this.maxReconnectAttempts = options.maxReconnectAttempts || 5;
-    this.reconnectDelay = options.reconnectDelay || 2000;
-    this.loginTimeout = options.loginTimeout || 3000;
+      "ws://localhost:8000/api/v2/realtime/ws/prices";
+    this.maxReconnectAttempts = options.maxReconnectAttempts || 10;
+    this.reconnectDelay = options.reconnectDelay || 1000;
+    this.maxReconnectDelay = options.maxReconnectDelay || 30000;
+    this.loginTimeout = options.loginTimeout || 5000;
     this.logger = logger;
 
-    if (!this.apiKey) {
-      this.logger.error(
-        "API key not found! Please set NEXT_PUBLIC_FMP_API_KEY in .env.local"
-      );
-    } else {
-      this.logger.debug(
-        `API key loaded: ${this.apiKey.substring(0, 10)}...`
-      );
+    // 브라우저 환경에서만 online/offline 이벤트 리스너 등록
+    if (typeof window !== 'undefined') {
+      this.isOnline = navigator.onLine;
+
+      window.addEventListener('online', () => {
+        this.logger.info('Network is online');
+        this.isOnline = true;
+        // 오프라인에서 온라인으로 전환 시 재연결 시도
+        if (!this._isConnected && !this._isConnecting) {
+          this.reconnectAttempts = 0; // 재시도 카운터 리셋
+          this.connect();
+        }
+      });
+
+      window.addEventListener('offline', () => {
+        this.logger.warn('Network is offline');
+        this.isOnline = false;
+      });
     }
   }
 
@@ -76,8 +86,7 @@ export class WebSocketConnection {
     try {
       this.logger.info("Connecting...");
 
-      const wsUrl = `${this.wsUrl}?apikey=${this.apiKey}`;
-      this.ws = new WebSocket(wsUrl);
+      this.ws = new WebSocket(this.wsUrl);
 
       this.connectPromise = new Promise((resolve, reject) => {
         if (!this.ws) {
@@ -85,26 +94,14 @@ export class WebSocketConnection {
           return;
         }
 
-        this.ws.onopen = async () => {
+        this.ws.onopen = () => {
           this.logger.info("Connected");
           this._isConnected = true;
           this._isConnecting = false;
           this.reconnectAttempts = 0;
           this.notifyConnectionChange(true);
-
-          // 로그인 (FMP WebSocket은 연결 후 반드시 login 이벤트 필요)
-          const loginSuccess = await this.login();
-
-          if (loginSuccess) {
-            this.connectPromise = null;
-            resolve(true);
-          } else {
-            this.logger.warn("Login failed, will retry via reconnect logic");
-            this._isConnecting = false;
-            this.connectPromise = null;
-            this.ws?.close();
-            reject(new Error("Login failed - retrying"));
-          }
+          this.connectPromise = null;
+          resolve(true);
         };
 
         this.ws.onerror = (error) => {
@@ -140,50 +137,10 @@ export class WebSocketConnection {
   }
 
   /**
-   * 로그인
+   * 로그인 (백엔드가 자동 처리, 메서드 유지)
    */
   private async login(): Promise<boolean> {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      return false;
-    }
-
-    if (!this.apiKey || this.apiKey === "your_fmp_api_key_here") {
-      this.logger.error(
-        "Invalid API key. Please set NEXT_PUBLIC_FMP_API_KEY in .env.local"
-      );
-      return false;
-    }
-
-    try {
-      const loginMessage = {
-        event: "login",
-        data: {
-          apiKey: this.apiKey,
-        },
-      };
-
-      // 로그인 응답을 기다리기 위한 Promise 생성
-      const loginPromise = new Promise<boolean>((resolve) => {
-        this.loginResolver = resolve;
-
-        // 타임아웃
-        setTimeout(() => {
-          if (this.loginResolver) {
-            this.logger.warn(`Login timeout after ${this.loginTimeout}ms`);
-            this.loginResolver(false);
-            this.loginResolver = null;
-          }
-        }, this.loginTimeout);
-      });
-
-      this.ws.send(JSON.stringify(loginMessage));
-      this.logger.debug("Login message sent, waiting for response...");
-
-      return await loginPromise;
-    } catch (error) {
-      this.logger.error("Login failed:", error);
-      return false;
-    }
+    return true;
   }
 
   /**
@@ -193,20 +150,6 @@ export class WebSocketConnection {
     try {
       const message: FMPMessage = JSON.parse(data);
 
-      // 로그인 응답 처리
-      if ("event" in message && message.event === "login") {
-        this.handleLoginResponse(message);
-        return;
-      }
-
-      // 다른 이벤트 처리 (subscribe/unsubscribe는 정상 동작이므로 로깅 생략)
-      if ("event" in message) {
-        const eventType = message.event;
-        if (eventType !== "subscribe" && eventType !== "unsubscribe") {
-          this.logger.debug(`Event received: ${eventType}`, message);
-        }
-      }
-
       // 메시지 핸들러에 전달
       this.messageHandlers.forEach((handler) => handler(message));
     } catch (error) {
@@ -215,69 +158,36 @@ export class WebSocketConnection {
   }
 
   /**
-   * 로그인 응답 처리
+   * 로그인 응답 처리 (더 이상 사용 안 함)
    */
   private handleLoginResponse(message: FMPMessage) {
-    // 로그인이 이미 처리된 경우 중복 메시지 무시
-    if (!this.loginResolver) {
-      this.logger.warn("Ignoring duplicate login message (already processed)");
-      return;
-    }
-
-    const success =
-      ("status" in message &&
-        (message.status === 200 || message.status === "success")) ||
-      ("statusCode" in message && message.statusCode === 200) ||
-      ("message" in message &&
-        message.message?.toLowerCase().includes("authenticated"));
-
-    this.logger.info(
-      `Login response: ${success ? "success" : "failed"}`,
-      message
-    );
-
-    // loginResolver 실행 및 정리
-    this.loginResolver(success);
-    this.loginResolver = null;
-
-    if (!success) {
-      this.logger.error("Login failed. Check your API key:", message);
-
-      if (
-        "message" in message &&
-        message.message?.includes("Connected from another location")
-      ) {
-        this.logger.warn(
-          "Already connected from another location. Closing and will retry..."
-        );
-      }
-
-      if (
-        ("status" in message && message.status === 401) ||
-        ("message" in message && message.message?.includes("Unauthorized"))
-      ) {
-        this.logger.warn("Unauthorized - authentication required");
-      }
-    }
+    // 백엔드 API는 로그인 응답 없음
   }
 
   /**
    * 재연결 처리
    */
   private async handleReconnect() {
+    // 오프라인 상태면 재연결 시도하지 않음
+    if (!this.isOnline) {
+      this.logger.info('Offline - waiting for network to resume');
+      return;
+    }
+
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       this.logger.error("Max reconnection attempts reached");
       return;
     }
 
     this.reconnectAttempts++;
-    // 첫 재시도는 빠르게 (500ms), 이후 exponential backoff
-    const baseDelay =
-      this.reconnectAttempts === 1 ? 500 : this.reconnectDelay;
-    const delay = baseDelay * Math.pow(2, Math.max(0, this.reconnectAttempts - 2));
+
+    // Exponential backoff with jitter
+    const baseDelay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
+    const jitter = Math.random() * 0.3 * baseDelay; // 0-30% jitter
+    const delay = Math.min(baseDelay + jitter, this.maxReconnectDelay);
 
     this.logger.info(
-      `Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`
+      `Reconnecting in ${Math.round(delay)}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`
     );
 
     setTimeout(async () => {
@@ -287,6 +197,13 @@ export class WebSocketConnection {
         this.logger.error("Reconnection failed:", error);
       }
     }, delay);
+  }
+
+  /**
+   * 네트워크 온라인 상태 확인
+   */
+  get isNetworkOnline(): boolean {
+    return this.isOnline;
   }
 
   /**

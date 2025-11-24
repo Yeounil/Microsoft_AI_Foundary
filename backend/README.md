@@ -36,7 +36,7 @@ AI 기반 금융 데이터 수집 및 분석 시스템입니다. FMP API로부�
   - 0.4~0.6: 중간 영향
   - 0.6~0.8: 큰 영향
   - 0.8~1.0: 매우 큰 영향
-- **영향 방향 평가** (postive_score: 0.0~1.0)
+- **영향 방향 평가** (positive_score: 0.0~1.0)
   - 0.0~0.4: 부정적 (주가 하락 예상)
   - 0.4~0.6: 중립
   - 0.6~1.0: 긍정적 (주가 상승 예상)
@@ -245,7 +245,7 @@ curl http://localhost:8000/api/v2/news-ai-score/health
 - url: TEXT
 - published_at: TIMESTAMP
 - ai_score: FLOAT              # 주가 영향도 (0.0 ~ 1.0)
-- postive_score: FLOAT         # 영향 방향 (0.0 ~ 1.0)
+- positive_score: FLOAT        # 영향 방향 (0.0 ~ 1.0)
 - ai_analyzed_text: TEXT       # AI 분석 근거
 - analyzed_at: TIMESTAMP       # 분석 시간
 ```
@@ -386,7 +386,7 @@ tail -f backend.log
 **뉴스 AI Score 평가 시스템:**
 - GPT-5 Responses API 통합
 - 뉴스 주가 영향도 자동 평가 (ai_score: 0.0~1.0)
-- 긍정/부정 방향 평가 (postive_score: 0.0~1.0)
+- 긍정/부정 방향 평가 (positive_score: 0.0~1.0)
 - 사용자 친화적 분석 텍스트 자동 생성 (ai_analyzed_text)
 - 배치 재평가 스크립트 (re_evaluate_all_news.py)
 - API 엔드포인트 추가 (/api/v2/news-ai-score/*)

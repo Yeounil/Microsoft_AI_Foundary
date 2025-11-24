@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import { Bell, Search, User, LogOut, Menu, X, TrendingUp } from "lucide-react";
+import { Search, User, LogOut, Menu, X, TrendingUp, Moon, Sun, Bell, Settings, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -14,25 +14,29 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuthStore } from "@/store/auth-store";
+import { NotificationDropdown } from "./NotificationDropdown";
+import { ThemeToggle } from "./ThemeToggle";
 import { cn } from "@/lib/utils";
+import { useTheme } from "next-themes";
 
-interface NavItem {
-  label: string;
-  href: string;
-}
+// 모바일 네비게이션 제거
+// interface NavItem {
+//   label: string;
+//   href: string;
+// }
 
-const navItems: NavItem[] = [
-  { label: "홈", href: "/main" },
-  { label: "관심", href: "/watchlist" },
-  { label: "발견", href: "/discover" },
-];
+// const navItems: NavItem[] = [
+//   { label: "홈", href: "/main" },
+//   { label: "관심", href: "/watchlist" },
+//   { label: "발견", href: "/discover" },
+// ];
 
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
   const { user, isAuthenticated, logout } = useAuthStore();
+  const { theme, setTheme } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
-  const [hasNotification] = useState(false); // TODO: Implement notification system
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -55,13 +59,13 @@ export default function Header() {
 
   const handleLogout = async () => {
     await logout();
-    router.push("/");
+    router.push("/login");
   };
 
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 transition-all",
+        "sticky top-0 z-50 w-full border-b bg-background transition-all",
         isScrolled && "shadow-sm"
       )}
     >
@@ -74,37 +78,37 @@ export default function Header() {
               href="/main"
               className="flex items-center gap-2 cursor-pointer"
             >
-              <TrendingUp className="h-6 w-6 text-primary" />
-              <span className="text-xl font-bold hidden sm:inline">
-                AI Finance
+              <TrendingUp className="h-6 w-6 text-primary" color="green" />
+              <span className="text-xl font-bold sm:inline text-green-600">
+                Green Wire
               </span>
             </Link>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-6">
+            {/* Desktop Navigation - Hidden (using bottom nav and sidebar instead) */}
+            {/* <nav className="hidden">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "text-sm font-medium transition-colors hover:text-primary cursor-pointer",
+                    "text-sm font-medium transition-colors hover:text-primary cursor-pointer px-3 py-2 rounded-md min-h-[44px] flex items-center",
                     pathname === item.href
-                      ? "text-foreground"
-                      : "text-muted-foreground"
+                      ? "text-foreground bg-primary/10"
+                      : "text-muted-foreground hover:bg-muted"
                   )}
                 >
                   {item.label}
                 </Link>
               ))}
-            </nav>
+            </nav> */}
           </div>
 
           {/* Search and Actions */}
           <div className="flex items-center gap-4">
-            {/* Search Bar */}
+            {/* Search Bar - Show on tablet and up */}
             <form
               onSubmit={handleSearch}
-              className="hidden lg:flex items-center"
+              className="hidden md:flex items-center"
             >
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -113,60 +117,55 @@ export default function Header() {
                   placeholder="종목명 및 코드 검색"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-[300px] pl-9"
+                  className="w-[200px] lg:w-[300px] xl:w-[400px] pl-9"
                 />
               </div>
             </form>
 
-            {/* Notification Bell */}
-            {isAuthenticated && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative"
-                onClick={() => router.push("/notifications")}
-              >
-                <Bell className="h-5 w-5" />
-                {hasNotification && (
-                  <span className="absolute right-1 top-1 h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
-                  </span>
-                )}
-              </Button>
-            )}
+            {/* Theme Toggle - Hide on mobile */}
+            <div className="hidden md:block">
+              <ThemeToggle />
+            </div>
 
-            {/* User Menu */}
+            {/* Notification Dropdown - Show when authenticated */}
+            {isAuthenticated && <NotificationDropdown />}
+
+            {/* User Menu - Hide on mobile */}
             {isAuthenticated ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <User className="h-5 w-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <div className="px-2 py-1.5">
-                    <p className="text-sm font-medium">{user?.username}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {user?.email}
-                    </p>
-                  </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => router.push("/profile")} className="cursor-pointer">
-                    프로필
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push("/settings")} className="cursor-pointer">
-                    설정
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    로그아웃
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="hidden md:block">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="min-h-11 min-w-11 p-2">
+                      <User className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <div className="px-2 py-1.5">
+                      <p className="text-sm font-medium">{user?.username}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {user?.email}
+                      </p>
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => router.push("/profile")} className="cursor-pointer">
+                      프로필
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/subscriptions")} className="cursor-pointer">
+                      내 구독 종목
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/settings")} className="cursor-pointer">
+                      설정
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      로그아웃
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="hidden md:flex items-center gap-2">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -187,8 +186,7 @@ export default function Header() {
             {/* Mobile Menu Button */}
             <Button
               variant="ghost"
-              size="icon"
-              className="md:hidden"
+              className="md:hidden min-h-11 min-w-11 p-2"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
               {isMobileMenuOpen ? (
@@ -200,41 +198,148 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Mobile Full Screen Overlay Menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden border-t py-4">
-            {/* Mobile Search */}
-            <form onSubmit={handleSearch} className="mb-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="종목명 및 코드 검색"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9"
-                />
-              </div>
-            </form>
-
-            {/* Mobile Nav Items */}
-            <nav className="space-y-2">
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
+          <div className="fixed inset-0 z-50 bg-background md:hidden animate-fade-in">
+            <div className="flex flex-col h-full">
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b">
+                <span className="text-lg font-bold text-green-600">Green Wire</span>
+                <button
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className={cn(
-                    "block px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                    pathname === item.href
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
+                  className="p-2 rounded-full hover:bg-muted min-h-11 min-w-11"
                 >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              {/* Mobile Search */}
+              <form onSubmit={handleSearch} className="p-4 border-b">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    type="search"
+                    placeholder="종목명 및 코드 검색"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-9 h-12"
+                    inputMode="search"
+                    autoComplete="off"
+                  />
+                </div>
+              </form>
+
+              {/* 메뉴 항목들 */}
+              <div className="flex-1 overflow-y-auto">
+                {/* 사용자 정보 (로그인한 경우) */}
+                {isAuthenticated && user && (
+                  <div className="p-4 border-b">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                        <User className="h-6 w-6" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-lg">{user.username}</p>
+                        <p className="text-sm text-muted-foreground">{user.email}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 메뉴 옵션들 */}
+                <div className="p-4 space-y-2">
+                  {isAuthenticated && (
+                    <>
+                      {/* 프로필 */}
+                      <button
+                        onClick={() => {
+                          setIsMobileMenuOpen(false);
+                          router.push("/profile");
+                        }}
+                        className="flex items-center gap-3 w-full px-4 py-3 rounded-lg hover:bg-muted min-h-12 text-left"
+                      >
+                        <User className="h-5 w-5" />
+                        <span>프로필</span>
+                      </button>
+
+                      {/* 내 구독 종목 */}
+                      <button
+                        onClick={() => {
+                          setIsMobileMenuOpen(false);
+                          router.push("/subscriptions");
+                        }}
+                        className="flex items-center gap-3 w-full px-4 py-3 rounded-lg hover:bg-muted min-h-12 text-left"
+                      >
+                        <Mail className="h-5 w-5" />
+                        <span>내 구독 종목</span>
+                      </button>
+
+                      {/* 설정 */}
+                      <button
+                        onClick={() => {
+                          setIsMobileMenuOpen(false);
+                          router.push("/settings");
+                        }}
+                        className="flex items-center gap-3 w-full px-4 py-3 rounded-lg hover:bg-muted min-h-12 text-left"
+                      >
+                        <Settings className="h-5 w-5" />
+                        <span>설정</span>
+                      </button>
+                    </>
+                  )}
+
+                  {/* 다크모드 토글 */}
+                  <button
+                    onClick={() => {
+                      setTheme(theme === 'dark' ? 'light' : 'dark');
+                    }}
+                    className="flex items-center gap-3 w-full px-4 py-3 rounded-lg hover:bg-muted min-h-12 text-left"
+                  >
+                    {theme === 'dark' ? (
+                      <Sun className="h-5 w-5" />
+                    ) : (
+                      <Moon className="h-5 w-5" />
+                    )}
+                    <span>{theme === 'dark' ? '라이트 모드' : '다크 모드'}</span>
+                  </button>
+
+                  {/* 로그인/로그아웃 */}
+                  {isAuthenticated ? (
+                    <button
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        handleLogout();
+                      }}
+                      className="flex items-center gap-3 w-full px-4 py-3 text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 min-h-12 text-left"
+                    >
+                      <LogOut className="h-5 w-5" />
+                      <span>로그아웃</span>
+                    </button>
+                  ) : (
+                    <div className="space-y-2 pt-2 border-t">
+                      <button
+                        onClick={() => {
+                          setIsMobileMenuOpen(false);
+                          router.push("/login");
+                        }}
+                        className="flex items-center justify-center w-full px-4 py-3 bg-primary text-primary-foreground rounded-lg min-h-12"
+                      >
+                        로그인
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsMobileMenuOpen(false);
+                          router.push("/register");
+                        }}
+                        className="flex items-center justify-center w-full px-4 py-3 border border-primary text-primary rounded-lg min-h-12"
+                      >
+                        회원가입
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
