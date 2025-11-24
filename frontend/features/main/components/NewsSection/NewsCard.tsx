@@ -12,13 +12,14 @@ import { stripMarkdown } from "@/lib/stripMarkdown";
 interface NewsCardProps {
   article: FinancialNewsArticle;
   index: number;
+  isMainPage?: boolean;
 }
 
 /**
  * NewsCard Component
  * 개별 뉴스 기사를 카드 형태로 표시합니다.
  */
-export const NewsCard = memo(function NewsCard({ article, index }: NewsCardProps) {
+export const NewsCard = memo(function NewsCard({ article, index, isMainPage = false }: NewsCardProps) {
   const sentiment = getSentiment(article.positive_score);
   const SentimentIcon = sentiment.icon;
 
@@ -71,7 +72,7 @@ export const NewsCard = memo(function NewsCard({ article, index }: NewsCardProps
           {/* 본문 미리보기 (데스크톱만 표시) */}
           {(article.kr_translate || article.text) && (
             <div className="hidden lg:block">
-              <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+              <p className={`text-sm text-muted-foreground line-clamp-2 leading-relaxed`}>
                 {stripMarkdown(article.kr_translate || article.text || "")}
               </p>
             </div>

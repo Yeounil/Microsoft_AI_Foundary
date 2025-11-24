@@ -53,10 +53,15 @@ export function NewsAnalysisContainer({
 
     try {
       // POST 요청으로 레포트 생성
-      await apiClient.createNewsReport(newsData.symbol, 20);
+      const response = await apiClient.createNewsReport(newsData.symbol, 20);
 
-      // 레포트 페이지로 이동
-      router.push(`/news-report/${newsData.symbol}`);
+      // reports/[id] 페이지로 이동 (report_id 사용)
+      if (response.id) {
+        router.push(`/reports/${response.id}`);
+      } else {
+        // fallback: 레거시 URL로 이동 (리다이렉트됨)
+        router.push(`/news-report/${newsData.symbol}`);
+      }
     } catch (err: unknown) {
       console.error("Failed to generate report:", err);
       const axiosError = err as { response?: { data?: { detail?: string } } };

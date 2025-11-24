@@ -28,7 +28,7 @@ export function ChartModeSelector({
         </TabsTrigger>
         <TabsTrigger
           value="enhanced"
-          className="text-xs px-3 py-2 min-w-[50px] min-h-9"
+          className="text-xs px-3 py-2 min-w-[70px] min-h-9"
         >
           고급
         </TabsTrigger>

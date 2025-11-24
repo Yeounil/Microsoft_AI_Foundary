@@ -99,10 +99,10 @@ export function NewsList({
 
   return (
     <div className={`flex flex-col h-[600px] ${isMainPage ? 'md:h-[860px]' : 'md:h-[880px]'} lg:h-[1050px] min-h-[400px]`}>
-      <div className="flex-1 overflow-y-auto space-y-3 mb-4 pt-2 stagger-animate">
+      <div className="flex flex-col justify-around flex-1 overflow-y-auto space-y-3 mb-4 pt-2 stagger-animate">
         {news.map((item, index) => (
           <div key={item.id || index} className="transform transition-all duration-300">
-            <NewsCard article={item} index={index} />
+            <NewsCard article={item} index={index} isMainPage={isMainPage} />
           </div>
         ))}
       </div>

@@ -23,11 +23,12 @@ def html_to_pdf_sync(html_content: str, output_path: str) -> bool:
                 format='A4',
                 print_background=True,
                 margin={
-                    'top': '20mm',
-                    'right': '15mm',
-                    'bottom': '20mm',
-                    'left': '15mm'
-                }
+                    'top': '15mm',
+                    'right': '12mm',
+                    'bottom': '15mm',
+                    'left': '12mm'
+                },
+                scale=0.95
             )
 
             browser.close()

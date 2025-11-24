@@ -50,14 +50,14 @@ export default function MainPage() {
   return (
     <div className="w-full px-3 py-4 md:px-6 md:py-6 lg:px-8 mx-auto max-w-[1600px]">
       {/* TradingView Ticker Tape */}
-      <AnimatedSection animation="fade-in" duration={300}>
+      {/* <AnimatedSection animation="fade-in" duration={300}>
         <TickerTapeWidget />
-      </AnimatedSection>
+      </AnimatedSection> */}
 
       {/* Main Content Grid - News first on all devices (뉴스 분석이 메인) */}
-      <div className="flex flex-col gap-4 md:gap-6 lg:grid lg:grid-cols-2 lg:gap-8">
-        {/* News Section - Always first */}
-        <AnimatedSection animation="fade-up" delay={100}>
+      <div className="flex flex-col gap-4 md:gap-6 lg:grid lg:grid-cols-3 lg:gap-8">
+        {/* News Section - Always first (2/3 width) */}
+        <AnimatedSection animation="fade-up" delay={100} className="lg:col-span-2">
           <Suspense fallback={
             <div className="flex items-center justify-center py-16 bg-card rounded-lg border">
               <LoadingSpinner size="lg" />
@@ -71,18 +71,20 @@ export default function MainPage() {
           </Suspense>
         </AnimatedSection>
 
-        {/* Stock List - Always second */}
-        <AnimatedSection animation="fade-up" delay={200}>
-          <Suspense fallback={
-            <div className="flex items-center justify-center py-16 bg-card rounded-lg border">
-              <LoadingSpinner size="lg" />
-            </div>
-          }>
-            <ImprovedStockList
-              supportedStocks={supportedStocks}
-              isLoadingStocks={isLoadingStocks}
-            />
-          </Suspense>
+        {/* Stock List - Always second (1/3 width, sticky) */}
+        <AnimatedSection animation="fade-up" delay={200} className="lg:col-span-1">
+          <div className="lg:sticky lg:top-20">
+            <Suspense fallback={
+              <div className="flex items-center justify-center py-16 bg-card rounded-lg border">
+                <LoadingSpinner size="lg" />
+              </div>
+            }>
+              <ImprovedStockList
+                supportedStocks={supportedStocks}
+                isLoadingStocks={isLoadingStocks}
+              />
+            </Suspense>
+          </div>
         </AnimatedSection>
       </div>
     </div>

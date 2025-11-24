@@ -49,8 +49,6 @@ apscheduler>=3.10.4
 pinecone>=3.0.0
 
 # PDF Generation
-# weasyprint>=61.0  # 임시 비활성화
-# reportlab>=4.0.0  # 임시 비활성화 - Playwright로 전환
 playwright>=1.40.0
 
 # Email Service

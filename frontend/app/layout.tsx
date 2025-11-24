@@ -22,15 +22,17 @@ const notoSansKR = Noto_Sans_KR({
   variable: "--font-noto-sans-kr",
 });
 
+
+
 export const metadata: Metadata = {
-  title: "AI Finance Analysis - AI 기반 증권 분석 플랫폼",
+  title: "Green Wire - AI를 활용한 증권 분석 웹 프로젝트",
   description: "AI 기술을 활용한 실시간 주식 시장 분석, 뉴스 요약, 투자 인사이트 제공",
   keywords: "주식, AI 분석, 금융, 투자, 실시간 차트, 뉴스 분석",
   authors: [{ name: "AI Finance Team" }],
   manifest: '/manifest.json',
   openGraph: {
-    title: "AI Finance Analysis",
-    description: "AI 기술을 활용한 실시간 주식 시장 분석 플랫폼",
+    title: "Green Wire",
+    description: "AI를 활용한 증권 분석 웹 프로젝트",
     type: "website",
   },
   appleWebApp: {

@@ -340,7 +340,9 @@ class PDFService:
         sentiment_section = extract_section(content, '## 감성 분석', '## 핵심 요약')
         summary_section = extract_section(content, '## 핵심 요약', '## 시장 반응')
         market_section = extract_section(content, '## 시장 반응', '## 주가 영향 분석')
-        price_impact_section = extract_section(content, '## 주가 영향 분석', '## 투자 권고')
+        price_impact_section = extract_section(content, '## 주가 영향 분석', '## 경쟁사 분석')
+        competitor_section = extract_section(content, '## 경쟁사 분석', '## 리스크 요인')
+        risk_section = extract_section(content, '## 리스크 요인', '## 투자 권고')
         investment_section = extract_section(content, '## 투자 권고', '## 결론')
         conclusion_section = extract_section(content, '## 결론', None)
 
@@ -370,61 +372,67 @@ class PDFService:
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
-            line-height: 1.6;
+            line-height: 1.4;
             color: #1a1a1a;
             background: #ffffff;
-            padding: 30px 40px;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
         }
 
         .header {
             text-align: center;
-            padding: 40px 0;
-            border-bottom: 4px solid #1a1a2e;
-            margin-bottom: 40px;
+            padding: 25px 0;
+            border-bottom: 3px solid #1a1a2e;
+            margin-bottom: 25px;
         }
 
         .header h1 {
-            font-size: 36px;
+            font-size: 24px;
             font-weight: 700;
             color: #1a1a2e;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
 
         .header .meta {
-            font-size: 14px;
+            font-size: 12px;
             color: #666;
         }
 
         .card {
             background: #ffffff;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 25px;
-            margin-bottom: 25px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 15px 0;
+            margin-bottom: 20px;
             page-break-inside: avoid;
         }
 
+        .card.with-border {
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 15px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+        }
+
         .card-title {
-            font-size: 22px;
+            font-size: 16px;
             font-weight: 600;
             color: #1a1a2e;
-            margin-bottom: 20px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid #f0f0f0;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e5e7eb;
         }
 
         .sentiment-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            margin-top: 15px;
+            gap: 10px;
+            margin-top: 10px;
         }
 
         .sentiment-box {
             text-align: center;
-            padding: 20px 15px;
-            border-radius: 6px;
+            padding: 12px 10px;
+            border-radius: 4px;
             background: #f8f9fa;
         }
 
@@ -434,13 +442,13 @@ class PDFService:
         .sentiment-box.negative { background: #f8d7da; }
 
         .sentiment-label {
-            font-size: 12px;
+            font-size: 10px;
             color: #666;
-            margin-bottom: 8px;
+            margin-bottom: 5px;
         }
 
         .sentiment-value {
-            font-size: 28px;
+            font-size: 20px;
             font-weight: 700;
         }
 
@@ -449,47 +457,70 @@ class PDFService:
         .sentiment-value.neutral-color { color: #6b7280; }
 
         .section {
-            margin-bottom: 20px;
-        }
-
-        .section-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: #1a1a2e;
             margin-bottom: 12px;
         }
 
+        .section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1a1a2e;
+            margin-bottom: 8px;
+        }
+
         .section-content {
-            font-size: 14px;
-            line-height: 1.8;
+            font-size: 12px;
+            line-height: 1.5;
             color: #374151;
         }
 
         .highlight-box {
             background: #f8f9fa;
-            border-left: 4px solid #0f3460;
-            padding: 18px 20px;
-            margin: 15px 0;
+            border-left: 3px solid #0f3460;
+            padding: 12px 15px;
+            margin: 10px 0;
             border-radius: 4px;
         }
 
         .list-items {
-            margin-top: 10px;
+            margin-top: 8px;
+            padding-left: 0;
+            list-style: none;
         }
 
         .list-items li {
             margin-bottom: 8px;
-            line-height: 1.7;
+            line-height: 1.6;
             color: #4b5563;
+            font-size: 11px;
+            padding-left: 18px;
+            position: relative;
+        }
+
+        .list-items li:before {
+            content: "•";
+            position: absolute;
+            left: 6px;
+            color: #9ca3af;
+        }
+
+        .list-items.numbered {
+            counter-reset: item;
+        }
+
+        .list-items.numbered li:before {
+            content: counter(item) ".";
+            counter-increment: item;
+            left: 0;
+            width: 16px;
         }
 
         .badge {
             display: inline-block;
-            padding: 6px 14px;
-            border-radius: 4px;
-            font-size: 13px;
+            padding: 4px 10px;
+            border-radius: 3px;
+            font-size: 11px;
             font-weight: 600;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .badge.buy { background: #22c55e; color: white; }
@@ -497,36 +528,37 @@ class PDFService:
         .badge.hold { background: #6b7280; color: white; }
 
         .footer {
-            margin-top: 50px;
-            padding-top: 25px;
-            border-top: 2px solid #e0e0e0;
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
             text-align: center;
         }
 
         .footer p {
-            font-size: 11px;
+            font-size: 9px;
             color: #9ca3af;
-            line-height: 1.6;
+            line-height: 1.4;
         }
 
         .disclaimer {
             background: #fef3c7;
             border: 1px solid #fbbf24;
-            border-radius: 6px;
-            padding: 20px;
-            margin-top: 30px;
+            border-radius: 4px;
+            padding: 12px;
+            margin-top: 20px;
+            page-break-inside: avoid;
         }
 
         .disclaimer-title {
-            font-size: 14px;
+            font-size: 11px;
             font-weight: 600;
             color: #92400e;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
         }
 
         .disclaimer-text {
-            font-size: 12px;
-            line-height: 1.7;
+            font-size: 10px;
+            line-height: 1.5;
             color: #78350f;
         }
 
@@ -548,7 +580,7 @@ class PDFService:
     </div>
 
     <!-- Sentiment Analysis Card -->
-    <div class="card">
+    <div class="card with-border">
         <div class="card-title">감성 분석 결과</div>
         <p class="section-content">{{ total_count }}개의 뉴스를 분석했습니다</p>
         <div class="sentiment-grid">
@@ -579,7 +611,7 @@ class PDFService:
         {% if key_findings %}
         <div class="highlight-box">
             <div class="section-title">주요 발견사항:</div>
-            <ul class="list-items">
+            <ul class="list-items numbered">
                 {% for finding in key_findings %}
                 <li>{{ finding }}</li>
                 {% endfor %}
@@ -636,10 +668,118 @@ class PDFService:
         <div class="card-title">2. 주가 영향 분석</div>
         <p class="section-content">{{ price_overview }}</p>
 
+        {% if expected_changes %}
+        <div class="section" style="margin-top: 20px;">
+            <div class="section-title">예상 주가 변동:</div>
+            <div style="padding-left: 15px;">
+                {% if expected_changes.shortTerm %}
+                <p class="section-content" style="margin-bottom: 8px;"><strong>단기(1-2주):</strong> {{ expected_changes.shortTerm }}</p>
+                {% endif %}
+                {% if expected_changes.mediumTerm %}
+                <p class="section-content" style="margin-bottom: 8px;"><strong>중기(1-3개월):</strong> {{ expected_changes.mediumTerm }}</p>
+                {% endif %}
+                {% if expected_changes.longTerm %}
+                <p class="section-content" style="margin-bottom: 8px;"><strong>장기(6개월 이상):</strong> {{ expected_changes.longTerm }}</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if related_sectors %}
+        <div class="section" style="margin-top: 15px;">
+            <div class="section-title">관련 섹터 영향:</div>
+            <ul class="list-items">
+                {% for sector in related_sectors %}
+                <li>{{ sector }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
         {% if investment_point %}
         <div class="highlight-box" style="margin-top: 20px;">
             <div class="section-title">투자 포인트:</div>
             <p class="section-content">{{ investment_point }}</p>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Competitor Analysis Card -->
+    {% if competitor_overview or competitors_list or market_outlook %}
+    <div class="card">
+        <div class="card-title">3. 경쟁사 분석</div>
+        {% if competitor_overview %}
+        <p class="section-content">{{ competitor_overview }}</p>
+        {% endif %}
+
+        {% if competitors_list %}
+        <div class="section" style="margin-top: 20px;">
+            <div class="section-title">경쟁사 현황:</div>
+            <div style="padding-left: 15px;">
+                {% for competitor in competitors_list %}
+                <p class="section-content" style="margin-bottom: 10px;"><strong>{{ competitor.name }}</strong></p>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if market_outlook %}
+        <div class="highlight-box" style="margin-top: 20px;">
+            <div class="section-title">시장 전망:</div>
+            <p class="section-content">{{ market_outlook }}</p>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Risk Factors Card -->
+    {% if risk_overview or technical_risks or regulatory_risks or market_risks %}
+    <div class="card">
+        <div class="card-title">4. 리스크 요인</div>
+        {% if risk_overview %}
+        <p class="section-content">{{ risk_overview }}</p>
+        {% endif %}
+
+        <div class="section" style="margin-top: 20px;">
+            {% if technical_risks %}
+            <div style="margin-bottom: 15px;">
+                <div class="section-title">기술적 리스크:</div>
+                <ul class="list-items">
+                    {% for risk in technical_risks %}
+                    <li>{{ risk }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if regulatory_risks %}
+            <div style="margin-bottom: 15px;">
+                <div class="section-title">규제 리스크:</div>
+                <ul class="list-items">
+                    {% for risk in regulatory_risks %}
+                    <li>{{ risk }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if market_risks %}
+            <div style="margin-bottom: 15px;">
+                <div class="section-title">시장 리스크:</div>
+                <ul class="list-items">
+                    {% for risk in market_risks %}
+                    <li>{{ risk }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if mitigation %}
+        <div class="highlight-box" style="margin-top: 20px;">
+            <div class="section-title">대응 전략:</div>
+            <p class="section-content">{{ mitigation }}</p>
         </div>
         {% endif %}
     </div>
@@ -655,14 +795,31 @@ class PDFService:
             <span class="badge {{ investment_class }}">{{ investment_recommendation }}</span>
         </div>
 
+        {% if target_prices %}
+        <div class="section" style="margin-top: 20px;">
+            <div class="section-title">목표주가:</div>
+            <div style="padding-left: 15px;">
+                {% if target_prices.shortTerm %}
+                <p class="section-content" style="margin-bottom: 8px;"><strong>단기(3개월):</strong> {{ target_prices.shortTerm }}</p>
+                {% endif %}
+                {% if target_prices.mediumTerm %}
+                <p class="section-content" style="margin-bottom: 8px;"><strong>중기(6개월):</strong> {{ target_prices.mediumTerm }}</p>
+                {% endif %}
+                {% if target_prices.longTerm %}
+                <p class="section-content" style="margin-bottom: 8px;"><strong>장기(12개월):</strong> {{ target_prices.longTerm }}</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
         {% if investment_reasons %}
         <div class="section" style="margin-top: 20px;">
             <div class="section-title">투자 근거:</div>
-            <ol class="list-items">
+            <ul class="list-items numbered">
                 {% for reason in investment_reasons %}
                 <li>{{ reason }}</li>
                 {% endfor %}
-            </ol>
+            </ul>
         </div>
         {% endif %}
 
@@ -676,15 +833,32 @@ class PDFService:
             </ul>
         </div>
         {% endif %}
+
+        {% if risk_warning %}
+        <div class="highlight-box" style="margin-top: 20px; background: #fef3c7; border-left-color: #fbbf24;">
+            <div class="section-title" style="color: #92400e;">리스크:</div>
+            <p class="section-content" style="color: #78350f;">{{ risk_warning }}</p>
+        </div>
+        {% endif %}
     </div>
     {% endif %}
 
     <!-- Conclusion Card -->
-    {% if conclusion_opinion or conclusion_perspective %}
+    {% if conclusion_summary or conclusion_opinion or conclusion_perspective %}
     <div class="card">
         <div class="card-title">6. 결론</div>
+        {% if conclusion_summary %}
+        <div class="highlight-box">
+            <div class="section-title">핵심 요약:</div>
+            <ul class="list-items">
+                {% for item in conclusion_summary %}
+                <li>{{ item }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
         {% if conclusion_opinion %}
-        <div class="section">
+        <div class="section" style="margin-top: 20px;">
             <div class="section-title">최종 의견:</div>
             <p class="section-content">{{ conclusion_opinion }}</p>
         </div>
@@ -714,7 +888,7 @@ class PDFService:
 </html>
         """
 
-        # 각 섹션에서 리스트 아이템 추출
+        # 각 섹션에서 리스트 아이템 추출 (제한 없이 전체)
         key_findings = []
         for line in summary_section.split('\n'):
             if line.strip() and (line.strip()[0].isdigit() or line.startswith('-')):
@@ -729,10 +903,10 @@ class PDFService:
         if investment_section:
             if '투자 근거:' in investment_section:
                 reasons_text = investment_section.split('투자 근거:')[1].split('모니터링')[0]
-                investment_reasons = [line.strip().lstrip('0123456789.-) ') for line in reasons_text.split('\n') if line.strip() and line.strip()[0].isdigit()]
+                investment_reasons = [line.strip().lstrip('0123456789.-) ') for line in reasons_text.split('\n') if line.strip() and (line.strip()[0].isdigit() or line.startswith('-'))]
             if '모니터링 포인트:' in investment_section:
                 monitoring_text = investment_section.split('모니터링 포인트:')[1]
-                monitoring_points = [line.strip().lstrip('0123456789.-) ') for line in monitoring_text.split('\n') if line.strip() and line.strip()[0].isdigit()]
+                monitoring_points = [line.strip().lstrip('0123456789.-) ') for line in monitoring_text.split('\n') if line.strip() and (line.strip()[0].isdigit() or line.startswith('-'))]
 
         # 투자 권고 추출
         investment_recommendation = 'HOLD'
@@ -746,6 +920,88 @@ class PDFService:
             investment_recommendation = '보유 (HOLD)'
             investment_class = 'hold'
 
+        # 목표주가 추출
+        target_prices = {}
+        if '목표주가:' in investment_section:
+            target_section = investment_section.split('목표주가:')[1].split('투자 근거:')[0] if '투자 근거:' in investment_section else investment_section.split('목표주가:')[1]
+            for line in target_section.split('\n'):
+                if '단기(3개월):' in line:
+                    target_prices['shortTerm'] = line.split('단기(3개월):')[1].strip()
+                elif '중기(6개월):' in line:
+                    target_prices['mediumTerm'] = line.split('중기(6개월):')[1].strip()
+                elif '장기(12개월):' in line:
+                    target_prices['longTerm'] = line.split('장기(12개월):')[1].strip()
+
+        # 리스크 경고 추출
+        risk_warning = ''
+        if '리스크:' in investment_section:
+            risk_warning = investment_section.split('리스크:')[1].strip()
+
+        # 예상 주가 변동 추출
+        expected_changes = {}
+        if '예상 주가 변동:' in price_impact_section:
+            change_section = price_impact_section.split('예상 주가 변동:')[1].split('관련 섹터')[0] if '관련 섹터' in price_impact_section else price_impact_section.split('예상 주가 변동:')[1]
+            for line in change_section.split('\n'):
+                if '단기(1-2주):' in line:
+                    expected_changes['shortTerm'] = line.split('단기(1-2주):')[1].strip()
+                elif '중기(1-3개월):' in line:
+                    expected_changes['mediumTerm'] = line.split('중기(1-3개월):')[1].strip()
+                elif '장기(6개월 이상):' in line:
+                    expected_changes['longTerm'] = line.split('장기(6개월 이상):')[1].strip()
+
+        # 관련 섹터 영향 추출
+        related_sectors = []
+        if '관련 섹터 영향:' in price_impact_section:
+            sector_section = price_impact_section.split('관련 섹터 영향:')[1].split('투자 포인트:')[0] if '투자 포인트:' in price_impact_section else price_impact_section.split('관련 섹터 영향:')[1]
+            related_sectors = extract_list_items(sector_section)
+
+        # 경쟁사 분석 추출
+        competitor_overview = ''
+        competitors_list = []
+        market_outlook = ''
+        if competitor_section:
+            competitor_overview = competitor_section.split('경쟁사 현황:')[0].strip() if '경쟁사 현황:' in competitor_section else ''
+            market_outlook = competitor_section.split('시장 전망:')[1].strip() if '시장 전망:' in competitor_section else ''
+
+            # 경쟁사 현황 파싱
+            if '경쟁사 현황:' in competitor_section:
+                competitors_text = competitor_section.split('경쟁사 현황:')[1].split('시장 전망:')[0] if '시장 전망:' in competitor_section else competitor_section.split('경쟁사 현황:')[1]
+                # 간단한 파싱 - 줄 단위로 처리
+                competitor_lines = [line.strip() for line in competitors_text.split('\n') if line.strip() and not line.strip().startswith('-')]
+                for line in competitor_lines:
+                    if line and ':' not in line and not line.startswith('-'):
+                        competitors_list.append({'name': line, 'points': []})
+
+        # 리스크 요인 추출
+        risk_overview = ''
+        technical_risks = []
+        regulatory_risks = []
+        market_risks = []
+        mitigation = ''
+        if risk_section:
+            risk_overview = risk_section.split('기술적 리스크:')[0].strip() if '기술적 리스크:' in risk_section else ''
+
+            if '기술적 리스크:' in risk_section:
+                tech_text = risk_section.split('기술적 리스크:')[1].split('규제 리스크:')[0] if '규제 리스크:' in risk_section else risk_section.split('기술적 리스크:')[1]
+                technical_risks = extract_list_items(tech_text)
+
+            if '규제 리스크:' in risk_section:
+                reg_text = risk_section.split('규제 리스크:')[1].split('시장 리스크:')[0] if '시장 리스크:' in risk_section else risk_section.split('규제 리스크:')[1]
+                regulatory_risks = extract_list_items(reg_text)
+
+            if '시장 리스크:' in risk_section:
+                market_text = risk_section.split('시장 리스크:')[1].split('대응 전략:')[0] if '대응 전략:' in risk_section else risk_section.split('시장 리스크:')[1]
+                market_risks = extract_list_items(market_text)
+
+            if '대응 전략:' in risk_section:
+                mitigation = risk_section.split('대응 전략:')[1].strip()
+
+        # 결론의 핵심 요약 추출
+        conclusion_summary = []
+        if '핵심 요약:' in conclusion_section:
+            summary_text = conclusion_section.split('핵심 요약:')[1].split('최종 의견:')[0] if '최종 의견:' in conclusion_section else conclusion_section.split('핵심 요약:')[1]
+            conclusion_summary = extract_list_items(summary_text)
+
         template = Template(template_html)
         return template.render(
             symbol=symbol,
@@ -753,19 +1009,32 @@ class PDFService:
             total_count=sentiment_data['positive'] + sentiment_data['neutral'] + sentiment_data['negative'],
             sentiment=sentiment_data,
             summary_overview=summary_section.split('주요 발견사항:')[0].strip() if '주요 발견사항:' in summary_section else summary_section,
-            key_findings=key_findings[:5],
-            market_overview=market_section.split('긍정 요인:')[0].strip() if '긍정 요인:' in market_section else market_section[:300],
-            positive_factors=positive_factors[:5],
-            neutral_factors=neutral_factors[:5],
-            negative_factors=negative_factors[:5],
-            price_overview=price_impact_section.split('투자 포인트:')[0].strip() if '투자 포인트:' in price_impact_section else price_impact_section[:300],
+            key_findings=key_findings,
+            market_overview=market_section.split('긍정 요인:')[0].strip() if '긍정 요인:' in market_section else market_section,
+            positive_factors=positive_factors,
+            neutral_factors=neutral_factors,
+            negative_factors=negative_factors,
+            price_overview=price_impact_section.split('예상 주가 변동:')[0].strip() if '예상 주가 변동:' in price_impact_section else price_impact_section.split('관련 섹터')[0].strip() if '관련 섹터' in price_impact_section else price_impact_section.split('투자 포인트:')[0].strip() if '투자 포인트:' in price_impact_section else price_impact_section,
+            expected_changes=expected_changes,
+            related_sectors=related_sectors,
             investment_point=price_impact_section.split('투자 포인트:')[1].strip() if '투자 포인트:' in price_impact_section else '',
+            competitor_overview=competitor_overview,
+            competitors_list=competitors_list,
+            market_outlook=market_outlook,
+            risk_overview=risk_overview,
+            technical_risks=technical_risks,
+            regulatory_risks=regulatory_risks,
+            market_risks=market_risks,
+            mitigation=mitigation,
             investment_recommendation=investment_recommendation,
             investment_class=investment_class,
-            investment_reasons=investment_reasons[:5],
-            monitoring_points=monitoring_points[:5],
-            conclusion_opinion=conclusion_section.split('\n')[0] if conclusion_section else '',
-            conclusion_perspective='\n'.join(conclusion_section.split('\n')[1:]) if conclusion_section and len(conclusion_section.split('\n')) > 1 else ''
+            target_prices=target_prices,
+            investment_reasons=investment_reasons,
+            monitoring_points=monitoring_points,
+            risk_warning=risk_warning,
+            conclusion_summary=conclusion_summary,
+            conclusion_opinion=conclusion_section.split('최종 의견:')[1].split('\n')[0].strip() if '최종 의견:' in conclusion_section else conclusion_section.split('\n')[0] if conclusion_section else '',
+            conclusion_perspective=conclusion_section.split('최종 의견:')[1].split('\n', 1)[1].strip() if '최종 의견:' in conclusion_section and len(conclusion_section.split('최종 의견:')[1].split('\n', 1)) > 1 else ''
         )
 
     def _render_stock_analysis_html(

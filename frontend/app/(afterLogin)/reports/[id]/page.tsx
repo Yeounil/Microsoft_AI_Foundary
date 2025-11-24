@@ -34,7 +34,7 @@ export default function ReportDetailPage() {
     try {
       console.log('백엔드에서 PDF 생성 중...');
 
-      // 리포트 전체 데이터를 뉴스 데이터 형태로 변환
+      // 리포트 전체 데이터를 뉴스 데이터 형태로 변환 (모든 섹션 포함)
       const newsData = [
         {
           title: reportData.title || `${report.symbol} 뉴스 종합 분석 레포트`,
@@ -69,11 +69,51 @@ ${reportData.marketReaction?.negativeFactors?.map((f: string, i: number) => `- $
 ## 주가 영향 분석
 ${reportData.priceImpact?.overview || ''}
 
+예상 주가 변동:
+- 단기(1-2주): ${reportData.priceImpact?.expectedChange?.shortTerm || ''}
+- 중기(1-3개월): ${reportData.priceImpact?.expectedChange?.mediumTerm || ''}
+- 장기(6개월 이상): ${reportData.priceImpact?.expectedChange?.longTerm || ''}
+
+관련 섹터 영향:
+${reportData.priceImpact?.relatedSectors?.map((s: any) => `- ${s.sector}: ${s.impact}`).join('\n') || ''}
+
 투자 포인트:
 ${reportData.priceImpact?.investmentPoint || ''}
 
+## 경쟁사 분석
+${reportData.competitorAnalysis?.overview || ''}
+
+경쟁사 현황:
+${reportData.competitorAnalysis?.competitors?.map((c: any) => `
+${c.name}:
+${c.analysis?.map((a: string) => `- ${a}`).join('\n') || ''}
+`).join('\n') || ''}
+
+시장 전망:
+${reportData.competitorAnalysis?.marketOutlook || ''}
+
+## 리스크 요인
+${reportData.riskFactors?.overview || ''}
+
+기술적 리스크:
+${reportData.riskFactors?.technical?.map((r: string) => `- ${r}`).join('\n') || ''}
+
+규제 리스크:
+${reportData.riskFactors?.regulatory?.map((r: string) => `- ${r}`).join('\n') || ''}
+
+시장 리스크:
+${reportData.riskFactors?.market?.map((r: string) => `- ${r}`).join('\n') || ''}
+
+대응 전략:
+${reportData.riskFactors?.mitigation || ''}
+
 ## 투자 권고
 추천: ${reportData.investmentRecommendation?.recommendation || 'HOLD'}
+
+목표주가:
+- 단기(3개월): ${reportData.investmentRecommendation?.targetPrices?.shortTerm || ''}
+- 중기(6개월): ${reportData.investmentRecommendation?.targetPrices?.mediumTerm || ''}
+- 장기(12개월): ${reportData.investmentRecommendation?.targetPrices?.longTerm || ''}
 
 투자 근거:
 ${reportData.investmentRecommendation?.reasons?.map((r: string, i: number) => `${i + 1}. ${r}`).join('\n') || ''}
@@ -81,8 +121,16 @@ ${reportData.investmentRecommendation?.reasons?.map((r: string, i: number) => `$
 모니터링 포인트:
 ${reportData.investmentRecommendation?.monitoringPoints?.map((p: string, i: number) => `${i + 1}. ${p}`).join('\n') || ''}
 
+리스크:
+${reportData.investmentRecommendation?.riskWarning || ''}
+
 ## 결론
+핵심 요약:
+${reportData.conclusion?.summary?.map((s: string) => `- ${s}`).join('\n') || ''}
+
+최종 의견:
 ${reportData.conclusion?.finalOpinion || ''}
+
 ${reportData.conclusion?.longTermPerspective || ''}
           `.trim()
         }

@@ -97,8 +97,8 @@ app.include_router(embeddings.router, prefix="/api/v2/embeddings", tags=["embedd
 # RAG (Retrieval Augmented Generation) API - 제거됨: GPT-5 사용 최소화
 # app.include_router(rag.router, prefix="/api/v2/rag", tags=["rag"])
 
-# Real-time WebSocket API (FMP) - 비활성화: 프론트엔드에서 직접 FMP WebSocket 사용
-# app.include_router(websocket_realtime.router, prefix="/api/v2/realtime", tags=["realtime"])
+# Real-time WebSocket API (FMP)
+app.include_router(websocket_realtime.router, prefix="/api/v2/realtime", tags=["realtime"])
 
 # News AI Score API (GPT-5 기반 뉴스 영향도 평가)
 app.include_router(news_ai_score.router, prefix="/api/v2/news-ai-score", tags=["news-ai-score"])
