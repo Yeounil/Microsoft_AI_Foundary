@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import { Search, User, LogOut, Menu, X, TrendingUp, Moon, Sun, Bell, Settings } from "lucide-react";
+import { Search, User, LogOut, Menu, X, TrendingUp, Moon, Sun, Bell, Settings, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -150,6 +150,9 @@ export default function Header() {
                     <DropdownMenuItem onClick={() => router.push("/profile")} className="cursor-pointer">
                       프로필
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/subscriptions")} className="cursor-pointer">
+                      내 구독 종목
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => router.push("/settings")} className="cursor-pointer">
                       설정
                     </DropdownMenuItem>
@@ -259,6 +262,17 @@ export default function Header() {
                         <span>프로필</span>
                       </button>
 
+                      {/* 내 구독 종목 */}
+                      <button
+                        onClick={() => {
+                          setIsMobileMenuOpen(false);
+                          router.push("/subscriptions");
+                        }}
+                        className="flex items-center gap-3 w-full px-4 py-3 rounded-lg hover:bg-muted min-h-12 text-left"
+                      >
+                        <Mail className="h-5 w-5" />
+                        <span>내 구독 종목</span>
+                      </button>
 
                       {/* 설정 */}
                       <button

@@ -4,6 +4,7 @@ import { ReactNode, useState, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { ThemeProvider } from 'next-themes';
+import { Toaster } from 'sonner';
 
 // Service Worker 등록
 function useServiceWorker() {
@@ -88,6 +89,7 @@ export default function Providers({ children }: ProvidersProps) {
       disableTransitionOnChange
     >
       <QueryClientProvider client={queryClient}>
+        <Toaster position="top-right" richColors closeButton />
         {children}
         {process.env.NODE_ENV === 'development' && <ReactQueryDevtools />}
       </QueryClientProvider>

@@ -76,10 +76,21 @@ class SubscriptionService:
                 }
 
         except Exception as e:
+            import traceback
+            error_detail = traceback.format_exc()
             logger.error(f"[SUBSCRIPTION] Error creating subscription: {str(e)}")
+            logger.error(f"[SUBSCRIPTION] Full error: {error_detail}")
+
+            # Supabase 에러 상세 정보 추출
+            error_message = str(e)
+            if hasattr(e, 'message'):
+                error_message = e.message
+            elif hasattr(e, 'details'):
+                error_message = e.details
+
             return {
                 'status': 'error',
-                'error': str(e)
+                'error': error_message
             }
 
     async def get_user_subscriptions(

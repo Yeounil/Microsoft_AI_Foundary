@@ -9,6 +9,8 @@ from datetime import datetime
 from typing import Dict, Any, Optional, List
 import resend
 from jinja2 import Template
+import base64
+import httpx
 
 from app.db.supabase_client import get_supabase
 from app.core.config import settings
@@ -43,19 +45,47 @@ class EmailService:
             html_content = self._render_report_template(report_data)
 
             # 이메일 발송 데이터
+            # Resend 샌드박스 이메일 사용 (테스트용)
             email_data = {
-                'from': 'AI Investment Analysis <noreply@yourdomain.com>',
+                'from': 'AI Investment Analysis <onboarding@resend.dev>',
                 'to': to,
                 'subject': subject,
                 'html': html_content
             }
 
             # PDF 첨부 파일이 있을 경우
-            # Note: Resend에서 첨부 파일은 URL이 아닌 파일 내용이 필요함
-            # 실제 구현 시 URL에서 파일 다운로드 후 첨부해야 함
+            if attachment_url:
+                try:
+                    logger.info(f"[EMAIL] Downloading PDF from {attachment_url}")
+
+                    # URL에서 PDF 다운로드
+                    async with httpx.AsyncClient() as client:
+                        pdf_response = await client.get(attachment_url)
+                        pdf_response.raise_for_status()
+                        pdf_content = pdf_response.content
+
+                    # Base64 인코딩
+                    pdf_base64 = base64.b64encode(pdf_content).decode('utf-8')
+
+                    # 첨부 파일 추가
+                    email_data['attachments'] = [
+                        {
+                            'filename': f"report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+                            'content': pdf_base64
+                        }
+                    ]
+
+                    logger.info(f"[EMAIL] PDF attached successfully, size: {len(pdf_content)} bytes")
+
+                except Exception as pdf_error:
+                    logger.error(f"[EMAIL] Failed to attach PDF: {str(pdf_error)}")
+                    # PDF 첨부 실패해도 이메일은 발송
 
             # 이메일 발송
             response = resend.Emails.send(email_data)
+
+            # Resend 응답 로깅
+            logger.info(f"[EMAIL] Resend response: {response}")
 
             # 발송 이력 저장
             history_record = {
@@ -68,7 +98,7 @@ class EmailService:
 
             self.supabase.table('email_history').insert(history_record).execute()
 
-            logger.info(f"[EMAIL] Email sent successfully to {to}")
+            logger.info(f"[EMAIL] Email sent successfully to {to}, email_id: {response.get('id')}")
 
             return {
                 'status': 'success',
@@ -110,8 +140,9 @@ class EmailService:
 
             html_content = self._render_subscription_confirmation_template(subscription_data)
 
+            # Resend 샌드박스 이메일 사용 (테스트용)
             email_data = {
-                'from': 'AI Investment Analysis <noreply@yourdomain.com>',
+                'from': 'AI Investment Analysis <onboarding@resend.dev>',
                 'to': to,
                 'subject': 'Subscription Confirmation - AI Investment Reports',
                 'html': html_content
@@ -266,6 +297,10 @@ class EmailService:
     <div class="footer">
         <p>This is an automated email from AI Investment Analysis platform.</p>
         <p>To manage your subscription, visit your account settings.</p>
+        <p style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 5px; color: #856404;">
+            📬 <strong>Important:</strong> If you don't see our emails in your inbox, please check your spam/junk folder
+            and mark this email as "Not Spam" to ensure future reports arrive in your inbox.
+        </p>
     </div>
 </body>
 </html>

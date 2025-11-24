@@ -106,11 +106,8 @@ async def get_subscriptions(
             user_id=current_user["user_id"]
         )
 
-        return {
-            "user_id": current_user["user_id"],
-            "total_count": len(subscriptions),
-            "subscriptions": subscriptions
-        }
+        # 프론트엔드가 배열을 기대하므로 직접 배열 반환
+        return subscriptions
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"구독 목록 조회 오류: {str(e)}")
@@ -217,26 +214,36 @@ async def delete_subscription(
 @router.post("/{subscription_id}/toggle")
 async def toggle_subscription_status(
     subscription_id: str,
-    is_active: bool = Query(..., description="구독 활성화 여부"),
     current_user: dict = Depends(get_current_user)
 ):
-    """구독 활성화/비활성화"""
+    """구독 활성화/비활성화 토글"""
     try:
         subscription_service = SubscriptionService()
+
+        # 현재 구독 정보 조회
+        subscription = await subscription_service.get_subscription(subscription_id)
+
+        if not subscription:
+            raise HTTPException(status_code=404, detail="Subscription not found")
+
+        # 권한 확인
+        if subscription.get('user_id') != current_user["user_id"]:
+            raise HTTPException(status_code=403, detail="Access denied")
+
+        # 현재 상태의 반대로 토글
+        new_status = not subscription.get('is_active', True)
 
         result = await subscription_service.toggle_subscription_status(
             subscription_id=subscription_id,
             user_id=current_user["user_id"],
-            is_active=is_active
+            is_active=new_status
         )
 
         if result.get('status') == 'error':
             raise HTTPException(status_code=400, detail=result.get('error'))
 
-        return {
-            "message": f"Subscription {'activated' if is_active else 'deactivated'} successfully",
-            "subscription": result.get('subscription')
-        }
+        # 프론트엔드가 Subscription 객체를 기대하므로 직접 반환
+        return result.get('subscription')
 
     except HTTPException:
         raise
@@ -271,7 +278,19 @@ async def send_test_email(
         )
 
         if result.get('status') == 'error':
-            raise HTTPException(status_code=500, detail=result.get('error'))
+            error_msg = result.get('error', '알 수 없는 오류')
+
+            # Resend 도메인 인증 에러 처리
+            if 'domain is not verified' in error_msg:
+                raise HTTPException(
+                    status_code=503,
+                    detail="이메일 서비스가 아직 설정되지 않았습니다. Resend에서 도메인 인증을 완료해주세요."
+                )
+
+            raise HTTPException(
+                status_code=500,
+                detail=f"이메일 발송 실패: {error_msg}"
+            )
 
         return {
             "message": "Test email sent successfully",

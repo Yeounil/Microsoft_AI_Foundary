@@ -15,6 +15,7 @@ async def get_current_user(
     """현재 인증된 사용자 가져오기 (Supabase)"""
     from jose import jwt, JWTError
     from app.core.config import settings
+    from app.db.supabase_client import get_supabase
 
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -42,6 +43,7 @@ async def get_current_user(
         # JWT에서 직접 user_id와 username 추출
         user_id: str = payload.get("user_id")
         username: str = payload.get("sub")
+        email: str = payload.get("email", "")
 
         if not user_id or not username:
             logger.error(f"토큰에 user_id 또는 username 없음 - user_id: {user_id}, username: {username}")
@@ -49,11 +51,39 @@ async def get_current_user(
 
         logger.info(f"토큰 검증 성공 - user_id: {user_id}, username: {username}")
 
-        # DB 조회 없이 JWT 정보만으로 반환 (더 빠름)
+        # DB에서 사용자 확인 및 없으면 자동 생성 (구글 로그인 사용자)
+        supabase = get_supabase()
+        try:
+            # 사용자 존재 여부 확인
+            existing_user = supabase.table("auth_users").select("*").eq("id", user_id).execute()
+
+            if not existing_user.data or len(existing_user.data) == 0:
+                # 사용자가 없으면 자동 생성 (구글 로그인)
+                logger.info(f"[AUTH] 구글 로그인 사용자 자동 생성 - user_id: {user_id}")
+
+                new_user = {
+                    "id": user_id,
+                    "username": username,
+                    "email": email,
+                    "hashed_password": ""  # 구글 로그인은 비밀번호 없음
+                }
+
+                create_result = supabase.table("auth_users").insert(new_user).execute()
+
+                if create_result.data and len(create_result.data) > 0:
+                    logger.info(f"[AUTH] 구글 로그인 사용자 생성 완료 - user_id: {user_id}")
+                else:
+                    logger.error(f"[AUTH] 사용자 생성 실패 - user_id: {user_id}")
+
+        except Exception as db_error:
+            logger.error(f"[AUTH] DB 작업 중 오류: {str(db_error)}")
+            # DB 오류가 있어도 JWT가 유효하면 계속 진행
+
+        # JWT 정보 반환
         return {
             "user_id": user_id,
             "username": username,
-            "email": payload.get("email", "")  # email이 없을 수 있음
+            "email": email
         }
 
     except JWTError as e:
