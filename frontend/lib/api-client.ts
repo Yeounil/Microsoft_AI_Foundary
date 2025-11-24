@@ -372,6 +372,39 @@ class ApiClient {
     return response.data;
   }
 
+  // PDF methods
+  async generateNewsReportPDF(symbol: string, newsData: any[], analysisSummary?: string) {
+    const response = await this.client.post('/api/v2/pdf/generate/news-report', {
+      symbol,
+      news_data: newsData,
+      analysis_summary: analysisSummary,
+    });
+    return response.data;
+  }
+
+  async generateStockAnalysisPDF(symbol: string, analysisData: any) {
+    const response = await this.client.post('/api/v2/pdf/generate/stock-analysis', {
+      symbol,
+      analysis_data: analysisData,
+    });
+    return response.data;
+  }
+
+  async generateComprehensiveReportPDF(symbols: string[], reportData: any) {
+    const response = await this.client.post('/api/v2/pdf/generate/comprehensive-report', {
+      symbols,
+      report_data: reportData,
+    });
+    return response.data;
+  }
+
+  async getPDFHistory(limit: number = 20) {
+    const response = await this.client.get('/api/v2/pdf/history', {
+      params: { limit },
+    });
+    return response.data;
+  }
+
   // Generic request method
   async request<T = unknown>(config: AxiosRequestConfig): Promise<T> {
     const response = await this.client.request<T>(config);

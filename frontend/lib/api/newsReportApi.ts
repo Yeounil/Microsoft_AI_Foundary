@@ -8,7 +8,7 @@ export async function getMyReports(
   limit: number = 20,
   offset: number = 0
 ): Promise<MyReportsResponse> {
-  const response = await apiClient.get('/api/v1/news-report/my-reports', {
+  const response = await apiClient.get<MyReportsResponse>('/api/v1/news-report/my-reports', {
     params: { limit, offset },
   });
   return response.data;
@@ -18,7 +18,7 @@ export async function getMyReports(
  * 특정 레포트 상세 조회
  */
 export async function getReportById(reportId: number): Promise<ReportDetail> {
-  const response = await apiClient.get(`/api/v1/news-report/report/${reportId}`);
+  const response = await apiClient.get<ReportDetail>(`/api/v1/news-report/report/${reportId}`);
   return response.data;
 }
 
@@ -26,7 +26,7 @@ export async function getReportById(reportId: number): Promise<ReportDetail> {
  * 심볼로 최신 레포트 조회
  */
 export async function getReportBySymbol(symbol: string): Promise<ReportDetail> {
-  const response = await apiClient.get(`/api/v1/news-report/${symbol.toUpperCase()}`);
+  const response = await apiClient.get<ReportDetail>(`/api/v1/news-report/${symbol.toUpperCase()}`);
   return response.data;
 }
 
@@ -37,7 +37,7 @@ export async function createReport(
   symbol: string,
   limit: number = 20
 ): Promise<ReportDetail> {
-  const response = await apiClient.post('/api/v1/news-report', {
+  const response = await apiClient.post<ReportDetail>('/api/v1/news-report', {
     symbol: symbol.toUpperCase(),
     limit,
   });

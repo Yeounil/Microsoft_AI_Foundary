@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Download, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,11 +9,11 @@ import { Badge } from '@/components/ui/badge';
 import { useReportDetail } from '@/features/reports/hooks/useReportDetail';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import apiClient from '@/lib/api-client';
 
 export default function ReportDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const reportRef = useRef<HTMLDivElement>(null);
   const reportId = Number(params.id);
 
   const { data: report, isLoading, error } = useReportDetail(reportId);
@@ -28,49 +28,83 @@ export default function ReportDetailPage() {
   };
 
   const generatePDF = async () => {
-    if (!reportRef.current) return;
+    if (!report || !reportData) return;
 
     setIsGeneratingPDF(true);
     try {
-      const [html2canvasModule, jsPDFModule] = await Promise.all([
-        import('html2canvas'),
-        import('jspdf')
-      ]);
-      const html2canvas = html2canvasModule.default;
-      const jsPDF = jsPDFModule.default;
+      console.log('백엔드에서 PDF 생성 중...');
 
-      const canvas = await html2canvas(reportRef.current, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-      });
+      // 리포트 전체 데이터를 뉴스 데이터 형태로 변환
+      const newsData = [
+        {
+          title: reportData.title || `${report.symbol} 뉴스 종합 분석 레포트`,
+          source: 'AI Analysis',
+          published_date: formatDate(report.created_at),
+          sentiment: reportData.investmentRecommendation?.recommendation === 'BUY' ? 'positive' :
+                     reportData.investmentRecommendation?.recommendation === 'SELL' ? 'negative' : 'neutral',
+          content: `
+## 감성 분석
+- 긍정: ${reportData.sentimentDistribution?.positive || 0}개
+- 중립: ${reportData.sentimentDistribution?.neutral || 0}개
+- 부정: ${reportData.sentimentDistribution?.negative || 0}개
 
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-      });
+## 핵심 요약
+${reportData.executiveSummary?.overview || ''}
 
-      const imgWidth = 210;
-      const pageHeight = 297;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = 0;
+주요 발견사항:
+${reportData.executiveSummary?.keyFindings?.map((f: string, i: number) => `${i + 1}. ${f}`).join('\n') || ''}
 
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+## 시장 반응
+${reportData.marketReaction?.overview || ''}
 
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+긍정 요인:
+${reportData.marketReaction?.positiveFactors?.map((f: string, i: number) => `- ${f}`).join('\n') || ''}
+
+중립 요인:
+${reportData.marketReaction?.neutralFactors?.map((f: string, i: number) => `- ${f}`).join('\n') || ''}
+
+부정 요인:
+${reportData.marketReaction?.negativeFactors?.map((f: string, i: number) => `- ${f}`).join('\n') || ''}
+
+## 주가 영향 분석
+${reportData.priceImpact?.overview || ''}
+
+투자 포인트:
+${reportData.priceImpact?.investmentPoint || ''}
+
+## 투자 권고
+추천: ${reportData.investmentRecommendation?.recommendation || 'HOLD'}
+
+투자 근거:
+${reportData.investmentRecommendation?.reasons?.map((r: string, i: number) => `${i + 1}. ${r}`).join('\n') || ''}
+
+모니터링 포인트:
+${reportData.investmentRecommendation?.monitoringPoints?.map((p: string, i: number) => `${i + 1}. ${p}`).join('\n') || ''}
+
+## 결론
+${reportData.conclusion?.finalOpinion || ''}
+${reportData.conclusion?.longTermPerspective || ''}
+          `.trim()
+        }
+      ];
+
+      // 백엔드 API 호출 - Playwright 기반 PDF 생성
+      const response = await apiClient.generateNewsReportPDF(
+        report.symbol.toUpperCase(),
+        newsData,
+        reportData.executiveSummary?.overview || '종합 분석 리포트'
+      );
+
+      if (response.file_url) {
+        // 백엔드에서 생성된 PDF URL로 다운로드
+        console.log('서버 PDF 생성 완료:', response.file_url);
+        window.open(response.file_url, '_blank');
+      } else {
+        throw new Error('PDF URL을 받지 못했습니다.');
       }
-
-      pdf.save(`news-report-${report?.symbol || reportId}.pdf`);
     } catch (error) {
-      console.error('PDF generation failed:', error);
+      console.error('PDF 생성 실패:', error);
+      alert('PDF 생성에 실패했습니다. 나중에 다시 시도해주세요.');
     } finally {
       setIsGeneratingPDF(false);
     }
@@ -144,7 +178,7 @@ export default function ReportDetailPage() {
       </div>
 
       {/* Report Content */}
-      <div ref={reportRef} className="space-y-4 sm:space-y-6 bg-background p-2 sm:p-6">
+      <div className="space-y-4 sm:space-y-6 bg-background p-2 sm:p-6">
         {/* Report Header */}
         <Card>
           <CardHeader className="text-center">

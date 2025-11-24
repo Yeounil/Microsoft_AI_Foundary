@@ -48,6 +48,9 @@ class Settings(BaseSettings):
     # Pinecone Vector DB
     pinecone_api_key: Optional[str] = os.getenv("PINECONE_API_KEY")
 
+    # Email Service
+    resend_api_key: Optional[str] = os.getenv("RESEND_API_KEY")
+
     # Social Login - Kakao
     kakao_client_id: str = os.getenv("KAKAO_CLIENT_ID", "")
     kakao_client_secret: str = os.getenv("KAKAO_CLIENT_SECRET", "")

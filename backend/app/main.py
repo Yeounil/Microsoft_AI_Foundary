@@ -1,3 +1,5 @@
+import sys
+import asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -5,9 +7,14 @@ import logging
 from datetime import datetime
 from typing import Dict, Any
 
+# Windows에서 Playwright subprocess 지원을 위한 Event Loop Policy 설정
+if sys.platform == 'win32':
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+    print(f"[WINDOWS] Event loop policy set to: {asyncio.get_event_loop_policy().__class__.__name__}")
+
 from app.core.config import settings
 from app.api import stocks, stock_data
-from app.api import auth_supabase, social_auth, analysis_supabase, news_supabase, recommendations_supabase, news_v1, analysis_v1, embeddings, websocket_realtime, news_ai_score, news_translation, news_report_v1
+from app.api import auth_supabase, social_auth, analysis_supabase, news_supabase, recommendations_supabase, news_v1, analysis_v1, embeddings, websocket_realtime, news_ai_score, news_translation, news_report_v1, pdf, subscriptions
 from app.services.news_scheduler import get_scheduler
 from app.db.supabase_client import get_supabase
 
@@ -98,6 +105,12 @@ app.include_router(news_ai_score.router, prefix="/api/v2/news-ai-score", tags=["
 
 # News Translation API (Claude Sonnet API 기반 뉴스 번역)
 app.include_router(news_translation.router, prefix="/api/v2/news-translation", tags=["news-translation"])
+
+# PDF Generation API
+app.include_router(pdf.router, prefix="/api/v2/pdf", tags=["pdf"])
+
+# Email Subscription API
+app.include_router(subscriptions.router, prefix="/api/v2/subscriptions", tags=["subscriptions"])
 
 # Stock Data Collection API
 app.include_router(stock_data.router)

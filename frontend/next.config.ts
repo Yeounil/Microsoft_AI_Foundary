@@ -6,9 +6,10 @@ const withBundleAnalyzer = bundleAnalyzer({
 });
 
 const nextConfig: NextConfig = {
-  turbopack: {
-    root: ".",
-  },
+  // Turbopack은 현재 Google Fonts와 호환성 문제가 있어 비활성화
+  // turbopack: {
+  //   root: ".",
+  // },
   // 이미지 최적화
   images: {
     formats: ['image/avif', 'image/webp'],

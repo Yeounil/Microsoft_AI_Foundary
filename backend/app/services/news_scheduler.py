@@ -14,6 +14,9 @@ from apscheduler.triggers.date import DateTrigger
 from app.services.news_service import NewsService
 from app.services.fmp_stock_data_service import FMPStockDataService
 from app.services.financial_embedding_service import FinancialEmbeddingService
+from app.services.subscription_service import SubscriptionService
+from app.services.email_service import EmailService
+from app.services.pdf_service import PDFService
 from app.db.supabase_client import get_supabase
 
 logger = logging.getLogger(__name__)
@@ -32,6 +35,9 @@ class NewsScheduler:
         self.scheduler = AsyncIOScheduler()
         self.stock_data_service = FMPStockDataService.get_instance()
         self.embedding_service = FinancialEmbeddingService()
+        self.subscription_service = SubscriptionService()
+        self.email_service = EmailService()
+        self.pdf_service = PDFService()
         self.is_running = False
 
     async def start(self):
@@ -109,6 +115,41 @@ class NewsScheduler:
             replace_existing=True
         )
 
+        # 8. 매일 오전 9시에 일일 구독 이메일 발송
+        self.scheduler.add_job(
+            self._process_daily_emails,
+            trigger='cron',
+            hour=9,
+            minute=0,
+            id='daily_email_subscriptions',
+            name='Process daily email subscriptions at 9 AM',
+            replace_existing=True
+        )
+
+        # 9. 매주 월요일 오전 9시에 주간 구독 이메일 발송
+        self.scheduler.add_job(
+            self._process_weekly_emails,
+            trigger='cron',
+            day_of_week='mon',
+            hour=9,
+            minute=0,
+            id='weekly_email_subscriptions',
+            name='Process weekly email subscriptions on Monday at 9 AM',
+            replace_existing=True
+        )
+
+        # 10. 매월 1일 오전 9시에 월간 구독 이메일 발송
+        self.scheduler.add_job(
+            self._process_monthly_emails,
+            trigger='cron',
+            day=1,
+            hour=9,
+            minute=0,
+            id='monthly_email_subscriptions',
+            name='Process monthly email subscriptions on 1st at 9 AM',
+            replace_existing=True
+        )
+
         # 스케줄러 시작
         self.scheduler.start()
         self.is_running = True
@@ -120,6 +161,9 @@ class NewsScheduler:
         logger.info("[CONFIG] - Daily price history collection at 3 AM")
         logger.info("[CONFIG] - Daily stock indicators embedding at 4 AM")
         logger.info("[CONFIG] - Daily price history embedding at 5 AM")
+        logger.info("[CONFIG] - Daily email subscriptions at 9 AM")
+        logger.info("[CONFIG] - Weekly email subscriptions on Monday at 9 AM")
+        logger.info("[CONFIG] - Monthly email subscriptions on 1st at 9 AM")
 
     async def stop(self):
         """스케줄러 중지"""
@@ -590,6 +634,179 @@ class NewsScheduler:
                 "status": "error",
                 "error": str(e)
             }
+
+    async def _process_daily_emails(self):
+        """일일 구독 이메일 처리"""
+        try:
+            logger.info("========== [SCHEDULED_EMAIL] Daily email subscriptions processing started ==========")
+
+            # 오늘 발송할 일일 구독 조회
+            subscriptions = await self.subscription_service.get_pending_subscriptions('daily')
+
+            if not subscriptions:
+                logger.info("[EMAIL] No daily subscriptions to process")
+                return
+
+            logger.info(f"[EMAIL] Processing {len(subscriptions)} daily subscriptions")
+
+            sent_count = 0
+            failed_count = 0
+
+            for sub in subscriptions:
+                try:
+                    # 뉴스 데이터 수집 (간단한 예시)
+                    symbols = sub.get('symbols', [])
+                    # TODO: 실제 뉴스 데이터 조회 로직 구현
+
+                    # 샘플 리포트 데이터 생성
+                    report_data = {
+                        'symbol': ', '.join(symbols[:3]),
+                        'generated_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                        'executive_summary': f'Daily investment report for {", ".join(symbols[:3])}',
+                        'positive_count': 10,
+                        'neutral_count': 5,
+                        'negative_count': 3,
+                        'web_report_url': 'https://yourdomain.com/reports/daily'
+                    }
+
+                    # 이메일 발송
+                    result = await self.email_service.send_report_email(
+                        to=sub.get('email'),
+                        subject=f"Daily Investment Report - {datetime.now().strftime('%Y-%m-%d')}",
+                        report_data=report_data,
+                        subscription_id=sub.get('id')
+                    )
+
+                    if result.get('status') == 'success':
+                        sent_count += 1
+                        # 다음 발송 시각 업데이트
+                        await self.subscription_service.update_next_send_time(sub.get('id'))
+                    else:
+                        failed_count += 1
+                        logger.warning(f"[EMAIL] Failed to send email to {sub.get('email')}")
+
+                    # 레이트 제한 고려
+                    await asyncio.sleep(0.5)
+
+                except Exception as e:
+                    failed_count += 1
+                    logger.error(f"[EMAIL] Error processing subscription {sub.get('id')}: {str(e)}")
+
+            logger.info(f"[EMAIL] Daily email processing completed: {sent_count} sent, {failed_count} failed")
+            logger.info("========== [SCHEDULED_EMAIL] Daily email processing finished ==========")
+
+        except Exception as e:
+            logger.error(f"[ERROR] Error during daily email processing: {str(e)}")
+
+    async def _process_weekly_emails(self):
+        """주간 구독 이메일 처리"""
+        try:
+            logger.info("========== [SCHEDULED_EMAIL] Weekly email subscriptions processing started ==========")
+
+            subscriptions = await self.subscription_service.get_pending_subscriptions('weekly')
+
+            if not subscriptions:
+                logger.info("[EMAIL] No weekly subscriptions to process")
+                return
+
+            logger.info(f"[EMAIL] Processing {len(subscriptions)} weekly subscriptions")
+
+            sent_count = 0
+            failed_count = 0
+
+            for sub in subscriptions:
+                try:
+                    symbols = sub.get('symbols', [])
+
+                    report_data = {
+                        'symbol': ', '.join(symbols[:3]),
+                        'generated_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                        'executive_summary': f'Weekly investment report for {", ".join(symbols[:3])}',
+                        'positive_count': 45,
+                        'neutral_count': 20,
+                        'negative_count': 10,
+                        'web_report_url': 'https://yourdomain.com/reports/weekly'
+                    }
+
+                    result = await self.email_service.send_report_email(
+                        to=sub.get('email'),
+                        subject=f"Weekly Investment Report - Week of {datetime.now().strftime('%Y-%m-%d')}",
+                        report_data=report_data,
+                        subscription_id=sub.get('id')
+                    )
+
+                    if result.get('status') == 'success':
+                        sent_count += 1
+                        await self.subscription_service.update_next_send_time(sub.get('id'))
+                    else:
+                        failed_count += 1
+
+                    await asyncio.sleep(0.5)
+
+                except Exception as e:
+                    failed_count += 1
+                    logger.error(f"[EMAIL] Error processing subscription {sub.get('id')}: {str(e)}")
+
+            logger.info(f"[EMAIL] Weekly email processing completed: {sent_count} sent, {failed_count} failed")
+            logger.info("========== [SCHEDULED_EMAIL] Weekly email processing finished ==========")
+
+        except Exception as e:
+            logger.error(f"[ERROR] Error during weekly email processing: {str(e)}")
+
+    async def _process_monthly_emails(self):
+        """월간 구독 이메일 처리"""
+        try:
+            logger.info("========== [SCHEDULED_EMAIL] Monthly email subscriptions processing started ==========")
+
+            subscriptions = await self.subscription_service.get_pending_subscriptions('monthly')
+
+            if not subscriptions:
+                logger.info("[EMAIL] No monthly subscriptions to process")
+                return
+
+            logger.info(f"[EMAIL] Processing {len(subscriptions)} monthly subscriptions")
+
+            sent_count = 0
+            failed_count = 0
+
+            for sub in subscriptions:
+                try:
+                    symbols = sub.get('symbols', [])
+
+                    report_data = {
+                        'symbol': ', '.join(symbols[:3]),
+                        'generated_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                        'executive_summary': f'Monthly investment report for {", ".join(symbols[:3])}',
+                        'positive_count': 150,
+                        'neutral_count': 75,
+                        'negative_count': 30,
+                        'web_report_url': 'https://yourdomain.com/reports/monthly'
+                    }
+
+                    result = await self.email_service.send_report_email(
+                        to=sub.get('email'),
+                        subject=f"Monthly Investment Report - {datetime.now().strftime('%B %Y')}",
+                        report_data=report_data,
+                        subscription_id=sub.get('id')
+                    )
+
+                    if result.get('status') == 'success':
+                        sent_count += 1
+                        await self.subscription_service.update_next_send_time(sub.get('id'))
+                    else:
+                        failed_count += 1
+
+                    await asyncio.sleep(0.5)
+
+                except Exception as e:
+                    failed_count += 1
+                    logger.error(f"[EMAIL] Error processing subscription {sub.get('id')}: {str(e)}")
+
+            logger.info(f"[EMAIL] Monthly email processing completed: {sent_count} sent, {failed_count} failed")
+            logger.info("========== [SCHEDULED_EMAIL] Monthly email processing finished ==========")
+
+        except Exception as e:
+            logger.error(f"[ERROR] Error during monthly email processing: {str(e)}")
 
 
 # 전역 스케줄러 인스턴스
