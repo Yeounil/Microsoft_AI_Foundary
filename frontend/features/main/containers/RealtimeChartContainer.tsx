@@ -87,7 +87,7 @@ export function RealtimeChartContainer({
   const { setChartLoading } = useLoadingStore();
 
   // Hooks
-  const chartRef = useChartInitialization(chartContainerRef);
+  const chartRef = useChartInitialization(chartContainerRef, chartMode, timeRange, interval);
   const seriesRef = useChartSeries(chartRef, chartType);
   const { isLoading, priceInfo, setPriceInfo } = useHistoricalData(
     chartRef,

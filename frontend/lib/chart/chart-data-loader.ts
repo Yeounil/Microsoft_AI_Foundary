@@ -59,12 +59,32 @@ export class ChartDataLoader {
       }
 
       // period에 따른 날짜 범위 설정
-      const now = new Date();
-      let daysAgo = 1;
+      let now = new Date();
+
+      // 가장 최근 영업일로 조정 (주말 + 시장 개장 전 처리)
+      const dayOfWeek = now.getDay(); // 0 (일요일) ~ 6 (토요일)
+      const hour = now.getHours();
+
+      // 주말이거나, 월요일 오전(아직 시장 미개장)인 경우 금요일로 조정
+      if (dayOfWeek === 0) {
+        // 일요일 → 금요일로 (2일 전)
+        now = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
+        logger.debug("Weekend detected (Sunday), adjusting to Friday");
+      } else if (dayOfWeek === 6) {
+        // 토요일 → 금요일로 (1일 전)
+        now = new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000);
+        logger.debug("Weekend detected (Saturday), adjusting to Friday");
+      } else if (dayOfWeek === 1 && hour < 23) {
+        // 월요일 23시 전(미국 시장 개장 전) → 금요일로 (3일 전)
+        now = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+        logger.debug("Monday before market open, adjusting to Friday");
+      }
+
+      let daysAgo = 0;  // 기본값을 0으로 변경
 
       switch (period) {
         case "1d":
-          daysAgo = 1;
+          daysAgo = 0;  // 1일 = 같은 날 (from_date = to_date)
           break;
         case "7d":
         case "1w":
@@ -74,7 +94,7 @@ export class ChartDataLoader {
           daysAgo = 30;
           break;
         default:
-          daysAgo = 1;
+          daysAgo = 0;
       }
 
       const fromDateObj = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
