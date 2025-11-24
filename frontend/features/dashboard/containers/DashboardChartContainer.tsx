@@ -123,7 +123,7 @@ export function DashboardChartContainer({
 
   // 차트 초기화
   const chartContainerRef = useRef<HTMLDivElement>(null);
-  const chartRef = useChartInitialization(chartContainerRef);
+  const chartRef = useChartInitialization(chartContainerRef, chartMode, timeRange, interval);
 
   // 차트 시리즈 생성
   const seriesRef = useChartSeries(chartRef, chartType);

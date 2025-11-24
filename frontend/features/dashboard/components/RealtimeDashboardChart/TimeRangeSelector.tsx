@@ -36,7 +36,7 @@ export function TimeRangeSelector({
           variant={timeRange === range ? "default" : "outline"}
           size="sm"
           onClick={() => onTimeRangeChange(range)}
-          className="text-xs h-9 sm:h-8 px-2.5 sm:px-3 min-w-[44px] transition-all duration-200 hover:shadow-sm whitespace-nowrap shrink-0"
+          className="text-xs h-9 sm:h-8 px-2.5 sm:px-3 min-w-11 transition-all duration-200 hover:shadow-sm whitespace-nowrap shrink-0"
         >
           {getTimeRangeLabel(range)}
         </Button>
