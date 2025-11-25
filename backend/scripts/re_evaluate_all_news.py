@@ -220,13 +220,13 @@ class NewsReEvaluator:
         try:
             # 최신 뉴스부터 먼저 분석하도록 published_at 기준 내림차순 정렬
             query = self.supabase.table("news_articles")\
-                .select("id, title, description, body, symbol, published_at, ai_score, analyzed_at, ai_analyzed_text")\
+                .select("id, title, description, body, symbol, published_at, ai_score, analyzed_at, ai_analyzed_text, positive_score")\
                 .order("published_at", desc=True)
 
-            # 미평가만 (ai_analyzed_text 또는 positive_score가 NULL인 경우)
+            # 미평가만 (ai_score, analyzed_at, ai_analyzed_text, positive_score 중 하나라도 NULL인 경우)
             if unevaluated_only:
-                # ai_analyzed_text가 NULL이거나 positive_score가 NULL인 뉴스
-                query = query.is_("ai_analyzed_text", "null")
+                # Supabase의 or 조건 사용: 4개 필드 중 하나라도 NULL이면 선택
+                query = query.or_("ai_score.is.null,analyzed_at.is.null,ai_analyzed_text.is.null,positive_score.is.null")
 
             # 종목 필터
             if symbol:
