@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Query, Body, Depends
+from fastapi import APIRouter, HTTPException, Query, Body, Depends, BackgroundTasks
 from app.services.claude_service import ClaudeService
 from app.db.supabase_client import get_supabase
 from app.core.auth_supabase import get_current_user
@@ -6,48 +6,18 @@ from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
 import logging
 import json
+import asyncio
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
 
-@router.post("")
-async def create_news_report(
-    symbol: str = Body(..., description="종목 심볼"),
-    limit: int = Body(20, description="분석할 뉴스 개수"),
-    current_user: dict = Depends(get_current_user)
-):
-    """
-    뉴스 분석 레포트 생성 및 저장 (POST) - 인증 필요
-
-    Claude 4.5 Sonnet을 사용하여 최신 뉴스를 분석하고
-    레포트를 생성한 후 DB에 저장합니다.
-
-    Args:
-        symbol: 종목 심볼 (예: AAPL, GOOGL, TSLA)
-        limit: 분석할 뉴스 개수 (기본: 20, 최대: 50)
-        current_user: 현재 로그인한 사용자 정보 (자동 주입)
-
-    Returns:
-        {
-            "id": 123,
-            "symbol": "AAPL",
-            "user_id": "uuid",
-            "report_data": {...},
-            "created_at": "2025-01-08T16:30:00Z",
-            "expires_at": "2025-01-09T16:30:00Z"
-        }
-    """
+async def _generate_report_background(symbol: str, limit: int, user_id: str):
+    """백그라운드에서 레포트 생성 (내부 함수)"""
     try:
-        # limit 범위 제한
-        limit = min(max(limit, 5), 50)
-        symbol = symbol.upper()
-        user_id = current_user["user_id"]
-
         supabase = get_supabase()
-
-        logger.info(f"[NEWS_REPORT] {symbol} 레포트 생성 요청 (user_id: {user_id}, limit: {limit})")
+        logger.info(f"[BACKGROUND] 레포트 생성 시작 - {symbol}, user: {user_id}")
 
         # 1. 최신 뉴스 조회
         query_builder = supabase.table("news_articles")\
@@ -59,13 +29,13 @@ async def create_news_report(
         result = query_builder.execute()
 
         if not result.data or len(result.data) == 0:
-            raise HTTPException(
-                status_code=404,
-                detail=f"{symbol} 종목의 뉴스가 없습니다."
-            )
+            logger.error(f"[BACKGROUND] 뉴스 없음 - {symbol}")
+            from app.api.notifications_sse import notify_report_failed
+            await notify_report_failed(user_id, symbol, f"{symbol} 종목의 뉴스가 없습니다.")
+            return
 
         news_articles = result.data
-        logger.info(f"[NEWS_REPORT] {len(news_articles)}개 뉴스 조회 완료")
+        logger.info(f"[BACKGROUND] {len(news_articles)}개 뉴스 조회 완료")
 
         # 2. Claude로 레포트 생성
         claude_service = ClaudeService()
@@ -74,13 +44,13 @@ async def create_news_report(
             news_articles=news_articles
         )
 
-        logger.info(f"[NEWS_REPORT] ✅ {symbol} 레포트 생성 완료")
+        logger.info(f"[BACKGROUND] ✅ {symbol} 레포트 생성 완료")
 
         # 3. DB에 저장
         expires_at = datetime.now() + timedelta(hours=24)
 
         insert_data = {
-            "user_id": user_id,  # 사용자 ID 추가
+            "user_id": user_id,
             "symbol": symbol,
             "report_data": report_data,
             "analyzed_count": len(news_articles),
@@ -90,41 +60,74 @@ async def create_news_report(
 
         save_result = supabase.table("news_reports").insert(insert_data).execute()
 
-        if not save_result.data or len(save_result.data) == 0:
-            logger.error(f"[NEWS_REPORT] DB 저장 실패")
-            # 저장 실패해도 레포트는 반환
-            return {
-                "id": None,
-                "user_id": user_id,
-                "symbol": symbol,
-                "report_data": report_data,
-                "created_at": datetime.now().isoformat(),
-                "expires_at": expires_at.isoformat(),
-                "saved": False
-            }
+        if save_result.data and len(save_result.data) > 0:
+            saved_report = save_result.data[0]
+            report_id = saved_report.get('id')
+            logger.info(f"[BACKGROUND] 💾 레포트 DB 저장 완료 (ID: {report_id})")
 
-        saved_report = save_result.data[0]
-        logger.info(f"[NEWS_REPORT] 💾 레포트 DB 저장 완료 (ID: {saved_report.get('id')}, User: {user_id})")
+            # 4. SSE로 완료 알림 전송
+            from app.api.notifications_sse import notify_report_completed
+            await notify_report_completed(user_id, report_id, symbol)
+        else:
+            logger.error(f"[BACKGROUND] DB 저장 실패")
+            from app.api.notifications_sse import notify_report_failed
+            await notify_report_failed(user_id, symbol, "레포트 저장에 실패했습니다.")
+
+    except Exception as e:
+        logger.error(f"[BACKGROUND] 레포트 생성 오류 ({symbol}): {str(e)}")
+        import traceback
+        logger.error(f"[BACKGROUND] 상세 오류:\n{traceback.format_exc()}")
+
+        from app.api.notifications_sse import notify_report_failed
+        await notify_report_failed(user_id, symbol, f"레포트 생성 중 오류: {str(e)}")
+
+
+@router.post("")
+async def create_news_report(
+    background_tasks: BackgroundTasks,
+    symbol: str = Body(..., description="종목 심볼"),
+    limit: int = Body(20, description="분석할 뉴스 개수"),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    뉴스 분석 레포트 생성 및 저장 (POST) - 인증 필요
+
+    백그라운드에서 레포트를 생성하고, 완료 시 SSE로 알림을 전송합니다.
+
+    Args:
+        symbol: 종목 심볼 (예: AAPL, GOOGL, TSLA)
+        limit: 분석할 뉴스 개수 (기본: 20, 최대: 50)
+        current_user: 현재 로그인한 사용자 정보 (자동 주입)
+
+    Returns:
+        {
+            "status": "processing",
+            "symbol": "AAPL",
+            "message": "레포트 생성이 시작되었습니다. 완료되면 알림을 보내드립니다."
+        }
+    """
+    try:
+        # limit 범위 제한
+        limit = min(max(limit, 5), 50)
+        symbol = symbol.upper()
+        user_id = current_user["user_id"]
+
+        logger.info(f"[NEWS_REPORT] {symbol} 레포트 생성 요청 (user_id: {user_id}, limit: {limit})")
+
+        # 백그라운드 작업으로 레포트 생성
+        background_tasks.add_task(_generate_report_background, symbol, limit, user_id)
 
         return {
-            "id": saved_report.get("id"),
-            "user_id": user_id,
+            "status": "processing",
             "symbol": symbol,
-            "report_data": report_data,
-            "created_at": saved_report.get("created_at"),
-            "expires_at": saved_report.get("expires_at"),
-            "saved": True
+            "message": f"{symbol} 레포트를 생성하고 있습니다. 완료되면 알림을 보내드립니다."
         }
 
-    except HTTPException:
-        raise
     except Exception as e:
-        logger.error(f"[NEWS_REPORT] 레포트 생성 오류 ({symbol}): {str(e)}")
-        import traceback
-        logger.error(f"[NEWS_REPORT] 상세 오류:\n{traceback.format_exc()}")
+        logger.error(f"[NEWS_REPORT] 레포트 생성 요청 오류: {str(e)}")
         raise HTTPException(
             status_code=500,
-            detail=f"레포트 생성 중 오류가 발생했습니다: {str(e)}"
+            detail=f"레포트 생성 요청 중 오류가 발생했습니다: {str(e)}"
         )
 
 

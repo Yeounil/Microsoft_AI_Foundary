@@ -14,7 +14,7 @@ if sys.platform == 'win32':
 
 from app.core.config import settings
 from app.api import stocks, stock_data
-from app.api import auth_supabase, social_auth, analysis_supabase, news_supabase, recommendations_supabase, news_v1, analysis_v1, embeddings, websocket_realtime, news_ai_score, news_translation, news_report_v1, pdf, subscriptions
+from app.api import auth_supabase, social_auth, analysis_supabase, news_supabase, recommendations_supabase, news_v1, analysis_v1, embeddings, websocket_realtime, news_ai_score, news_translation, news_report_v1, pdf, subscriptions, notifications_sse
 from app.services.news_scheduler import get_scheduler
 from app.db.supabase_client import get_supabase
 
@@ -111,6 +111,9 @@ app.include_router(pdf.router, prefix="/api/v2/pdf", tags=["pdf"])
 
 # Email Subscription API
 app.include_router(subscriptions.router, prefix="/api/v2/subscriptions", tags=["subscriptions"])
+
+# SSE Notifications API
+app.include_router(notifications_sse.router, prefix="/api/v1/notifications", tags=["notifications"])
 
 # Stock Data Collection API
 app.include_router(stock_data.router)

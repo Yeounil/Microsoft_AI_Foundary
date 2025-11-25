@@ -123,7 +123,7 @@ async def register(user: UserCreate):
         )
 
 @router.post("/login", response_model=Token)
-async def login(user_credentials: UserLogin, request: Request):
+async def login(user_credentials: UserLogin, request: Request, response: Response):
     """사용자 로그인"""
     user_service = SupabaseUserService()
     data_service = SupabaseDataService()
@@ -190,6 +190,22 @@ async def login(user_credentials: UserLogin, request: Request):
     except Exception as log_error:
         # 로그 실패는 무시
         print(f"로그인 활동 로그 실패 (무시됨): {log_error}")
+
+    # HttpOnly 쿠키에 access_token 저장 (SSE 인증용)
+    # 개발 환경에서는 secure=False (HTTP 허용)
+    import os
+    is_production = os.getenv("ENVIRONMENT", "development") == "production"
+
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,  # JavaScript에서 접근 불가 (XSS 방지)
+        secure=is_production,  # 프로덕션에서만 HTTPS 필수
+        samesite="lax", # CSRF 방지
+        max_age=settings.access_token_expire_minutes * 60,  # 초 단위
+        path="/",
+        domain=None  # 도메인 제한 없음 (localhost 호환)
+    )
 
     return {
         "access_token": access_token,

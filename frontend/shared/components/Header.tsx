@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuthStore } from "@/store/auth-store";
-import { NotificationDropdown } from "./NotificationDropdown";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { ThemeToggle } from "./ThemeToggle";
 import { SearchAutocomplete } from "./SearchAutocomplete";
 import { cn } from "@/lib/utils";
@@ -111,8 +111,8 @@ export default function Header() {
               <ThemeToggle />
             </div>
 
-            {/* Notification Dropdown - Show when authenticated */}
-            {isAuthenticated && <NotificationDropdown />}
+            {/* Notification Bell - Show when authenticated */}
+            {isAuthenticated && <NotificationBell />}
 
             {/* User Menu - Hide on mobile */}
             {isAuthenticated ? (

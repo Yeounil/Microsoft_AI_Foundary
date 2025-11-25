@@ -16,6 +16,7 @@ import { ImpactAnalysis } from "../components/NewsAnalysis/ImpactAnalysis";
 import { ContentTabs } from "../components/NewsAnalysis/ContentTabs";
 import { RelatedNewsList } from "../components/NewsAnalysis/RelatedNewsList";
 import apiClient from "@/lib/api-client";
+import { ReportGeneratingModal } from "@/components/reports/ReportGeneratingModal";
 
 interface NewsAnalysisContainerProps {
   newsData: NewsData;
@@ -34,6 +35,7 @@ export function NewsAnalysisContainer({
 }: NewsAnalysisContainerProps) {
   const router = useRouter();
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   // 관련 뉴스 hook
   const { relatedNews, page, setPage, hasNextPage } = useRelatedNews({
@@ -50,22 +52,23 @@ export function NewsAnalysisContainer({
     }
 
     setIsGeneratingReport(true);
+    setShowModal(true);
 
     try {
-      // POST 요청으로 레포트 생성
+      // POST 요청으로 레포트 생성 (백그라운드 처리)
       const response = await apiClient.createNewsReport(newsData.symbol, 20);
 
-      // reports/[id] 페이지로 이동 (report_id 사용)
-      if (response.id) {
-        router.push(`/reports/${response.id}`);
-      } else {
-        // fallback: 레거시 URL로 이동 (리다이렉트됨)
-        router.push(`/news-report/${newsData.symbol}`);
-      }
+      // 백그라운드 처리 시작 메시지 확인
+      console.log("Report generation started:", response);
+
+      // 모달은 사용자가 닫을 때까지 유지
+      // SSE를 통해 완료 알림을 받으면 자동으로 페이지 이동
     } catch (err: unknown) {
       console.error("Failed to generate report:", err);
       const axiosError = err as { response?: { data?: { detail?: string } } };
-      alert(axiosError.response?.data?.detail || "레포트 생성 중 오류가 발생했습니다.");
+      alert(axiosError.response?.data?.detail || "레포트 생성 요청 중 오류가 발생했습니다.");
+      setShowModal(false);
+    } finally {
       setIsGeneratingReport(false);
     }
   };
@@ -112,6 +115,13 @@ export function NewsAnalysisContainer({
 
   return (
     <div className="container mx-auto px-4 py-6">
+      {/* Report Generating Modal */}
+      <ReportGeneratingModal
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        symbol={newsData?.symbol || ''}
+      />
+
       {/* Header */}
       <NewsAnalysisHeader
         onBack={() => router.back()}
