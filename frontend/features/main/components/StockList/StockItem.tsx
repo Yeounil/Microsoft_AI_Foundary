@@ -32,9 +32,9 @@ export const StockItem = memo(function StockItem({
     >
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline gap-1.5">
-          <h3 className="font-semibold truncate text-sm lg:text-base">{stock.name}</h3>
-          <span className="text-[10px] lg:text-xs text-muted-foreground shrink-0">
-            {stock.symbol}
+          <h3 className="font-semibold text-sm lg:text-base shrink-0">{stock.symbol}</h3>
+          <span className="text-[10px] lg:text-xs text-muted-foreground truncate">
+            {stock.name}
           </span>
         </div>
         <div className="mt-0.5 flex items-center gap-2 text-xs lg:text-sm">

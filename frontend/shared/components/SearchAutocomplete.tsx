@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Clock, TrendingUp, X, Newspaper, Tag, Filter } from 'lucide-react';
+import { Search, Clock, TrendingUp, X, Newspaper, Tag, Filter, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { HighlightText } from './HighlightText';
 import { fuzzySearch } from '@/lib/fuzzy-search';
+import { useSupportedStocks } from '@/hooks/useSupportedStocks';
 
 type SearchFilterType = 'all' | 'stock' | 'news' | 'category';
 
@@ -23,10 +24,13 @@ interface SearchAutocompleteProps {
   className?: string;
   showFilters?: boolean;
   defaultFilter?: SearchFilterType;
+  navigateOnSelect?: boolean;      // 선택 시 라우팅 여부 (기본: true)
+  stocks?: string[];               // 외부에서 종목 데이터 주입 (없으면 API 사용)
 }
 
 const SEARCH_HISTORY_KEY = 'search_history';
 const MAX_HISTORY = 5;
+const EMPTY_RESULTS: SearchResult[] = [];
 
 /**
  * 검색 자동완성 컴포넌트
@@ -44,6 +48,8 @@ export function SearchAutocomplete({
   className,
   showFilters = false,
   defaultFilter = 'all',
+  navigateOnSelect = true,
+  stocks: externalStocks,
 }: SearchAutocompleteProps) {
   const router = useRouter();
   const [query, setQuery] = useState('');
@@ -55,12 +61,28 @@ export function SearchAutocomplete({
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // 검색 히스토리 로드
+  // API에서 종목 데이터 로드 (외부 데이터가 없을 때만)
+  const { stocks: apiStocks, isLoading: isLoadingStocks } = useSupportedStocks();
+
+  // 외부 데이터가 있으면 외부 데이터 사용, 없으면 API 데이터 사용
+  // externalStocks는 string[] 형태, apiStocks는 { symbol, name }[] 형태
+  const availableStocks = useMemo(() => {
+    if (externalStocks) {
+      // 외부에서 string[]로 전달된 경우 변환
+      return externalStocks.map((symbol) => ({ symbol, name: symbol }));
+    }
+    return apiStocks;
+  }, [externalStocks, apiStocks]);
+
+  // 검색 히스토리 로드 (마운트 시 한 번만)
   useEffect(() => {
     const saved = localStorage.getItem(SEARCH_HISTORY_KEY);
     if (saved) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setHistory(JSON.parse(saved));
+      try {
+        setHistory(JSON.parse(saved));
+      } catch {
+        // 파싱 실패 시 무시
+      }
     }
   }, []);
 
@@ -77,26 +99,18 @@ export function SearchAutocomplete({
   // 검색 결과 필터링 (퍼지 검색)
   useEffect(() => {
     if (query.length < 1) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setResults([]);
+      setResults(EMPTY_RESULTS);
       return;
     }
 
-    // 인기 종목 목록 (실제로는 API에서 가져와야 함)
-    const popularStocks: SearchResult[] = [
-      { symbol: 'AAPL', name: 'Apple Inc.', type: 'stock' },
-      { symbol: 'MSFT', name: 'Microsoft Corporation', type: 'stock' },
-      { symbol: 'GOOGL', name: 'Alphabet Inc.', type: 'stock' },
-      { symbol: 'AMZN', name: 'Amazon.com Inc.', type: 'stock' },
-      { symbol: 'NVDA', name: 'NVIDIA Corporation', type: 'stock' },
-      { symbol: 'META', name: 'Meta Platforms Inc.', type: 'stock' },
-      { symbol: 'TSLA', name: 'Tesla Inc.', type: 'stock' },
-      { symbol: 'AMD', name: 'Advanced Micro Devices', type: 'stock' },
-      { symbol: 'NFLX', name: 'Netflix Inc.', type: 'stock' },
-      { symbol: 'CRM', name: 'Salesforce Inc.', type: 'stock' },
-    ];
+    // API에서 가져온 종목 데이터를 SearchResult 형식으로 변환
+    const stockResults: SearchResult[] = availableStocks.map((stock) => ({
+      symbol: stock.symbol,
+      name: stock.name,
+      type: 'stock' as const,
+    }));
 
-    // 뉴스 카테고리 (실제로는 API에서 가져와야 함)
+    // 뉴스 카테고리
     const newsCategories: SearchResult[] = [
       { symbol: 'earnings', name: '실적 발표', type: 'news' },
       { symbol: 'merger', name: '인수합병', type: 'news' },
@@ -117,9 +131,9 @@ export function SearchAutocomplete({
     // 필터에 따라 검색 대상 결정
     let searchData: SearchResult[] = [];
     if (activeFilter === 'all') {
-      searchData = [...popularStocks, ...newsCategories, ...industryCategories];
+      searchData = [...stockResults, ...newsCategories, ...industryCategories];
     } else if (activeFilter === 'stock') {
-      searchData = popularStocks;
+      searchData = stockResults;
     } else if (activeFilter === 'news') {
       searchData = newsCategories;
     } else if (activeFilter === 'category') {
@@ -130,12 +144,12 @@ export function SearchAutocomplete({
     const fuzzyResults = fuzzySearch(searchData, query, {
       keys: ['symbol', 'name'],
       threshold: 0.3,
-      limit: 8,
+      limit: 10,
     });
 
     setResults(fuzzyResults.map((r) => r.item));
     setSelectedIndex(-1);
-  }, [query, activeFilter]);
+  }, [query, activeFilter, availableStocks]);
 
   // 외부 클릭 감지
   useEffect(() => {
@@ -188,7 +202,11 @@ export function SearchAutocomplete({
 
     if (onSelect) {
       onSelect(symbol, type);
-    } else {
+    }
+
+    // navigateOnSelect가 true이고 onSelect가 없을 때만 라우팅
+    // (onSelect가 있으면 외부에서 라우팅을 제어)
+    if (navigateOnSelect && !onSelect) {
       // 타입에 따라 다른 경로로 이동
       if (type === 'news') {
         router.push(`/main?news=${symbol}`);
@@ -259,7 +277,11 @@ export function SearchAutocomplete({
       )}
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        {isLoadingStocks && !externalStocks ? (
+          <Loader2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground animate-spin" />
+        ) : (
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        )}
         <Input
           ref={inputRef}
           type="search"
@@ -269,6 +291,7 @@ export function SearchAutocomplete({
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
           className="pl-9 pr-4"
+          disabled={isLoadingStocks && !externalStocks}
         />
       </div>
 

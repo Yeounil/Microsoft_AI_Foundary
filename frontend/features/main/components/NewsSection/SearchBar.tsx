@@ -1,13 +1,18 @@
 import { RefObject } from "react";
-import { Search, X } from "lucide-react";
+import { Search, X, TrendingUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
+
+interface StockInfo {
+  symbol: string;
+  name: string;
+}
 
 interface SearchBarProps {
   searchQuery: string;
   selectedStock: string | null;
   showDropdown: boolean;
   highlightedIndex: number;
-  filteredStocks: string[];
+  filteredStocks: StockInfo[];
   isLoadingStocks: boolean;
   dropdownRef: RefObject<HTMLDivElement | null>;
   inputRef: RefObject<HTMLInputElement | null>;
@@ -63,17 +68,31 @@ export function SearchBar({
 
       {/* Autocomplete Dropdown */}
       {showDropdown && filteredStocks.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-background border rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-popover border rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
+          <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground border-b">
+            검색 결과 ({filteredStocks.length})
+          </div>
           {filteredStocks.map((stock, index) => (
             <button
-              key={stock}
-              onClick={() => onSelectStock(stock)}
-              className={`w-full px-4 py-2 text-left hover:bg-muted transition-colors ${
-                highlightedIndex === index ? "bg-muted" : ""
+              key={stock.symbol}
+              onClick={() => onSelectStock(stock.symbol)}
+              className={`w-full px-3 py-2 flex items-center gap-3 hover:bg-accent text-left transition-colors ${
+                highlightedIndex === index ? "bg-accent" : ""
               }`}
               onMouseEnter={() => onHighlightChange(index)}
             >
-              <span className="font-medium">{stock}</span>
+              <TrendingUp className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{stock.symbol}</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                    종목
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground truncate">
+                  {stock.name}
+                </div>
+              </div>
             </button>
           ))}
         </div>

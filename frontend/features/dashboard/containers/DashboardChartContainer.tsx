@@ -123,7 +123,7 @@ export function DashboardChartContainer({
 
   // 차트 초기화
   const chartContainerRef = useRef<HTMLDivElement>(null);
-  const chartRef = useChartInitialization(chartContainerRef, chartMode, timeRange, interval);
+  const chartRef = useChartInitialization(chartContainerRef);
 
   // 차트 시리즈 생성
   const seriesRef = useChartSeries(chartRef, chartType);
@@ -213,6 +213,7 @@ export function DashboardChartContainer({
         {isMobile ? (
           <MobileChartHeader
             symbol={symbol}
+            companyName={selectedStock?.company_name}
             currentPrice={priceInfo.currentPrice ?? undefined}
             priceChange={priceInfo.priceChange}
             priceChangePercent={priceInfo.priceChangePercent}

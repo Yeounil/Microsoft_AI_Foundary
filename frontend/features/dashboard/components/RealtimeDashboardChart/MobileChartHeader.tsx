@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 interface MobileChartHeaderProps {
   symbol: string;
+  companyName?: string;
   currentPrice?: number;
   priceChange?: number;
   priceChangePercent?: number;
@@ -16,6 +17,7 @@ interface MobileChartHeaderProps {
 
 export function MobileChartHeader({
   symbol,
+  companyName,
   currentPrice,
   priceChange,
   priceChangePercent,
@@ -40,7 +42,14 @@ export function MobileChartHeader({
   return (
     <div className="flex items-center justify-between">
       <div className="flex-1">
-        <h2 className="text-lg font-semibold">{symbol}</h2>
+        <h2 className="text-lg font-semibold">
+          {symbol}
+          {companyName && (
+            <span className="ml-2 text-sm font-normal text-muted-foreground">
+              {companyName}
+            </span>
+          )}
+        </h2>
         <div className="flex items-center gap-2">
           <span className="text-2xl font-bold">
             ${currentPrice?.toFixed(2) || "0.00"}

@@ -22,8 +22,13 @@ import { SearchBar } from "../components/NewsSection/SearchBar";
 import { NewsList } from "../components/NewsSection/NewsList";
 import { CATEGORY_LABELS, CATEGORY_ORDER } from "../constants/stockCategories";
 
+interface StockInfo {
+  symbol: string;
+  name: string;
+}
+
 interface NewsSectionContainerProps {
-  availableStocks: string[];
+  availableStocks: StockInfo[];
   isLoadingStocks: boolean;
   initialStock?: string; // 초기 선택 종목 (대시보드 페이지용)
   categories?: Record<string, string[]>; // 카테고리별 종목 리스트

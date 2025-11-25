@@ -1,5 +1,10 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 
+interface StockInfo {
+  symbol: string;
+  name: string;
+}
+
 interface TabSearchState {
   searchQuery: string;
   selectedStock: string | null;
@@ -11,7 +16,7 @@ interface TabSearchState {
  * 탭별 독립적인 검색 상태를 유지합니다.
  */
 export function useNewsSearch(
-  availableStocks: string[],
+  availableStocks: StockInfo[],
   activeTab: string,
   initialStock?: string
 ) {
@@ -52,7 +57,8 @@ export function useNewsSearch(
     () =>
       searchQuery
         ? availableStocks.filter((stock) =>
-            stock.toLowerCase().includes(searchQuery.toLowerCase())
+            stock.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            stock.name.toLowerCase().includes(searchQuery.toLowerCase())
           )
         : [],
     [searchQuery, availableStocks]
@@ -134,7 +140,7 @@ export function useNewsSearch(
         case "Enter":
           e.preventDefault();
           if (highlightedIndex >= 0 && filteredStocks[highlightedIndex]) {
-            handleSelectStock(filteredStocks[highlightedIndex]);
+            handleSelectStock(filteredStocks[highlightedIndex].symbol);
           }
           break;
         case "Escape":

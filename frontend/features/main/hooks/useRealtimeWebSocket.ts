@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, RefObject, Dispatch, SetStateAction } from "react";
-import { type IChartApi, type ISeriesApi } from "lightweight-charts";
+import { type IChartApi, type ISeriesApi, type Time } from "lightweight-charts";
 import {
   getFMPWebSocketClient,
   type CandleData,
@@ -12,6 +12,9 @@ import {
 } from "../services/chartService";
 import { PriceInfo } from "./useHistoricalData";
 import { logger } from "@/lib/logger";
+
+// 마지막 업데이트 시간 추적용
+let lastUpdateTime: number = 0;
 
 type SeriesType =
   | ISeriesApi<"Candlestick">
@@ -77,6 +80,18 @@ export function useRealtimeWebSocket(
         handleCandle = (candle: CandleData) => {
           if (!seriesRef.current || !mounted) return;
 
+          // 캔들 시간을 숫자로 변환 (Unix timestamp)
+          const candleTime = typeof candle.time === 'number'
+            ? candle.time
+            : new Date(candle.time as string).getTime() / 1000;
+
+          // 이전 시간보다 오래된 데이터는 무시 (lightweight-charts 오류 방지)
+          if (candleTime < lastUpdateTime) {
+            logger.debug(`[Chart] Skipping old candle: ${candleTime} < ${lastUpdateTime}`);
+            return;
+          }
+          lastUpdateTime = candleTime;
+
           // 실시간 가격 정보 업데이트
           setPriceInfo((prev) => {
             if (prev.previousClose !== null) {
@@ -95,7 +110,7 @@ export function useRealtimeWebSocket(
           try {
             if (chartType === "candle") {
               seriesRef.current.update({
-                time: candle.time as import("lightweight-charts").Time,
+                time: candle.time as Time,
                 open: candle.open,
                 high: candle.high,
                 low: candle.low,
@@ -103,14 +118,19 @@ export function useRealtimeWebSocket(
               });
             } else {
               seriesRef.current.update({
-                time: candle.time as import("lightweight-charts").Time,
+                time: candle.time as Time,
                 value: candle.close,
               });
             }
 
             chartRef.current?.timeScale().scrollToRealTime();
           } catch (error) {
-            console.error("[Chart] Update error:", error);
+            // "Cannot update oldest data" 오류 무시 (타이밍 이슈)
+            if (error instanceof Error && error.message.includes('oldest data')) {
+              logger.debug(`[Chart] Skipping oldest data update`);
+            } else {
+              console.error("[Chart] Update error:", error);
+            }
           }
         };
 
@@ -119,6 +139,9 @@ export function useRealtimeWebSocket(
         logger.debug(
           `[Chart] Subscribing ONLY ${symbol} (${interval}, ${intervalMs}ms)`
         );
+
+        // 새 구독 시작 시 마지막 업데이트 시간 리셋
+        lastUpdateTime = 0;
 
         await client.subscribe(symbol, intervalMs);
         client.onCandle(symbol, handleCandle);

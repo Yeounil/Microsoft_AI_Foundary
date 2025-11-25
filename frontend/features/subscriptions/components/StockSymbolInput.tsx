@@ -1,10 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { X, Plus } from 'lucide-react';
+import { X } from 'lucide-react';
+import { SearchAutocomplete } from '@/shared/components/SearchAutocomplete';
 
 interface StockSymbolInputProps {
   symbols: string[];
@@ -16,21 +14,14 @@ interface StockSymbolInputProps {
 export function StockSymbolInput({
   symbols,
   onChange,
-  placeholder = '종목 코드를 입력하세요',
+  placeholder = '종목을 검색하여 추가하세요',
   maxSymbols = 10,
 }: StockSymbolInputProps) {
-  const [inputValue, setInputValue] = useState('');
+  const handleSelect = (symbol: string) => {
+    const upperSymbol = symbol.toUpperCase();
 
-  const handleAddSymbol = () => {
-    const trimmedValue = inputValue.trim().toUpperCase();
-
-    if (!trimmedValue) {
-      return;
-    }
-
-    if (symbols.includes(trimmedValue)) {
-      alert('이미 추가된 종목입니다');
-      return;
+    if (symbols.includes(upperSymbol)) {
+      return; // 이미 추가된 종목 무시
     }
 
     if (symbols.length >= maxSymbols) {
@@ -38,42 +29,23 @@ export function StockSymbolInput({
       return;
     }
 
-    onChange([...symbols, trimmedValue]);
-    setInputValue('');
+    onChange([...symbols, upperSymbol]);
   };
 
   const handleRemoveSymbol = (symbol: string) => {
     onChange(symbols.filter((s) => s !== symbol));
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleAddSymbol();
-    }
-  };
-
   return (
     <div className="space-y-3">
-      {/* 입력 필드 */}
-      <div className="flex gap-2">
-        <Input
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          className="flex-1"
-        />
-        <Button
-          type="button"
-          onClick={handleAddSymbol}
-          size="icon"
-          variant="outline"
-          disabled={!inputValue.trim() || symbols.length >= maxSymbols}
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
-      </div>
+      {/* 자동완성 검색 입력 */}
+      <SearchAutocomplete
+        placeholder={placeholder}
+        defaultFilter="stock"
+        showFilters={false}
+        onSelect={handleSelect}
+        navigateOnSelect={false}
+      />
 
       {/* 선택된 종목 목록 */}
       {symbols.length > 0 && (

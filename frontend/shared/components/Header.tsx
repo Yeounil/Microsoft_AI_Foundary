@@ -3,9 +3,8 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import { Search, User, LogOut, Menu, X, TrendingUp, Moon, Sun, Bell, Settings, Mail } from "lucide-react";
+import { User, LogOut, Menu, X, TrendingUp, Moon, Sun, Bell, Settings, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +15,7 @@ import {
 import { useAuthStore } from "@/store/auth-store";
 import { NotificationDropdown } from "./NotificationDropdown";
 import { ThemeToggle } from "./ThemeToggle";
+import { SearchAutocomplete } from "./SearchAutocomplete";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
 
@@ -36,7 +36,6 @@ export default function Header() {
   const pathname = usePathname();
   const { user, isAuthenticated, logout } = useAuthStore();
   const { theme, setTheme } = useTheme();
-  const [searchQuery, setSearchQuery] = useState("");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -48,14 +47,6 @@ export default function Header() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
-      setSearchQuery("");
-    }
-  };
 
   const handleLogout = async () => {
     await logout();
@@ -106,21 +97,14 @@ export default function Header() {
           {/* Search and Actions */}
           <div className="flex items-center gap-4">
             {/* Search Bar - Show on tablet and up */}
-            <form
-              onSubmit={handleSearch}
-              className="hidden md:flex items-center"
-            >
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="종목명 및 코드 검색"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-[200px] lg:w-[300px] xl:w-[400px] pl-9"
-                />
-              </div>
-            </form>
+            <div className="hidden md:flex items-center">
+              <SearchAutocomplete
+                placeholder="종목명 및 코드 검색"
+                className="w-[200px] lg:w-[300px] xl:w-[400px]"
+                defaultFilter="stock"
+                showFilters={false}
+              />
+            </div>
 
             {/* Theme Toggle - Hide on mobile */}
             <div className="hidden md:block">
@@ -214,20 +198,14 @@ export default function Header() {
               </div>
 
               {/* Mobile Search */}
-              <form onSubmit={handleSearch} className="p-4 border-b">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    type="search"
-                    placeholder="종목명 및 코드 검색"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 h-12"
-                    inputMode="search"
-                    autoComplete="off"
-                  />
-                </div>
-              </form>
+              <div className="p-4 border-b">
+                <SearchAutocomplete
+                  placeholder="종목명 및 코드 검색"
+                  className="w-full"
+                  defaultFilter="stock"
+                  showFilters={false}
+                />
+              </div>
 
               {/* 메뉴 항목들 */}
               <div className="flex-1 overflow-y-auto">

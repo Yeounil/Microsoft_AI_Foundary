@@ -1,11 +1,9 @@
 "use client";
 
-import { useState, useEffect, Suspense, lazy } from "react";
-import { TickerTapeWidget } from "@/features/main/components/TickerTape";
-import apiClient from "@/lib/api-client";
-import { logger } from "@/lib/logger";
+import { Suspense, lazy } from "react";
 import { AnimatedSection } from "@/shared/components/ProgressiveLoader";
 import { LoadingSpinner } from "@/shared/components/LoadingSpinner";
+import { useSupportedStocks } from "@/hooks/useSupportedStocks";
 
 // Lazy load heavy components
 const ImprovedStockList = lazy(() =>
@@ -16,36 +14,7 @@ const NewsSection = lazy(() =>
 );
 
 export default function MainPage() {
-  const [supportedStocks, setSupportedStocks] = useState<string[]>([]);
-  const [categories, setCategories] = useState<Record<string, string[]>>({});
-  const [isLoadingStocks, setIsLoadingStocks] = useState(true);
-
-  // Fetch supported stocks and categories
-  useEffect(() => {
-    const loadSupportedStocks = async () => {
-      try {
-        logger.info('[MainPage] Loading WebSocket supported stocks...');
-        const response = await apiClient.getSupportedStocks();
-
-        if (response.all_symbols && Array.isArray(response.all_symbols)) {
-          setSupportedStocks(response.all_symbols);
-          logger.info(`[MainPage] Loaded ${response.all_symbols.length} stocks`);
-        }
-
-        if (response.categories && typeof response.categories === 'object') {
-          setCategories(response.categories);
-          logger.info(`[MainPage] Loaded ${Object.keys(response.categories).length} categories`);
-        }
-
-        setIsLoadingStocks(false);
-      } catch (error) {
-        logger.error('[MainPage] Failed to load stocks:', error);
-        setIsLoadingStocks(false);
-      }
-    };
-
-    loadSupportedStocks();
-  }, []);
+  const { stocks, stockSymbols, categories, isLoading: isLoadingStocks } = useSupportedStocks();
 
   return (
     <div className="w-full px-3 py-4 md:px-6 md:py-6 lg:px-8 mx-auto max-w-[1600px]">
@@ -64,7 +33,7 @@ export default function MainPage() {
             </div>
           }>
             <NewsSection
-              availableStocks={supportedStocks}
+              availableStocks={stocks}
               isLoadingStocks={isLoadingStocks}
               categories={categories}
             />
@@ -80,7 +49,7 @@ export default function MainPage() {
               </div>
             }>
               <ImprovedStockList
-                supportedStocks={supportedStocks}
+                supportedStocks={stockSymbols}
                 isLoadingStocks={isLoadingStocks}
               />
             </Suspense>

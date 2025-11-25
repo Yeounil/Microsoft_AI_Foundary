@@ -36,6 +36,45 @@ export interface HistoricalDataResult {
  */
 export class ChartDataLoader {
   /**
+   * 이전 영업일 계산 (주말 건너뛰기)
+   */
+  private static getPreviousBusinessDay(date: Date): Date {
+    const prevDay = new Date(date.getTime() - 24 * 60 * 60 * 1000);
+    const dayOfWeek = prevDay.getDay();
+
+    if (dayOfWeek === 0) {
+      // 일요일 → 금요일로 (2일 더 전)
+      return new Date(prevDay.getTime() - 2 * 24 * 60 * 60 * 1000);
+    } else if (dayOfWeek === 6) {
+      // 토요일 → 금요일로 (1일 더 전)
+      return new Date(prevDay.getTime() - 1 * 24 * 60 * 60 * 1000);
+    }
+    return prevDay;
+  }
+
+  /**
+   * 특정 날짜의 인트라데이 데이터 로드 (내부 헬퍼)
+   */
+  private static async fetchIntradayForDate(
+    symbol: string,
+    fmpInterval: string,
+    targetDate: Date
+  ): Promise<unknown[]> {
+    const dateStr = targetDate.toISOString().split('T')[0];
+
+    logger.debug(`Fetching intraday data for ${symbol} on ${dateStr}`);
+
+    const response = await apiClient.getIntradayData(symbol, fmpInterval, dateStr, dateStr);
+
+    if (Array.isArray(response)) {
+      return response;
+    } else if (response.data && Array.isArray(response.data)) {
+      return response.data;
+    }
+    return [];
+  }
+
+  /**
    * 분단위 Intraday 데이터 로드
    */
   static async loadIntradayData(
@@ -81,12 +120,32 @@ export class ChartDataLoader {
         logger.debug("Monday before market open, adjusting to Friday");
       }
 
-      let daysAgo = 0;  // 기본값을 0으로 변경
+      // 하루치 데이터 (period === "1d")인 경우 특별 처리
+      if (period === "1d") {
+        let targetDate = now;
+        const maxRetries = 5; // 최대 5일 전까지 시도 (공휴일 대비)
+
+        for (let retry = 0; retry < maxRetries; retry++) {
+          const dataArray = await this.fetchIntradayForDate(symbol, fmpInterval, targetDate);
+
+          if (dataArray.length > 0) {
+            logger.debug(`Loaded ${dataArray.length} intraday candles for ${symbol} on ${targetDate.toISOString().split('T')[0]}`);
+            return this.normalizeChartData(dataArray);
+          }
+
+          // 데이터가 없으면 이전 영업일로 재시도
+          logger.debug(`No data for ${targetDate.toISOString().split('T')[0]}, trying previous business day`);
+          targetDate = this.getPreviousBusinessDay(targetDate);
+        }
+
+        logger.warn(`No intraday data found for ${symbol} after ${maxRetries} retries`);
+        return [];
+      }
+
+      // 1주일 이상의 기간 데이터
+      let daysAgo = 0;
 
       switch (period) {
-        case "1d":
-          daysAgo = 0;  // 1일 = 같은 날 (from_date = to_date)
-          break;
         case "7d":
         case "1w":
           daysAgo = 7;
@@ -99,20 +158,17 @@ export class ChartDataLoader {
       }
 
       const fromDateObj = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
-      const toDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
-      const fromDate = fromDateObj.toISOString().split('T')[0]; // YYYY-MM-DD
+      const toDate = now.toISOString().split('T')[0];
+      const fromDate = fromDateObj.toISOString().split('T')[0];
 
       logger.debug(`Loading intraday data: ${symbol}, period: ${period}, interval: ${interval} → ${fmpInterval}, from: ${fromDate}, to: ${toDate}`);
 
       const response = await apiClient.getIntradayData(symbol, fmpInterval, fromDate, toDate);
 
-      // API 응답 형식 정규화 (apiClient가 이미 response.data를 반환함)
       let dataArray: unknown[];
       if (Array.isArray(response)) {
-        // 직접 배열로 반환된 경우
         dataArray = response;
       } else if (response.data && Array.isArray(response.data)) {
-        // {data: [...]} 형식으로 반환된 경우
         dataArray = response.data;
       } else {
         console.error("Unexpected intraday data format:", response);
@@ -121,8 +177,6 @@ export class ChartDataLoader {
 
       logger.debug(`Loaded ${dataArray.length} intraday candles for ${symbol}`);
 
-      // 백엔드가 반환한 데이터를 그대로 사용 (백엔드에서 필터링 처리)
-      // 프론트엔드 필터링은 제거 (백엔드가 날짜 범위를 무시하는 경우가 있음)
       return this.normalizeChartData(dataArray);
     } catch (error) {
       console.error(`Failed to load intraday data for ${symbol}:`, error);
@@ -241,12 +295,9 @@ export class ChartDataLoader {
             time = Math.floor(Date.now() / 1000);
           }
 
-          // 한국 시간대(KST)로 변환
-          const kstTime = convertToKST(time);
-
-          // OHLC 데이터 정규화
+          // OHLC 데이터 정규화 (타임스탬프는 UTC 그대로 유지)
           const candle: CandleData = {
-            time: kstTime,
+            time: time,
             open: this.parseNumber(record.open || record.o || 0),
             high: this.parseNumber(record.high || record.h || 0),
             low: this.parseNumber(record.low || record.l || 0),
