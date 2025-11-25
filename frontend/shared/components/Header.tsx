@@ -132,7 +132,7 @@ export default function Header() {
                     </div>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => router.push("/profile")} className="cursor-pointer">
-                      프로필
+                      내 보고서
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => router.push("/subscriptions")} className="cursor-pointer">
                       내 구독 종목
