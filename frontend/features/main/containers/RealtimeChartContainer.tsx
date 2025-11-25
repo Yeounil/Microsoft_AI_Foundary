@@ -61,9 +61,14 @@ export function RealtimeChartContainer({
   } else {
     // Enhanced 모드
     if (enhancedChartType === "minute") {
-      // 분단위: 모두 30일치 데이터
-      timeRange = "1M";
+      // 분단위: interval에 따라 적절한 기간 설정 (FMP API 제한)
       interval = enhancedMinuteInterval;
+      // 1분/5분: 7일, 15분/30분/1시간: 30일
+      if (interval === "1m" || interval === "5m") {
+        timeRange = "1W";
+      } else {
+        timeRange = "1M";
+      }
     } else if (enhancedChartType === "day") {
       // 일봉: 전체 데이터를 일 단위로
       timeRange = "ALL";

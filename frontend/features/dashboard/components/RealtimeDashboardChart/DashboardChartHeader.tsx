@@ -49,8 +49,8 @@ export function DashboardChartHeader({
               )}
             </CardTitle>
             {isRealtime && (
-              <span className="flex items-center gap-1 text-xs text-green-600">
-                <span className="inline-block w-2 h-2 bg-green-600 rounded-full animate-pulse"></span>
+              <span className="flex items-center gap-1 text-xs text-stock-up">
+                <span className="inline-block w-2 h-2 bg-stock-up rounded-full animate-pulse"></span>
                 LIVE
               </span>
             )}
@@ -71,7 +71,7 @@ export function DashboardChartHeader({
             {priceChange !== undefined && priceChangePercent !== undefined && (
               <span
                 className={`text-xs sm:text-sm font-medium ${
-                  isPositive ? "text-green-600" : "text-red-600"
+                  isPositive ? "text-stock-up" : "text-stock-down"
                 }`}
               >
                 {isPositive ? "+" : ""}

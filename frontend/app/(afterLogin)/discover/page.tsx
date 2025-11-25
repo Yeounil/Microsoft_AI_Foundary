@@ -180,13 +180,13 @@ export default function DiscoverPage() {
   const getRiskColor = (risk: string) => {
     switch (risk) {
       case 'LOW':
-        return 'text-green-600 bg-green-50';
+        return 'text-stock-up bg-stock-up-bg';
       case 'MEDIUM':
-        return 'text-yellow-600 bg-yellow-50';
+        return 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-950';
       case 'HIGH':
-        return 'text-red-600 bg-red-50';
+        return 'text-stock-down bg-stock-down-bg';
       default:
-        return 'text-gray-600 bg-gray-50';
+        return 'text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900';
     }
   };
 
@@ -194,13 +194,13 @@ export default function DiscoverPage() {
   const getRecommendationColor = (type: string) => {
     switch (type) {
       case 'BUY':
-        return 'bg-green-500';
+        return 'bg-stock-up text-white';
       case 'HOLD':
-        return 'bg-yellow-500';
+        return 'bg-yellow-500 text-white';
       case 'SELL':
-        return 'bg-red-500';
+        return 'bg-stock-down text-white';
       default:
-        return 'bg-gray-500';
+        return 'bg-gray-500 text-white';
     }
   };
 
@@ -240,7 +240,7 @@ export default function DiscoverPage() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">예상 수익률</p>
-              <p className="text-xl font-bold text-green-600">
+              <p className="text-xl font-bold text-stock-up">
                 +{rec.predicted_return.toFixed(1)}%
               </p>
             </div>
@@ -315,7 +315,7 @@ export default function DiscoverPage() {
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-2xl font-bold">${stock.current_price.toFixed(2)}</span>
-              <div className={`flex items-center gap-1 ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+              <div className={`flex items-center gap-1 ${isPositive ? 'text-stock-up' : 'text-stock-down'}`}>
                 {isPositive ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
                 <span className="font-medium">
                   {isPositive ? '+' : ''}{stock.change_percent.toFixed(2)}%

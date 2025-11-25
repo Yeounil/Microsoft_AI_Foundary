@@ -22,7 +22,7 @@ export function StockListContent({
   selectedSymbol,
 }: StockListContentProps) {
   return (
-    <ScrollArea className="h-[600px] pr-4">
+    <ScrollArea className="h-[600px]">
       <div className="space-y-2">
         {stocks.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">

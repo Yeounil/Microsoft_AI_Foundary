@@ -13,9 +13,10 @@ interface SocialLoginButtonProps {
 const providerConfig = {
   kakao: {
     name: "카카오",
-    bgColor: "bg-[#FEE500]",
-    hoverColor: "hover:bg-[#FDD835]",
-    textColor: "text-[#000000]",
+    bgColor: "bg-[#FEE500] dark:bg-[#FEE500]/90",
+    hoverColor: "hover:bg-[#FDD835] dark:hover:bg-[#FEE500]",
+    textColor: "text-[#000000] dark:text-[#000000]",
+    borderClass: "dark:border dark:border-[#FEE500]/30",
     icon: (
       <svg
         width="18"
@@ -33,9 +34,10 @@ const providerConfig = {
   },
   google: {
     name: "Google",
-    bgColor: "bg-white",
-    hoverColor: "hover:bg-gray-50",
-    textColor: "text-gray-700",
+    bgColor: "bg-white dark:bg-zinc-800",
+    hoverColor: "hover:bg-gray-50 dark:hover:bg-zinc-700",
+    textColor: "text-gray-700 dark:text-gray-200",
+    borderClass: "border border-gray-300 dark:border-zinc-600",
     icon: (
       <svg
         width="18"
@@ -65,9 +67,10 @@ const providerConfig = {
   },
   naver: {
     name: "네이버",
-    bgColor: "bg-[#03C75A]",
-    hoverColor: "hover:bg-[#02B350]",
+    bgColor: "bg-[#03C75A] dark:bg-[#03C75A]/90",
+    hoverColor: "hover:bg-[#02B350] dark:hover:bg-[#03C75A]",
     textColor: "text-white",
+    borderClass: "dark:border dark:border-[#03C75A]/30",
     icon: (
       <svg
         width="18"
@@ -97,7 +100,7 @@ export function SocialLoginButton({
     <Button
       type="button"
       variant="outline"
-      className={`w-full ${config.bgColor} ${config.hoverColor} ${config.textColor} border-0`}
+      className={`w-full ${config.bgColor} ${config.hoverColor} ${config.textColor} ${config.borderClass}`}
       onClick={onClick}
       disabled={disabled || isLoading}
     >

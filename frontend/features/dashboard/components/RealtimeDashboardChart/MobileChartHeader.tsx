@@ -48,7 +48,7 @@ export function MobileChartHeader({
           {priceChange !== undefined && priceChangePercent !== undefined && (
             <span
               className={`text-sm font-medium ${
-                isPositive ? "text-green-600" : "text-red-600"
+                isPositive ? "text-stock-up" : "text-stock-down"
               }`}
             >
               {isPositive ? "+" : ""}

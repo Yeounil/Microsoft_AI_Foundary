@@ -20,7 +20,7 @@ type SeriesType =
 
 /**
  * 실시간 WebSocket 연결 Hook
- * 1D 차트일 때만 WebSocket으로 실시간 가격을 업데이트합니다.
+ * 분봉/시간봉/일봉 차트일 때 WebSocket으로 실시간 가격을 업데이트합니다.
  */
 export function useRealtimeWebSocket(
   chartRef: RefObject<IChartApi | null>,
@@ -35,12 +35,15 @@ export function useRealtimeWebSocket(
   const [isRealtime, setIsRealtime] = useState(false);
   const wsClient = useRef(getFMPWebSocketClient());
 
-  // 실시간 WebSocket 연결 (1D일 때만, 현재 보고 있는 종목만)
+  // 실시간 WebSocket 연결 (분봉/시간봉/일봉일 때, 현재 보고 있는 종목만)
   useEffect(() => {
     // WebSocket client를 effect 시작 시 저장 (cleanup에서 사용하기 위해)
     const client = wsClient.current;
 
-    if (timeRange !== "1D" || !seriesRef.current) {
+    // interval 기반으로 실시간 지원 여부 판단 (분봉/시간봉/일봉 실시간 지원)
+    const isRealtimeSupported = ["1m", "5m", "15m", "30m", "1h", "1d"].includes(interval);
+
+    if (!isRealtimeSupported || !seriesRef.current) {
       // Early return 시 realtime 상태 정리는 cleanup에서 처리
       return () => {
         setIsRealtime(false);

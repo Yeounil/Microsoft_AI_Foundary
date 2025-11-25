@@ -3,9 +3,9 @@ import {
   WebSocketMessage,
   WebSocketCommand,
   isPriceUpdate,
-  isWebSocketMessage
-} from '@/types/websocket';
-import { logger } from '@/lib/logger';
+  isWebSocketMessage,
+} from "@/types/websocket";
+import { logger } from "@/lib/logger";
 
 type MessageHandler = (data: PriceUpdate) => void;
 type ConnectionHandler = (connected: boolean) => void;
@@ -22,7 +22,9 @@ class WebSocketClient {
   private isConnecting = false;
 
   constructor() {
-    this.url = `${process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000'}/api/v2/realtime/ws/prices`;
+    this.url = `${
+      process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000"
+    }/api/v2/realtime/ws/prices`;
   }
 
   connect(): Promise<void> {
@@ -49,7 +51,7 @@ class WebSocketClient {
         this.ws = new WebSocket(this.url);
 
         this.ws.onopen = () => {
-          logger.info('WebSocket connected');
+          logger.info("WebSocket connected");
           this.isConnecting = false;
           this.reconnectAttempts = 0;
           this.notifyConnectionHandlers(true);
@@ -63,14 +65,14 @@ class WebSocketClient {
         };
 
         this.ws.onclose = () => {
-          logger.info('WebSocket disconnected');
+          logger.info("WebSocket disconnected");
           this.isConnecting = false;
           this.notifyConnectionHandlers(false);
           this.attemptReconnect();
         };
 
         this.ws.onerror = (error) => {
-          console.error('WebSocket error:', error);
+          console.error("WebSocket error:", error);
           this.isConnecting = false;
           reject(error);
         };
@@ -80,7 +82,7 @@ class WebSocketClient {
             const data = JSON.parse(event.data);
             this.handleMessage(data);
           } catch (error) {
-            console.error('Failed to parse WebSocket message:', error);
+            console.error("Failed to parse WebSocket message:", error);
           }
         };
       } catch (error) {
@@ -93,39 +95,39 @@ class WebSocketClient {
   private handleMessage(data: unknown) {
     // Type guard to ensure data is a WebSocketMessage
     if (!isWebSocketMessage(data)) {
-      logger.warn('Invalid WebSocket message received:', data);
+      logger.warn("Invalid WebSocket message received:", data);
       return;
     }
 
     const message = data as WebSocketMessage;
 
     switch (message.type) {
-      case 'price_update':
+      case "price_update":
         if (isPriceUpdate(message.data)) {
           this.notifyMessageHandlers(message.data);
         }
         break;
-      case 'connected':
-        logger.info('Connected to price stream:', message.data);
+      case "connected":
+        logger.info("Connected to price stream:", message.data);
         break;
-      case 'error':
-        console.error('WebSocket error:', message.error || message.data);
+      case "error":
+        console.error("WebSocket error:", message.error || message.data);
         break;
-      case 'ping':
+      case "ping":
         // Respond with pong if needed
-        this.send({ type: 'pong' });
+        this.send({ type: "pong" });
         break;
-      case 'pong':
+      case "pong":
         // Handle pong response
         break;
       default:
-        logger.debug('Unhandled message type:', message.type, message);
+        logger.debug("Unhandled message type:", message.type, message);
     }
   }
 
   private send(message: WebSocketCommand | { type: string }): void {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      console.error('WebSocket is not connected');
+      console.error("WebSocket is not connected");
       return;
     }
     this.ws.send(JSON.stringify(message));
@@ -133,33 +135,35 @@ class WebSocketClient {
 
   private attemptReconnect() {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('Max reconnection attempts reached');
+      console.error("Max reconnection attempts reached");
       return;
     }
 
     this.reconnectAttempts++;
     const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
 
-    logger.info(`Attempting to reconnect in ${delay}ms (attempt ${this.reconnectAttempts})`);
+    logger.info(
+      `Attempting to reconnect in ${delay}ms (attempt ${this.reconnectAttempts})`
+    );
 
     setTimeout(() => {
       this.connect().catch((error) => {
-        console.error('Reconnection failed:', error);
+        console.error("Reconnection failed:", error);
       });
     }, delay);
   }
 
   subscribe(symbols: string[]): void {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      console.error('WebSocket is not connected');
+      console.error("WebSocket is not connected");
       return;
     }
 
-    const upperSymbols = symbols.map(s => s.toUpperCase());
-    upperSymbols.forEach(symbol => this.subscribedSymbols.add(symbol));
+    const upperSymbols = symbols.map((s) => s.toUpperCase());
+    upperSymbols.forEach((symbol) => this.subscribedSymbols.add(symbol));
 
     const command: WebSocketCommand = {
-      action: 'subscribe',
+      action: "subscribe",
       symbols: upperSymbols,
     };
 
@@ -168,15 +172,15 @@ class WebSocketClient {
 
   unsubscribe(symbols: string[]): void {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      console.error('WebSocket is not connected');
+      console.error("WebSocket is not connected");
       return;
     }
 
-    const upperSymbols = symbols.map(s => s.toUpperCase());
-    upperSymbols.forEach(symbol => this.subscribedSymbols.delete(symbol));
+    const upperSymbols = symbols.map((s) => s.toUpperCase());
+    upperSymbols.forEach((symbol) => this.subscribedSymbols.delete(symbol));
 
     const command: WebSocketCommand = {
-      action: 'unsubscribe',
+      action: "unsubscribe",
       symbols: upperSymbols,
     };
 
@@ -185,12 +189,12 @@ class WebSocketClient {
 
   getSubscriptions(): void {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      console.error('WebSocket is not connected');
+      console.error("WebSocket is not connected");
       return;
     }
 
     const command: WebSocketCommand = {
-      action: 'get_subscriptions',
+      action: "get_subscriptions",
     };
 
     this.ws.send(JSON.stringify(command));
@@ -202,7 +206,7 @@ class WebSocketClient {
     }
 
     const command: WebSocketCommand = {
-      action: 'ping',
+      action: "ping",
     };
 
     this.ws.send(JSON.stringify(command));
@@ -223,21 +227,21 @@ class WebSocketClient {
   }
 
   private notifyMessageHandlers(data: PriceUpdate) {
-    this.messageHandlers.forEach(handler => {
+    this.messageHandlers.forEach((handler) => {
       try {
         handler(data);
       } catch (error) {
-        console.error('Error in message handler:', error);
+        console.error("Error in message handler:", error);
       }
     });
   }
 
   private notifyConnectionHandlers(connected: boolean) {
-    this.connectionHandlers.forEach(handler => {
+    this.connectionHandlers.forEach((handler) => {
       try {
         handler(connected);
       } catch (error) {
-        console.error('Error in connection handler:', error);
+        console.error("Error in connection handler:", error);
       }
     });
   }

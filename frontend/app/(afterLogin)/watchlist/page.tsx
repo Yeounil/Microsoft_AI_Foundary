@@ -85,7 +85,7 @@ export default function WatchlistPage() {
   const PriceChange = ({ change, changePercent }: { change: number; changePercent: number }) => {
     const isPositive = change >= 0;
     const Icon = isPositive ? TrendingUp : TrendingDown;
-    const colorClass = isPositive ? 'text-green-600' : 'text-red-600';
+    const colorClass = isPositive ? 'text-stock-up' : 'text-stock-down';
 
     return (
       <div className={`flex items-center gap-1 ${colorClass}`}>

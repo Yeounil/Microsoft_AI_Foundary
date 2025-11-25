@@ -19,24 +19,25 @@ export default function SubscriptionsPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-7xl">
-      {/* 헤더 */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-2">
+    <div className="container mx-auto py-6 px-3 md:py-8 md:px-4 max-w-7xl">
+      {/* 헤더 - 반응형 */}
+      <div className="mb-6 md:mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
           <div className="flex items-center gap-3">
-            <Bell className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold">내 구독 종목</h1>
+            <Bell className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+            <h1 className="text-2xl sm:text-3xl font-bold">내 구독 종목</h1>
           </div>
           <Button
             onClick={() => setIsCreateDialogOpen(true)}
-            className="gap-2"
+            className="w-full sm:w-auto min-h-[44px] gap-2"
             disabled={subscriptions && subscriptions.length >= 5}
           >
             <Plus className="h-4 w-4" />
-            새 구독 추가
+            <span className="sm:hidden">추가</span>
+            <span className="hidden sm:inline">새 구독 추가</span>
           </Button>
         </div>
-        <p className="text-muted-foreground">
+        <p className="text-sm sm:text-base text-muted-foreground">
           관심 종목의 뉴스와 분석 레포트를 이메일로 받아보세요
         </p>
         {subscriptions && subscriptions.length >= 5 && (
