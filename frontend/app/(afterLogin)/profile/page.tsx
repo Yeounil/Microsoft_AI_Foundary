@@ -13,11 +13,16 @@ export default function ProfilePage() {
   const [page, setPage] = useState(1);
   const offset = (page - 1) * PAGE_SIZE;
 
-  const { data, isLoading, error } = useMyReports(PAGE_SIZE, offset);
+  const { data, isLoading, error, refetch } = useMyReports(PAGE_SIZE, offset);
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleReportDeleted = () => {
+    // 레포트 삭제 후 목록 새로고침
+    refetch();
   };
 
   return (
@@ -65,7 +70,7 @@ export default function ProfilePage() {
           </div>
 
           {/* 레포트 리스트 */}
-          <ReportList reports={data.reports} />
+          <ReportList reports={data.reports} onReportDeleted={handleReportDeleted} />
 
           {/* 페이지네이션 */}
           <ReportPagination

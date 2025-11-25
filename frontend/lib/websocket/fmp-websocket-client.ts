@@ -121,7 +121,6 @@ export class FMPWebSocketClient {
         as: backendMessage.ask_size,
         bp: backendMessage.bid_price,
         bs: backendMessage.bid_size,
-        type: backendMessage.data_type,
       };
 
       const symbol = priceMessage.s.toUpperCase();

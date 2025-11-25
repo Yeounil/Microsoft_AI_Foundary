@@ -35,10 +35,11 @@ class NewsTranslationService:
             logger.warning("⚠️ ANTHROPIC_API_KEY 환경변수가 설정되지 않음")
 
     def _load_translation_prompt(self) -> str:
-        """prompt.txt 파일에서 번역 프롬프트 로드"""
+        """news_translation_prompt.txt 파일에서 번역 프롬프트 로드"""
         try:
-            project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
-            prompt_path = os.path.join(project_root, 'prompt.txt')
+            # 현재 파일과 같은 디렉토리(app/services)에서 프롬프트 파일 로드
+            current_dir = os.path.dirname(__file__)
+            prompt_path = os.path.join(current_dir, 'news_translation_prompt.txt')
 
             if not os.path.exists(prompt_path):
                 logger.warning(f"⚠️ 프롬프트 파일을 찾을 수 없음: {prompt_path}")

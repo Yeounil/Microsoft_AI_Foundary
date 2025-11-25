@@ -75,7 +75,7 @@ export function CreateSubscriptionDialog({
     }
 
     // send_time을 HH:MM:SS 형식으로 변환
-    const sendTime = data.send_time.includes(':') && data.send_time.split(':').length === 2
+    const sendTime = data.send_time?.includes(':') && data.send_time.split(':').length === 2
       ? `${data.send_time}:00`
       : data.send_time;
 

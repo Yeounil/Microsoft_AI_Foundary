@@ -357,6 +357,74 @@ async def preview_news_for_report(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.delete("/report/{report_id}")
+async def delete_report(
+    report_id: int,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    레포트 삭제 (DELETE) - 인증 필요
+
+    자신의 레포트를 삭제합니다.
+    보안을 위해 user_id를 확인하여 본인의 레포트만 삭제 가능합니다.
+
+    Args:
+        report_id: 삭제할 레포트 ID
+        current_user: 현재 로그인한 사용자 정보 (자동 주입)
+
+    Returns:
+        {
+            "success": true,
+            "message": "레포트가 삭제되었습니다",
+            "deleted_id": 123
+        }
+    """
+    try:
+        user_id = current_user["user_id"]
+        supabase = get_supabase()
+
+        logger.info(f"[NEWS_REPORT] 레포트 삭제 요청 (report_id: {report_id}, user_id: {user_id})")
+
+        # 먼저 해당 레포트가 본인의 것인지 확인
+        query_result = supabase.table("news_reports")\
+            .select("id, symbol")\
+            .eq("id", report_id)\
+            .eq("user_id", user_id)\
+            .execute()
+
+        if not query_result.data or len(query_result.data) == 0:
+            raise HTTPException(
+                status_code=404,
+                detail="레포트를 찾을 수 없거나 삭제 권한이 없습니다."
+            )
+
+        # 레포트 삭제
+        delete_result = supabase.table("news_reports")\
+            .delete()\
+            .eq("id", report_id)\
+            .eq("user_id", user_id)\
+            .execute()
+
+        logger.info(f"[NEWS_REPORT] ✅ 레포트 삭제 완료 (ID: {report_id}, Symbol: {query_result.data[0]['symbol']})")
+
+        return {
+            "success": True,
+            "message": "레포트가 삭제되었습니다",
+            "deleted_id": report_id
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[NEWS_REPORT] 레포트 삭제 오류 (ID: {report_id}): {str(e)}")
+        import traceback
+        logger.error(f"[NEWS_REPORT] 상세 오류:\n{traceback.format_exc()}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"레포트 삭제 중 오류가 발생했습니다: {str(e)}"
+        )
+
+
 @router.get("/{symbol}")
 async def get_news_report(
     symbol: str,
