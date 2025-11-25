@@ -10,6 +10,7 @@ import {
   CandleCallback,
   CandleAggregatorOptions,
 } from "./types";
+import { convertToKST } from "../chart/timezone-utils";
 
 export class CandleAggregator {
   private currentCandles: Map<string, CandleData> = new Map();
@@ -49,11 +50,14 @@ export class CandleAggregator {
     const candleTime = Math.floor(timestamp / intervalMs) * intervalMs;
     const candleTimeSeconds = Math.floor(candleTime / 1000);
 
+    // 한국 시간대(KST)로 변환
+    const kstCandleTime = convertToKST(candleTimeSeconds);
+
     let candle = this.currentCandles.get(symbol);
 
     // 새 캔들 시작
-    if (!candle || candle.time !== candleTimeSeconds) {
-      candle = this.createNewCandle(price, candleTimeSeconds, message.ls);
+    if (!candle || candle.time !== kstCandleTime) {
+      candle = this.createNewCandle(price, kstCandleTime, message.ls);
       this.currentCandles.set(symbol, candle);
       this.candleIntervals.set(symbol, intervalMs);
 

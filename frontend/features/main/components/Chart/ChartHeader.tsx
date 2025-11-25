@@ -34,8 +34,8 @@ export function ChartHeader({
         <div className="flex items-center gap-3 mb-2">
           <CardTitle>실시간 차트 - {symbol}</CardTitle>
           {isRealtime && (
-            <span className="flex items-center gap-1 text-xs text-green-600">
-              <span className="inline-block w-2 h-2 bg-green-600 rounded-full animate-pulse"></span>
+            <span className="flex items-center gap-1 text-xs text-stock-up">
+              <span className="inline-block w-2 h-2 bg-stock-up rounded-full animate-pulse"></span>
               LIVE
             </span>
           )}
@@ -53,7 +53,7 @@ export function ChartHeader({
           <span className="text-2xl font-bold">${currentPrice.toFixed(2)}</span>
           <span
             className={`flex items-center gap-1 text-sm font-medium ${
-              priceChange >= 0 ? "text-green-600" : "text-red-600"
+              priceChange >= 0 ? "text-stock-up" : "text-stock-down"
             }`}
           >
             {priceChange >= 0 ? (

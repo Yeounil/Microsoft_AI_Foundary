@@ -143,13 +143,13 @@ export function ChartTooltip({ chart, series, symbol }: ChartTooltipProps) {
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">고가</span>
-              <span className="font-medium text-green-600">
+              <span className="font-medium text-stock-up">
                 {formatPrice(tooltipData.high)}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">저가</span>
-              <span className="font-medium text-red-600">
+              <span className="font-medium text-stock-down">
                 {formatPrice(tooltipData.low)}
               </span>
             </div>
@@ -165,7 +165,7 @@ export function ChartTooltip({ chart, series, symbol }: ChartTooltipProps) {
             <div
               className={cn(
                 "flex items-center gap-1 font-medium",
-                isPositive ? "text-green-600" : "text-red-600"
+                isPositive ? "text-stock-up" : "text-stock-down"
               )}
             >
               {isPositive ? (
@@ -222,7 +222,7 @@ export function ChartLegend({
             <span
               className={cn(
                 "flex items-center gap-1",
-                isPositive ? "text-green-600" : "text-red-600"
+                isPositive ? "text-stock-up" : "text-stock-down"
               )}
             >
               {isPositive ? (

@@ -49,7 +49,7 @@ export const StockItem = memo(function StockItem({
               </span>
               <span
                 className={`flex items-center gap-0.5 text-[10px] lg:text-xs ${
-                  stock.change >= 0 ? "text-green-600" : "text-red-600"
+                  stock.change >= 0 ? "text-stock-up" : "text-stock-down"
                 }`}
               >
                 {stock.change >= 0 ? (

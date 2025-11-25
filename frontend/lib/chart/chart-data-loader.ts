@@ -6,6 +6,7 @@
 import apiClient from "../api-client";
 import { CandleData } from "../websocket/types";
 import { logger } from "../logger";
+import { convertToKST } from "./timezone-utils";
 
 export type ChartPeriod = "1d" | "7d" | "1w" | "1mo" | "3mo" | "6mo" | "1y" | "5y" | "max" | "all";
 export type ChartInterval =
@@ -240,9 +241,12 @@ export class ChartDataLoader {
             time = Math.floor(Date.now() / 1000);
           }
 
+          // 한국 시간대(KST)로 변환
+          const kstTime = convertToKST(time);
+
           // OHLC 데이터 정규화
           const candle: CandleData = {
-            time,
+            time: kstTime,
             open: this.parseNumber(record.open || record.o || 0),
             high: this.parseNumber(record.high || record.h || 0),
             low: this.parseNumber(record.low || record.l || 0),

@@ -41,6 +41,11 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  /* 주가 색상 토큰 */
+  --color-stock-up: var(--stock-up);
+  --color-stock-down: var(--stock-down);
+  --color-stock-up-bg: var(--stock-up-bg);
+  --color-stock-down-bg: var(--stock-down-bg);
 }
 
 :root {
@@ -76,6 +81,11 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  /* 주가 색상 - 라이트 모드 */
+  --stock-up: oklch(0.55 0.2 145);
+  --stock-down: oklch(0.55 0.22 25);
+  --stock-up-bg: oklch(0.95 0.05 145);
+  --stock-down-bg: oklch(0.95 0.05 25);
 }
 
 .dark {
@@ -110,6 +120,11 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  /* 주가 색상 - 다크 모드 (더 밝게) */
+  --stock-up: oklch(0.72 0.18 145);
+  --stock-down: oklch(0.72 0.20 25);
+  --stock-up-bg: oklch(0.25 0.05 145);
+  --stock-down-bg: oklch(0.25 0.05 25);
 }
 
 @layer base {
