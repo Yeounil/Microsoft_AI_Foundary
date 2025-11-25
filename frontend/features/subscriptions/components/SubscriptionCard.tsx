@@ -96,10 +96,11 @@ export function SubscriptionCard({ subscription, onUpdate }: SubscriptionCardPro
                 <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
                   수정
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleSendTest}>
+                {/* DNS 미설정으로 인한 테스트 발송 기능 임시 비활성화 */}
+                {/* <DropdownMenuItem onClick={handleSendTest}>
                   <Send className="mr-2 h-4 w-4" />
                   테스트 발송
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => setShowDeleteDialog(true)}

@@ -66,6 +66,7 @@ export type { PriceUpdate, WebSocketMessage } from '@/types/websocket';
 // News types
 export interface NewsArticle {
   title: string;
+  kr_title?: string;  // 한글 번역 제목
   content?: string;
   summary?: string;
   url: string;
@@ -116,6 +117,7 @@ export interface StockAnalysis {
 export interface NewsAnalysis {
   id: string;
   title: string;
+  kr_title?: string;  // 한글 번역 제목
   published_at: string;
   source: string;
   sentiment: 'positive' | 'negative' | 'neutral';

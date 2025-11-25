@@ -60,7 +60,11 @@ SUPPORTED_SYMBOLS = [
     # Industrials
     "CAT", "BA", "MMM", "RTX", "HON", "JCI", "PCAR", "GE", "DE", "LMT",
     # Energy
-    "XOM", "CVX", "COP", "MPC", "PSX", "VLO", "EOG", "OXY", "MRO", "SLB"
+    "XOM", "CVX", "COP", "MPC", "PSX", "VLO", "EOG", "OXY", "MRO", "SLB",
+    # Communications
+    "VZ", "T", "TMUS",
+    # ETFs
+    "SPY", "QQQ", "DIA", "IWM", "VTI", "VOO", "VEA", "VWO", "AGG", "BND", "GLD", "SLV"
 ]
 
 

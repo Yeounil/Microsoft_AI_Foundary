@@ -74,6 +74,11 @@ async def get_financial_news_v1(
 
         news = result.data if result.data else []
 
+        # kr_title이 있으면 title을 대체
+        for article in news:
+            if article.get("kr_title"):
+                article["title"] = article["kr_title"]
+
         return {
             "symbol": symbol,
             "symbols": symbols,
@@ -104,6 +109,10 @@ async def get_news_by_id(news_id: int):
 
         news = result.data[0]
 
+        # kr_title이 있으면 title을 대체
+        if news.get("kr_title"):
+            news["title"] = news["kr_title"]
+
         return news
 
     except HTTPException:
@@ -132,6 +141,11 @@ async def get_stock_news_v1(
             # 크롤링 후 다시 조회
             news = await NewsDBService.get_latest_news_by_symbol(symbol=symbol, limit=limit)
 
+        # kr_title이 있으면 title을 대체
+        for article in news:
+            if article.get("kr_title"):
+                article["title"] = article["kr_title"]
+
         return {
             "symbol": symbol,
             "total_count": len(news),
@@ -158,6 +172,11 @@ async def crawl_stock_news_v1(
 
         # 크롤링 후 DB에서 조회
         news = await NewsDBService.get_latest_news_by_symbol(symbol=symbol, limit=limit)
+
+        # kr_title이 있으면 title을 대체
+        for article in news:
+            if article.get("kr_title"):
+                article["title"] = article["kr_title"]
 
         return {
             "symbol": symbol,
