@@ -19,7 +19,7 @@ interface NewsListProps {
   error?: Error | null;
   isWatchlistTab?: boolean;
   watchlistLength?: number;
-  isMainPage?: boolean;  // 메인페이지 여부를 나타내는 prop 추가
+  isMainPage?: boolean; // 메인페이지 여부를 나타내는 prop 추가
 }
 
 /**
@@ -43,7 +43,7 @@ export function NewsList({
 
   if (isLoading) {
     return (
-      <div className="flex h-[calc(100vh-280px)] md:h-[calc(100vh-200px)] lg:h-[900px] min-h-[400px] max-h-[1100px] items-center justify-center">
+      <div className="flex h-[calc(100vh-280px)] md:h-[calc(100vh-200px)] lg:h-[1050px] min-h-[400px] max-h-[1100px] items-center justify-center">
         <div className="text-sm text-muted-foreground">
           뉴스를 불러오는 중...
         </div>
@@ -54,7 +54,7 @@ export function NewsList({
   // 에러 상태 (관심종목에 없는 종목 검색)
   if (error) {
     return (
-      <div className="flex h-[calc(100vh-280px)] md:h-[calc(100vh-200px)] lg:h-[900px] min-h-[400px] max-h-[1100px] items-center justify-center">
+      <div className="flex h-[calc(100vh-280px)] md:h-[calc(100vh-200px)] lg:h-[1050px] min-h-[400px] max-h-[1100px] items-center justify-center">
         <div className="text-center space-y-3">
           <div className="text-sm font-medium text-destructive">
             {error.message}
@@ -76,7 +76,8 @@ export function NewsList({
             관심종목을 추가해주세요
           </div>
           <div className="text-xs text-muted-foreground">
-            메인 페이지 또는 상세 페이지에서 ⭐ 버튼을 클릭하여 종목을 추가할 수 있습니다
+            메인 페이지 또는 상세 페이지에서 ⭐ 버튼을 클릭하여 종목을 추가할 수
+            있습니다
           </div>
         </div>
       </div>
@@ -98,10 +99,17 @@ export function NewsList({
   }
 
   return (
-    <div className={`flex flex-col h-[600px] ${isMainPage ? 'md:h-[860px]' : 'md:h-[880px]'} lg:h-[1050px] min-h-[400px]`}>
-      <div className="flex flex-col justify-around flex-1 overflow-y-auto space-y-3 mb-4 pt-2 stagger-animate">
+    <div
+      className={`flex flex-col h-[600px] ${
+        isMainPage ? "md:h-[860px]" : "md:h-[880px]"
+      } lg:h-[1050px] min-h-[400px]`}
+    >
+      <div className="grid grid-rows-5 gap-3 flex-1 overflow-y-auto mb-4 pt-2 stagger-animate [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {news.map((item, index) => (
-          <div key={item.id || index} className="transform transition-all duration-300">
+          <div
+            key={item.id || index}
+            className="transform transition-all duration-300"
+          >
             <NewsCard article={item} index={index} isMainPage={isMainPage} />
           </div>
         ))}

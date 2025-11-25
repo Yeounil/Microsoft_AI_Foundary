@@ -52,13 +52,13 @@ export const NewsCard = memo(function NewsCard({ article, index, isMainPage = fa
           </div>
 
           {/* 제목 (모바일/타블릿) */}
-          <CardTitle className="lg:hidden line-clamp-2 text-xs md:text-sm leading-4 md:leading-5">
+          <CardTitle className="lg:hidden line-clamp-2 text-xs md:text-sm leading-4 md:leading-5 min-h-[32px] md:min-h-[40px]">
             {article.title}
           </CardTitle>
 
           {/* 데스크톱: 제목 + 감정분석 (같은 줄) */}
           <div className="hidden lg:flex items-start justify-between gap-2">
-            <CardTitle className="line-clamp-2 text-base leading-6 flex-1">
+            <CardTitle className="line-clamp-2 text-base leading-6 flex-1 min-h-[48px]">
               {article.title}
             </CardTitle>
             <div
