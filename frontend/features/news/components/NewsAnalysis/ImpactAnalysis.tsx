@@ -21,10 +21,10 @@ export function ImpactAnalysis({
 }: ImpactAnalysisProps) {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>주가 영향 분석</CardTitle>
+      <CardHeader className="p-4 md:p-6">
+        <CardTitle className="text-base md:text-lg">주가 영향 분석</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="p-4 md:p-6 pt-0 md:pt-0 space-y-3 md:space-y-4">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium">예상 영향:</span>
           <span

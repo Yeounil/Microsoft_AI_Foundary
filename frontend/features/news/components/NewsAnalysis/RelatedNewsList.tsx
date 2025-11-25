@@ -30,14 +30,14 @@ export function RelatedNewsList({
   hasNextPage,
 }: RelatedNewsListProps) {
   return (
-    <Card className="sticky top-20">
-      <CardHeader>
-        <CardTitle>관련 뉴스</CardTitle>
-        <CardDescription>
+    <Card className="lg:sticky lg:top-20">
+      <CardHeader className="p-4 md:p-6">
+        <CardTitle className="text-base md:text-lg">관련 뉴스</CardTitle>
+        <CardDescription className="text-xs md:text-sm">
           {symbol ? `${symbol} 종목 관련 뉴스` : "관련 뉴스"}
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4 md:p-6 pt-0 md:pt-0">
         {relatedNews.length > 0 ? (
           <div className="space-y-3">
             {relatedNews.map((article) => (

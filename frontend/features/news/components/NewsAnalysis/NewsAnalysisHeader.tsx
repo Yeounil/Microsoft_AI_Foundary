@@ -15,12 +15,12 @@ export function NewsAnalysisHeader({
   isGeneratingReport = false,
 }: NewsAnalysisHeaderProps) {
   return (
-    <div className="mb-6 flex items-center border-b pb-4">
+    <div className="mb-4 md:mb-6 flex items-center border-b pb-3 md:pb-4">
       <Button
         variant="ghost"
         size="sm"
         onClick={onBack}
-        className="flex items-center gap-2"
+        className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm -ml-2"
         disabled={isGeneratingReport}
       >
         <ArrowLeft className="h-4 w-4" />

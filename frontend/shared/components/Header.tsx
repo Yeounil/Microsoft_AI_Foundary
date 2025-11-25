@@ -237,7 +237,7 @@ export default function Header() {
                         className="flex items-center gap-3 w-full px-4 py-3 rounded-lg hover:bg-muted min-h-12 text-left"
                       >
                         <User className="h-5 w-5" />
-                        <span>프로필</span>
+                        <span>내 보고서</span>
                       </button>
 
                       {/* 내 구독 종목 */}

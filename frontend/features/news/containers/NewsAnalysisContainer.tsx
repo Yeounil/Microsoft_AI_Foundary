@@ -114,7 +114,7 @@ export function NewsAnalysisContainer({
   const relatedStocks = newsData.symbol ? [newsData.symbol] : [];
 
   return (
-    <div className="container mx-auto px-4 py-6">
+    <div className="container mx-auto px-3 md:px-4 py-4 md:py-6">
       {/* Report Generating Modal */}
       <ReportGeneratingModal
         open={showModal}
@@ -128,9 +128,9 @@ export function NewsAnalysisContainer({
         isGeneratingReport={isGeneratingReport}
       />
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
+      <div className="grid gap-4 md:gap-6 lg:grid-cols-[1fr_400px]">
         {/* Left Side - Main Content */}
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6">
           {/* Article Header */}
           <ArticleHeader
             title={newsData.title}
