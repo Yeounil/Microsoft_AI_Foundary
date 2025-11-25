@@ -1,8 +1,9 @@
 from datetime import timedelta, datetime, timezone
-from fastapi import APIRouter, HTTPException, status, Request
+from fastapi import APIRouter, HTTPException, status, Request, Response
 from pydantic import BaseModel
 from typing import Dict, Any, Optional
 import logging
+import os
 
 from app.core.config import settings
 from app.core.kakao_auth import KakaoAuthProvider
@@ -88,7 +89,7 @@ async def get_authorization_url(provider: str, state: Optional[str] = None):
 
 
 @router.post("/{provider}/login", response_model=Token)
-async def social_login(provider: str, login_request: SocialLoginRequest, request: Request):
+async def social_login(provider: str, login_request: SocialLoginRequest, request: Request, response: Response):
     """
     소셜 로그인 처리
 
@@ -225,6 +226,31 @@ async def social_login(provider: str, login_request: SocialLoginRequest, request
             logger.warning(f"로그인 활동 로그 실패 (무시됨): {log_error}")
 
         logger.info(f"{provider} 소셜 로그인 성공: user_id={existing_user['id']}")
+
+        # HttpOnly 쿠키에 토큰 저장
+        is_production = os.getenv("ENVIRONMENT", "development") == "production"
+
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            secure=is_production,
+            samesite="lax",
+            max_age=settings.access_token_expire_minutes * 60,
+            path="/",
+            domain=None
+        )
+
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh_token,
+            httponly=True,
+            secure=is_production,
+            samesite="lax",
+            max_age=settings.refresh_token_expire_days * 24 * 60 * 60,
+            path="/",
+            domain=None
+        )
 
         return {
             "access_token": access_token,

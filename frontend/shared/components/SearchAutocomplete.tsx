@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { HighlightText } from './HighlightText';
 import { fuzzySearch } from '@/lib/fuzzy-search';
 import { useSupportedStocks } from '@/hooks/useSupportedStocks';
+import { isValidStockSymbol, sanitizeSymbol, sanitizeSearchQuery } from '@/lib/security/sanitize';
 
 type SearchFilterType = 'all' | 'stock' | 'news' | 'category';
 
@@ -74,24 +75,43 @@ export function SearchAutocomplete({
     return apiStocks;
   }, [externalStocks, apiStocks]);
 
-  // 검색 히스토리 로드 (마운트 시 한 번만)
+  // 검색 히스토리 로드 (마운트 시 한 번만) - 검증 추가
   useEffect(() => {
-    const saved = localStorage.getItem(SEARCH_HISTORY_KEY);
-    if (saved) {
-      try {
-        setHistory(JSON.parse(saved));
-      } catch {
-        // 파싱 실패 시 무시
+    try {
+      const saved = sessionStorage.getItem(SEARCH_HISTORY_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          // 각 항목 검증 - 허용된 문자만 포함된 항목만 허용
+          const validated = parsed
+            .filter((item): item is string =>
+              typeof item === 'string' &&
+              item.length <= 20 &&
+              /^[a-zA-Z0-9.\-]+$/.test(item)
+            )
+            .slice(0, MAX_HISTORY);
+          setHistory(validated);
+        }
       }
+    } catch {
+      // 파싱 실패 시 무시
     }
   }, []);
 
-  // 검색 히스토리 저장
+  // 검색 히스토리 저장 - 검증 추가
   const saveToHistory = useCallback((symbol: string) => {
+    // 입력값 검증 - 허용된 문자만
+    const sanitizedSymbol = symbol.replace(/[^a-zA-Z0-9.\-]/g, '').toUpperCase();
+    if (!sanitizedSymbol || sanitizedSymbol.length > 20) return;
+
     setHistory((prev) => {
-      const filtered = prev.filter((item) => item !== symbol);
-      const newHistory = [symbol, ...filtered].slice(0, MAX_HISTORY);
-      localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(newHistory));
+      const filtered = prev.filter((item) => item !== sanitizedSymbol);
+      const newHistory = [sanitizedSymbol, ...filtered].slice(0, MAX_HISTORY);
+      try {
+        sessionStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(newHistory));
+      } catch {
+        // Storage quota exceeded 등 에러 무시
+      }
       return newHistory;
     });
   }, []);
@@ -194,26 +214,40 @@ export function SearchAutocomplete({
     }
   };
 
-  // 선택 처리
+  // 선택 처리 - 입력 검증 및 안전한 리다이렉트
   const handleSelect = (symbol: string, type?: string) => {
-    saveToHistory(symbol);
+    // 주식 심볼 검증 (news, category 타입은 별도 검증)
+    if (type !== 'news' && type !== 'category') {
+      if (!isValidStockSymbol(symbol)) {
+        console.warn('Invalid stock symbol blocked:', symbol);
+        return;
+      }
+    }
+
+    // 심볼 새니타이즈
+    const safeSymbol = sanitizeSymbol(symbol);
+    if (!safeSymbol) return;
+
+    saveToHistory(safeSymbol);
     setQuery('');
     setIsOpen(false);
 
     if (onSelect) {
-      onSelect(symbol, type);
+      onSelect(safeSymbol, type);
     }
 
     // navigateOnSelect가 true이고 onSelect가 없을 때만 라우팅
     // (onSelect가 있으면 외부에서 라우팅을 제어)
     if (navigateOnSelect && !onSelect) {
-      // 타입에 따라 다른 경로로 이동
+      // 타입에 따라 다른 경로로 이동 (encodeURIComponent로 안전한 URL 생성)
       if (type === 'news') {
-        router.push(`/main?news=${symbol}`);
+        const safeNews = symbol.toLowerCase().replace(/[^a-z]/g, '');
+        router.push(`/main?news=${encodeURIComponent(safeNews)}`);
       } else if (type === 'category') {
-        router.push(`/main?category=${symbol}`);
+        const safeCategory = symbol.toLowerCase().replace(/[^a-z]/g, '');
+        router.push(`/main?category=${encodeURIComponent(safeCategory)}`);
       } else {
-        router.push(`/dashboard/${symbol}`);
+        router.push(`/dashboard/${encodeURIComponent(safeSymbol)}`);
       }
     }
   };
@@ -245,7 +279,7 @@ export function SearchAutocomplete({
   // 히스토리 삭제
   const clearHistory = () => {
     setHistory([]);
-    localStorage.removeItem(SEARCH_HISTORY_KEY);
+    sessionStorage.removeItem(SEARCH_HISTORY_KEY);
   };
 
   const showDropdown = isOpen && (query.length > 0 || history.length > 0);

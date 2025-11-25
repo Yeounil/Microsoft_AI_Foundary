@@ -1,18 +1,19 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.services.supabase_user_service import SupabaseUserService
 from app.core.security import verify_token
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 import logging
 
 logger = logging.getLogger(__name__)
 
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
 ) -> Dict[str, Any]:
-    """현재 인증된 사용자 가져오기 (Supabase)"""
+    """현재 인증된 사용자 가져오기 (Supabase) - Authorization 헤더 또는 HttpOnly 쿠키 지원"""
     from jose import jwt, JWTError
     from app.core.config import settings
     from app.db.supabase_client import get_supabase
@@ -23,9 +24,22 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
 
+    # 1. Authorization 헤더에서 토큰 추출 (우선)
+    token = None
+    if credentials and credentials.credentials:
+        token = credentials.credentials
+        logger.info(f"[AUTH] Authorization 헤더에서 토큰 추출")
+    # 2. HttpOnly 쿠키에서 토큰 추출 (fallback)
+    elif request.cookies.get("access_token"):
+        token = request.cookies.get("access_token")
+        logger.info(f"[AUTH] 쿠키에서 토큰 추출")
+
+    if not token:
+        logger.error("[AUTH] 토큰이 없음 (헤더/쿠키 모두 없음)")
+        raise credentials_exception
+
     try:
         # 토큰 값 확인 (디버깅)
-        token = credentials.credentials
         logger.info(f"받은 토큰: {token[:20]}... (길이: {len(token)})")
 
         # JWT 토큰 디코딩
@@ -100,8 +114,9 @@ async def get_current_active_user(current_user: Dict[str, Any] = Depends(get_cur
 
 # 실제 사용자 인증 (임시 사용자 제거)
 async def get_current_user_or_create_temp(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
 ) -> Dict[str, Any]:
     """현재 사용자 인증 (Supabase) - 임시 사용자 로직 제거"""
     # 실제 인증만 허용 - 임시 사용자 로직 제거
-    return await get_current_user(credentials)
+    return await get_current_user(request, credentials)

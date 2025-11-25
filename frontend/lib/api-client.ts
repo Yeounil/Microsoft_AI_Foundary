@@ -3,7 +3,9 @@ import { AuthTokens } from '@/types';
 
 class ApiClient {
   private client: AxiosInstance;
-  private refreshPromise: Promise<string> | null = null;
+  private refreshPromise: Promise<void> | null = null;
+  // 인증 상태 추적 (세션 만료 이벤트용)
+  private isAuthenticated: boolean = false;
 
   constructor() {
     this.client = axios.create({
@@ -11,20 +13,13 @@ class ApiClient {
       headers: {
         'Content-Type': 'application/json',
       },
+      withCredentials: true, // HttpOnly 쿠키 자동 전송
     });
 
-    // Request interceptor
+    // Request interceptor - 쿠키가 자동 전송되므로 Authorization 헤더 불필요
     this.client.interceptors.request.use(
-      (config) => {
-        const token = this.getAccessToken();
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-      },
-      (error) => {
-        return Promise.reject(error);
-      }
+      (config) => config,
+      (error) => Promise.reject(error)
     );
 
     // Response interceptor
@@ -39,19 +34,14 @@ class ApiClient {
         if (error.response?.status === 401 && !originalRequest._retry && !skipAuthRetry) {
           originalRequest._retry = true;
 
-          // Check if refresh token exists (user was logged in)
-          const hasRefreshToken = !!this.getRefreshToken();
-
           try {
-            const newToken = await this.refreshAccessToken();
-            if (newToken && originalRequest.headers) {
-              originalRequest.headers.Authorization = `Bearer ${newToken}`;
-            }
+            await this.refreshAccessToken();
+            // 쿠키가 갱신되었으므로 재요청
             return this.client(originalRequest);
           } catch (refreshError) {
-            this.clearTokens();
-            // Only dispatch session expired event if user was previously logged in
-            if (typeof window !== 'undefined' && hasRefreshToken) {
+            // 세션 만료 이벤트 발생 (이전에 인증된 상태였던 경우에만)
+            if (typeof window !== 'undefined' && this.isAuthenticated) {
+              this.isAuthenticated = false;
               window.dispatchEvent(new CustomEvent('session-expired'));
             }
             return Promise.reject(refreshError);
@@ -63,52 +53,25 @@ class ApiClient {
     );
   }
 
-  private getAccessToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('access_token');
-  }
-
-  private getRefreshToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('refresh_token');
-  }
-
-  private setTokens(tokens: AuthTokens): void {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem('access_token', tokens.access_token);
-    localStorage.setItem('refresh_token', tokens.refresh_token);
-  }
-
-  private clearTokens(): void {
-    if (typeof window === 'undefined') return;
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-  }
-
-  private async refreshAccessToken(): Promise<string> {
+  private async refreshAccessToken(): Promise<void> {
     if (this.refreshPromise) {
       return this.refreshPromise;
     }
 
-    const refreshToken = this.getRefreshToken();
-    if (!refreshToken) {
-      throw new Error('No refresh token available');
-    }
-
-    // Use axios directly without interceptors to avoid sending expired token
+    // HttpOnly 쿠키 기반: 쿠키가 자동으로 전송됨
     this.refreshPromise = axios
-      .post<AuthTokens>(
+      .post(
         `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v2/auth/refresh`,
-        { refresh_token: refreshToken },
+        {}, // body 비움 - 쿠키에서 refresh_token 읽음
         {
           headers: {
             'Content-Type': 'application/json',
           },
+          withCredentials: true,
         }
       )
-      .then((response) => {
-        this.setTokens(response.data);
-        return response.data.access_token;
+      .then(() => {
+        // 쿠키가 서버에서 갱신됨 - 별도 처리 불필요
       })
       .finally(() => {
         this.refreshPromise = null;
@@ -129,26 +92,25 @@ class ApiClient {
     const response = await this.client.post<AuthTokens>('/api/v2/auth/login', data, {
       headers: { 'X-Skip-Auth-Retry': 'true' }
     });
-    this.setTokens(response.data);
+    // 로그인 성공 - 쿠키는 서버에서 설정됨
+    this.isAuthenticated = true;
     return response.data;
   }
 
-  async logout(refreshToken?: string) {
-    const token = refreshToken || this.getRefreshToken();
-    if (token) {
-      try {
-        await this.client.post('/api/v2/auth/logout', {
-          refresh_token: token,
-        });
-      } catch (error) {
-        console.error('Logout error:', error);
-      }
+  async logout() {
+    try {
+      // HttpOnly 쿠키 기반: 서버에서 쿠키 삭제
+      await this.client.post('/api/v2/auth/logout', {});
+    } catch (error) {
+      console.error('Logout error:', error);
     }
-    this.clearTokens();
+    this.isAuthenticated = false;
   }
 
   async getMe() {
     const response = await this.client.get('/api/v2/auth/me');
+    // getMe 성공 시 인증 상태 업데이트
+    this.isAuthenticated = true;
     return response.data;
   }
 
@@ -168,7 +130,8 @@ class ApiClient {
         headers: { 'X-Skip-Auth-Retry': 'true' }
       }
     );
-    this.setTokens(response.data);
+    // 소셜 로그인 성공 - 쿠키는 서버에서 설정됨
+    this.isAuthenticated = true;
     return response.data;
   }
 
@@ -196,14 +159,6 @@ class ApiClient {
     });
     return response.data;
   }
-
-  // Removed: /api/v1/stocks/${symbol} API is no longer used
-  // async getStockData(symbol: string, period?: string, interval?: string) {
-  //   const response = await this.client.get(`/api/v1/stocks/${symbol}`, {
-  //     params: { period, interval },
-  //   });
-  //   return response.data;
-  // }
 
   async getChartData(symbol: string, period?: string, interval?: string) {
     const response = await this.client.get(`/api/v1/stocks/${symbol}/chart`, {
@@ -303,15 +258,6 @@ class ApiClient {
   }
 
   // Analysis methods
-  // Removed: /api/v2/analysis/stock API is no longer used
-  // async analyzeStock(symbol: string, period: string = '1mo') {
-  //   const response = await this.client.post('/api/v2/analysis/stock', {
-  //     symbol,
-  //     period,
-  //   });
-  //   return response.data;
-  // }
-
   async analyzePortfolio(stocks: string[], weights: number[]) {
     const response = await this.client.post('/api/v2/analysis/portfolio', {
       stocks,

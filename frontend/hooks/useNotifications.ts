@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useAuthStore } from '@/store/auth-store';
+import { EventSourcePolyfill } from 'event-source-polyfill';
 
 export interface Notification {
   type: 'report_completed' | 'report_failed' | 'connected' | 'heartbeat';
@@ -24,20 +25,20 @@ export function useNotifications() {
       return;
     }
 
-    let eventSource: EventSource | null = null;
+    let eventSource: EventSourcePolyfill | null = null;
     let reconnectTimeout: NodeJS.Timeout;
 
     const connect = () => {
       try {
-        // SSE 연결 (Query Parameter로 토큰 전달)
-        const token = localStorage.getItem('access_token');
-        if (!token) {
-          console.warn('[SSE] No access token found');
-          return;
-        }
+        // SSE 연결 - HttpOnly 쿠키 기반 인증 사용
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        const url = `${baseUrl}/api/v1/notifications/stream`;
 
-        const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/notifications/stream?token=${encodeURIComponent(token)}`;
-        eventSource = new EventSource(url);
+        // EventSourcePolyfill로 쿠키 자동 전송 (withCredentials 지원)
+        eventSource = new EventSourcePolyfill(url, {
+          withCredentials: true,
+          heartbeatTimeout: 60000, // 60초 타임아웃
+        });
 
         eventSource.onopen = () => {
           console.log('[SSE] Connected');

@@ -51,21 +51,17 @@ export const NewsCard = memo(function NewsCard({ article, index, isMainPage = fa
             </div>
           </div>
 
-          {/* 제목 (모바일/타블릿) */}
-          <CardTitle className="lg:hidden line-clamp-2 text-xs md:text-sm leading-4 md:leading-5 min-h-[32px] md:min-h-[40px]">
-            {article.title}
-          </CardTitle>
-
-          {/* 데스크톱: 제목 + 감정분석 (같은 줄) */}
-          <div className="hidden lg:flex items-start justify-between gap-2">
-            <CardTitle className="line-clamp-2 text-base leading-6 flex-1 min-h-[48px]">
+          {/* 제목 + 감정분석 (모든 화면) */}
+          <div className="flex items-start justify-between gap-2">
+            <CardTitle className="line-clamp-2 text-xs md:text-sm lg:text-base leading-4 md:leading-5 lg:leading-6 flex-1 min-h-8 md:min-h-10 lg:min-h-12">
               {article.title}
             </CardTitle>
+            {/* 모바일/데스크톱: 제목 옆 감정분석 */}
             <div
-              className={`flex items-center gap-1 px-2 py-0.5 rounded-md whitespace-nowrap shrink-0 ${sentiment.color}`}
+              className={`flex md:hidden lg:flex items-center gap-0.5 lg:gap-1 px-1.5 lg:px-2 py-0.5 rounded-md whitespace-nowrap shrink-0 ${sentiment.color}`}
             >
-              <SentimentIcon className="h-3 w-3" />
-              <span className="text-xs font-medium">{sentiment.label}</span>
+              <SentimentIcon className="h-2.5 w-2.5 lg:h-3 lg:w-3" />
+              <span className="text-[10px] lg:text-xs font-medium">{sentiment.label}</span>
             </div>
           </div>
 

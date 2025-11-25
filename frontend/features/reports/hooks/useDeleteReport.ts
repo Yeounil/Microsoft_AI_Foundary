@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import apiClient from '@/lib/api-client';
+import { AxiosError } from 'axios';
 
 interface DeleteReportResponse {
   success: boolean;
@@ -15,32 +17,27 @@ export function useDeleteReport() {
     setError(null);
 
     try {
-      // Get access token from localStorage (same pattern as api-client.ts)
-      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
-      if (!token) {
-        throw new Error('인증 토큰이 없습니다. 다시 로그인해주세요.');
-      }
-
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/news-report/report/${reportId}`,
-        {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
+      // apiClient 사용 - interceptor를 통해 토큰 자동 처리
+      const response = await apiClient.delete<DeleteReportResponse>(
+        `/api/v1/news-report/report/${reportId}`
       );
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || '레포트 삭제에 실패했습니다.');
+      return response.data.success;
+    } catch (err) {
+      let errorMessage = '알 수 없는 오류가 발생했습니다.';
+
+      if (err instanceof AxiosError) {
+        if (err.response?.status === 401) {
+          errorMessage = '인증이 만료되었습니다. 다시 로그인해주세요.';
+        } else if (err.response?.data?.detail) {
+          errorMessage = err.response.data.detail;
+        } else {
+          errorMessage = '레포트 삭제에 실패했습니다.';
+        }
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
       }
 
-      const data: DeleteReportResponse = await response.json();
-      return data.success;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.';
       setError(errorMessage);
       return false;
     } finally {

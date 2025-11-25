@@ -96,13 +96,19 @@ async def event_generator(request: Request, user_id: str):
 
 
 async def get_current_user_from_token(
+    request: Request,
     token: str = Query(None, description="Access token"),
 ) -> Dict[str, Any]:
     """Query parameter 또는 쿠키에서 JWT 토큰으로 현재 사용자 정보 추출 (SSE용)"""
+    # 1. Query parameter에서 토큰 확인 (우선)
     access_token = token
 
+    # 2. 쿠키에서 토큰 확인 (fallback)
     if not access_token:
-        logger.error("[SSE AUTH] No access_token provided")
+        access_token = request.cookies.get("access_token")
+
+    if not access_token:
+        logger.error("[SSE AUTH] No access_token provided (query or cookie)")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated - no access_token provided",
@@ -134,17 +140,24 @@ async def get_current_user_from_token(
 @router.get("/stream")
 async def notification_stream(
     request: Request,
-    current_user: dict = Depends(get_current_user_from_token)
+    token: str = Query(None, description="Access token"),
 ):
     """
     SSE 알림 스트림 엔드포인트
 
     클라이언트는 이 엔드포인트에 연결하여 실시간 알림을 받습니다.
 
-    인증: Query parameter로 access_token 전달
+    인증: Query parameter 또는 HttpOnly 쿠키로 access_token 전달
 
     사용법 (프론트엔드):
     ```javascript
+    // 쿠키 기반 인증 (권장)
+    const eventSource = new EventSource(
+        `/api/v1/notifications/stream`,
+        { withCredentials: true }
+    );
+
+    // 또는 토큰 기반 인증 (하위 호환)
     const token = localStorage.getItem('access_token');
     const eventSource = new EventSource(
         `/api/v1/notifications/stream?token=${token}`
@@ -164,6 +177,8 @@ async def notification_stream(
         "message": "레포트 생성이 완료되었습니다"
     }
     """
+    # 쿠키 또는 쿼리 파라미터에서 인증 수행
+    current_user = await get_current_user_from_token(request, token)
     user_id = current_user["id"]
 
     return StreamingResponse(

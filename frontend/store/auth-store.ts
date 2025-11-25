@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { User } from '@/types';
 import apiClient from '@/lib/api-client';
 import { extractErrorMessage } from '@/types/api';
@@ -103,11 +103,8 @@ export const useAuthStore = create<AuthState>()(
       },
 
       fetchUser: async () => {
-        if (!localStorage.getItem('access_token')) {
-          set({ isAuthenticated: false, user: null, isLoading: false });
-          return;
-        }
-
+        // HttpOnly 쿠키는 JavaScript에서 접근 불가
+        // API 호출을 시도하여 인증 상태 확인
         set({ isLoading: true });
         try {
           const userData = await apiClient.getMe();
@@ -135,6 +132,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
+      storage: createJSONStorage(() => sessionStorage), // sessionStorage 사용 (보안 강화)
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,

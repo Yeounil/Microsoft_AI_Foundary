@@ -25,30 +25,27 @@ export const StockItem = memo(function StockItem({
 }: StockItemProps) {
   return (
     <div
-      className={`flex items-center justify-between rounded-lg border border-border p-2 md:p-3 lg:p-4 transition-all duration-200 hover:bg-muted/50 hover:shadow-sm cursor-pointer active:scale-[0.98] touch-manipulation ${
-        isSelected ? "bg-primary/10 border-primary shadow-sm" : ""
+      className={`flex items-center gap-2 rounded-lg border border-border p-2 transition-colors hover:bg-muted/50 cursor-pointer active:scale-[0.99] touch-manipulation ${
+        isSelected ? "bg-primary/10 border-primary" : ""
       }`}
       onClick={() => onSelect(stock.symbol)}
     >
+      {/* 종목 정보 */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-baseline gap-1.5">
-          <h3 className="font-semibold text-sm lg:text-base shrink-0">{stock.symbol}</h3>
-          <span className="text-[10px] lg:text-xs text-muted-foreground truncate">
+        <div className="flex flex-col">
+          <h3 className="font-semibold text-sm">{stock.symbol}</h3>
+          <span className="text-[10px] text-muted-foreground truncate max-w-[120px] sm:max-w-40 md:max-w-[200px]">
             {stock.name}
           </span>
         </div>
-        <div className="mt-0.5 flex items-center gap-2 text-xs lg:text-sm">
+        <div className="flex items-center gap-1.5 text-xs">
           {stock.isLoading || stock.price === null ? (
-            <span className="text-muted-foreground animate-pulse">
-              로딩...
-            </span>
+            <span className="text-muted-foreground animate-pulse">로딩...</span>
           ) : (
             <>
-              <span className="font-medium">
-                ${stock.price.toFixed(2)}
-              </span>
+              <span className="font-medium">${stock.price.toFixed(2)}</span>
               <span
-                className={`flex items-center gap-0.5 text-[10px] lg:text-xs ${
+                className={`flex items-center text-[11px] ${
                   stock.change >= 0 ? "text-stock-up" : "text-stock-down"
                 }`}
               >
@@ -63,12 +60,13 @@ export const StockItem = memo(function StockItem({
           )}
         </div>
       </div>
-      <div className="flex items-center gap-1 shrink-0">
+      {/* 버튼 영역 */}
+      <div className="flex items-center shrink-0">
         <Button
-          size="sm"
+          size="icon"
           variant="ghost"
           onClick={(e) => onToggleWatchlist(e, stock.symbol)}
-          className="h-8 w-8 p-0 min-h-[36px] min-w-[36px]"
+          className="h-7 w-7"
         >
           <Star
             className={`h-4 w-4 ${
@@ -81,9 +79,11 @@ export const StockItem = memo(function StockItem({
           variant="outline"
           asChild
           onClick={(e) => e.stopPropagation()}
-          className="flex h-8 px-2 md:px-3 text-xs min-h-[36px] touch-manipulation active:scale-95 transition-transform"
+          className="h-7 px-2 text-xs"
         >
-          <Link href={`/dashboard/${stock.symbol}`}>상세</Link>
+          <Link href={`/dashboard/${stock.symbol}`}>
+            상세
+          </Link>
         </Button>
       </div>
     </div>

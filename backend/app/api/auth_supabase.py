@@ -9,6 +9,7 @@ from app.services.refresh_token_service import RefreshTokenService
 from app.core.security import create_access_token, create_refresh_token, verify_token
 from app.core.config import settings
 from typing import Dict, Any, Optional
+from fastapi.security import HTTPBearer as HTTPBearerClass
 import jwt
 
 router = APIRouter()
@@ -20,13 +21,32 @@ class Token(BaseModel):
     token_type: str
 
 class RefreshTokenRequest(BaseModel):
-    refresh_token: str
+    refresh_token: Optional[str] = None  # 쿠키 기반 인증 시 body에서 생략 가능
 
 # 의존성 함수들
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> Dict[str, Any]:
-    """JWT 토큰에서 현재 사용자 정보 추출"""
+async def get_current_user(
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(HTTPBearer(auto_error=False))
+) -> Dict[str, Any]:
+    """JWT 토큰에서 현재 사용자 정보 추출 (Authorization 헤더 또는 쿠키)"""
+    token = None
+
+    # 1. Authorization 헤더에서 토큰 확인 (우선)
+    if credentials and credentials.credentials:
+        token = credentials.credentials
+    # 2. 쿠키에서 토큰 확인 (fallback)
+    elif request.cookies.get("access_token"):
+        token = request.cookies.get("access_token")
+
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     try:
-        username = verify_token(credentials.credentials)
+        username = verify_token(token)
         if username is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -39,7 +59,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
             detail="Invalid authentication credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     user_service = SupabaseUserService()
     user = await user_service.get_user_by_username(username=username)
     if user is None:
@@ -207,6 +227,18 @@ async def login(user_credentials: UserLogin, request: Request, response: Respons
         domain=None  # 도메인 제한 없음 (localhost 호환)
     )
 
+    # refresh_token도 HttpOnly 쿠키에 저장
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=is_production,
+        samesite="lax",
+        max_age=settings.refresh_token_expire_days * 24 * 60 * 60,  # 7일
+        path="/",
+        domain=None
+    )
+
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
@@ -228,17 +260,40 @@ async def verify_token_endpoint(current_user: Dict[str, Any] = Depends(get_curre
     return {"valid": True, "username": current_user['username'], "user_id": current_user['id']}
 
 @router.post("/refresh", response_model=Token)
-async def refresh_token(refresh_request: RefreshTokenRequest, request: Request):
-    """리프레시 토큰을 사용하여 새로운 액세스 토큰 발급"""
+async def refresh_token(
+    request: Request,
+    response: Response,
+    refresh_request: Optional[RefreshTokenRequest] = None
+):
+    """리프레시 토큰을 사용하여 새로운 액세스 토큰 발급
+
+    refresh_token은 다음 순서로 확인:
+    1. Request body (하위 호환성)
+    2. HttpOnly 쿠키
+    """
     import logging
     logger = logging.getLogger(__name__)
 
     user_service = SupabaseUserService()
     token_service = RefreshTokenService()
 
+    # refresh_token 가져오기: body > cookie
+    current_refresh_token = None
+    if refresh_request and refresh_request.refresh_token:
+        current_refresh_token = refresh_request.refresh_token
+    elif request.cookies.get("refresh_token"):
+        current_refresh_token = request.cookies.get("refresh_token")
+
+    if not current_refresh_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="No refresh token provided",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     # 리프레시 토큰 JWT 검증
     try:
-        username = verify_token(refresh_request.refresh_token, token_type="refresh")
+        username = verify_token(current_refresh_token, token_type="refresh")
         if username is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -279,7 +334,7 @@ async def refresh_token(refresh_request: RefreshTokenRequest, request: Request):
     try:
         is_valid = await token_service.verify_refresh_token(
             user_id=user['id'],
-            refresh_token=refresh_request.refresh_token
+            refresh_token=current_refresh_token
         )
 
         if not is_valid:
@@ -319,7 +374,7 @@ async def refresh_token(refresh_request: RefreshTokenRequest, request: Request):
 
         await token_service.rotate_refresh_token(
             user_id=user['id'],
-            old_refresh_token=refresh_request.refresh_token,
+            old_refresh_token=current_refresh_token,
             new_refresh_token=new_refresh_token,
             expires_at=datetime.now(timezone.utc) + refresh_token_expires,
             device_info=user_agent,
@@ -327,6 +382,32 @@ async def refresh_token(refresh_request: RefreshTokenRequest, request: Request):
         )
     except Exception as e:
         print(f"Refresh token 회전 실패: {e}")
+
+    # HttpOnly 쿠키에 새 토큰 설정
+    import os
+    is_production = os.getenv("ENVIRONMENT", "development") == "production"
+
+    response.set_cookie(
+        key="access_token",
+        value=new_access_token,
+        httponly=True,
+        secure=is_production,
+        samesite="lax",
+        max_age=settings.access_token_expire_minutes * 60,
+        path="/",
+        domain=None
+    )
+
+    response.set_cookie(
+        key="refresh_token",
+        value=new_refresh_token,
+        httponly=True,
+        secure=is_production,
+        samesite="lax",
+        max_age=settings.refresh_token_expire_days * 24 * 60 * 60,
+        path="/",
+        domain=None
+    )
 
     return {
         "access_token": new_access_token,
@@ -469,19 +550,38 @@ async def remove_user_interest(
 
 @router.post("/logout")
 async def logout(
-    refresh_request: RefreshTokenRequest,
+    request: Request,
+    response: Response,
+    refresh_request: Optional[RefreshTokenRequest] = None,
     current_user: Dict[str, Any] = Depends(get_current_active_user)
 ):
-    """로그아웃 - Refresh Token 폐기"""
+    """로그아웃 - Refresh Token 폐기 및 쿠키 삭제
+
+    refresh_token은 다음 순서로 확인:
+    1. Request body (하위 호환성)
+    2. HttpOnly 쿠키
+    """
     token_service = RefreshTokenService()
 
-    try:
-        await token_service.revoke_refresh_token(
-            user_id=current_user['id'],
-            refresh_token=refresh_request.refresh_token
-        )
-    except Exception as e:
-        print(f"Logout token revoke failed: {e}")
+    # refresh_token 가져오기: body > cookie
+    refresh_token = None
+    if refresh_request and refresh_request.refresh_token:
+        refresh_token = refresh_request.refresh_token
+    elif request.cookies.get("refresh_token"):
+        refresh_token = request.cookies.get("refresh_token")
+
+    if refresh_token:
+        try:
+            await token_service.revoke_refresh_token(
+                user_id=current_user['id'],
+                refresh_token=refresh_token
+            )
+        except Exception as e:
+            print(f"Logout token revoke failed: {e}")
+
+    # HttpOnly 쿠키 삭제
+    response.delete_cookie(key="access_token", path="/")
+    response.delete_cookie(key="refresh_token", path="/")
 
     return {"message": "Logged out successfully"}
 

@@ -182,22 +182,16 @@ export function NewsSectionContainer({
         {/* 첫 번째 탭 그룹: Hot 뉴스 / 관심종목 */}
         <div className="flex gap-2 mb-3">
           <Button
-            variant={mainTab === "hot" && !categoryTab ? "default" : "outline"}
-            className="flex-1 min-h-[44px] text-sm md:text-base"
-            onClick={() => {
-              handleMainTabChange("hot");
-              setCategoryTab(null);
-            }}
+            variant={mainTab === "hot" ? "default" : "outline"}
+            className="flex-1 min-h-11 text-sm md:text-base"
+            onClick={() => handleMainTabChange("hot")}
           >
             Hot 뉴스
           </Button>
           <Button
-            variant={mainTab === "favorites" && !categoryTab ? "default" : "outline"}
-            className="flex-1 min-h-[44px] text-sm md:text-base"
-            onClick={() => {
-              handleMainTabChange("favorites");
-              setCategoryTab(null);
-            }}
+            variant={mainTab === "favorites" ? "default" : "outline"}
+            className="flex-1 min-h-11 text-sm md:text-base"
+            onClick={() => handleMainTabChange("favorites")}
           >
             관심종목
           </Button>
@@ -216,7 +210,7 @@ export function NewsSectionContainer({
               }
             }}
           >
-            <SelectTrigger className="w-full min-h-[44px]">
+            <SelectTrigger className="w-full min-h-11">
               <SelectValue placeholder="카테고리 선택 (선택사항)" />
             </SelectTrigger>
             <SelectContent>

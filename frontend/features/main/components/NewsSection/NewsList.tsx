@@ -85,14 +85,68 @@ export function NewsList({
   }
 
   if (news.length === 0) {
-    return (
-      <div className="flex h-[calc(100vh-280px)] md:h-[calc(100vh-200px)] lg:h-[900px] min-h-[400px] max-h-[1100px] items-center justify-center">
-        <div className="text-center space-y-2">
-          <div className="text-sm text-muted-foreground">
-            {selectedStock
-              ? `${selectedStock}에 대한 뉴스가 없습니다`
-              : "종목을 선택하여 관련 뉴스를 확인하세요"}
+    // 1페이지면 페이지네이션 없이 메시지만 표시
+    if (currentPage === 1) {
+      return (
+        <div className="flex h-[calc(100vh-280px)] md:h-[calc(100vh-200px)] lg:h-[900px] min-h-[400px] max-h-[1100px] items-center justify-center">
+          <div className="text-center space-y-2">
+            <div className="text-sm text-muted-foreground">
+              {selectedStock
+                ? `${selectedStock}에 대한 뉴스가 없습니다`
+                : "종목을 선택하여 관련 뉴스를 확인하세요"}
+            </div>
           </div>
+        </div>
+      );
+    }
+
+    // 2페이지 이상에서 뉴스가 없으면 메시지 + 페이지네이션 표시
+    return (
+      <div
+        className={`flex flex-col h-[600px] ${
+          isMainPage ? "md:h-[860px]" : "md:h-[880px]"
+        } lg:h-[1050px] min-h-[400px]`}
+      >
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-sm text-muted-foreground">
+            더 이상 뉴스가 없습니다
+          </div>
+        </div>
+
+        {/* Pagination - 이전 페이지로 돌아갈 수 있도록 */}
+        <div className="shrink-0 border-t pt-4">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => onPageChange(currentPage - 1)}
+                  className="cursor-pointer"
+                />
+              </PaginationItem>
+
+              {Array.from({ length: 2 }, (_, i) => {
+                const pageNum = currentPage - 1 + i;
+                if (pageNum < 1) return null;
+                return (
+                  <PaginationItem key={pageNum}>
+                    <PaginationLink
+                      onClick={() => onPageChange(pageNum)}
+                      isActive={currentPage === pageNum}
+                      className="cursor-pointer"
+                    >
+                      {pageNum}
+                    </PaginationLink>
+                  </PaginationItem>
+                );
+              }).filter(Boolean)}
+
+              <PaginationItem>
+                <PaginationNext
+                  className="pointer-events-none opacity-50"
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         </div>
       </div>
     );
