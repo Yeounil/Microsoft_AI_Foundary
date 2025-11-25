@@ -10,10 +10,15 @@ import { StockListSearch } from "../components/StockList/StockListSearch";
 import { StockListTabs } from "../components/StockList/StockListTabs";
 import { StockItem } from "../services/stockListService";
 
+interface StockInfo {
+  symbol: string;
+  name: string;
+}
+
 interface StockListContainerProps {
   onSelectStock?: (symbol: string) => void;
   selectedSymbol?: string;
-  supportedStocks: string[];
+  supportedStocks: StockInfo[];
   isLoadingStocks: boolean;
 }
 

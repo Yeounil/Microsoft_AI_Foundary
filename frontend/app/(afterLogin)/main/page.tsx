@@ -49,7 +49,7 @@ export default function MainPage() {
               </div>
             }>
               <ImprovedStockList
-                supportedStocks={stockSymbols}
+                supportedStocks={stocks}
                 isLoadingStocks={isLoadingStocks}
               />
             </Suspense>
