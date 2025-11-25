@@ -1,6 +1,10 @@
 import { useMemo, useEffect } from "react";
-import { convertToStockItems } from "../services/stockListService";
 import { logger } from "@/lib/logger";
+
+interface StockInfo {
+  symbol: string;
+  name: string;
+}
 
 interface StockBase {
   symbol: string;
@@ -9,7 +13,7 @@ interface StockBase {
 }
 
 interface UseStockDataParams {
-  supportedStocks: string[];
+  supportedStocks: StockInfo[];
   onSelectStock?: (symbol: string) => void;
   selectedSymbol?: string;
 }
@@ -26,7 +30,11 @@ export function useStockData({
   // Convert supported stocks to allStocks format using useMemo
   const allStocks = useMemo(() => {
     if (supportedStocks.length > 0) {
-      const stocks = convertToStockItems(supportedStocks);
+      const stocks = supportedStocks.map((stock) => ({
+        symbol: stock.symbol,
+        name: stock.name,
+        marketCap: 0,
+      }));
       logger.info(
         `[useStockData] Received ${stocks.length} stocks from MainPage`
       );

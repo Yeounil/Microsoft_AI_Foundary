@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useDevice } from "@/hooks/useDevice";
 import { useStockStore } from "@/store/stock-store";
 import { useLoadingStore } from "@/store/loading-store";
 import { useChartSettingsStore } from "@/store/chart-settings-store";
+import { useSupportedStocks } from "@/hooks/useSupportedStocks";
 import { logger } from "@/lib/logger";
 import { useChartInitialization } from "@/features/main/hooks/useChartInitialization";
 import { useChartSeries } from "@/features/main/hooks/useChartSeries";
@@ -75,6 +76,22 @@ export function DashboardChartContainer({
   const { selectedStock, watchlist, addToWatchlist, removeFromWatchlist } =
     useStockStore();
   const { setChartLoading } = useLoadingStore();
+  const { stocks: supportedStocks } = useSupportedStocks();
+
+  // Company name fallback: selectedStock > supportedStocks > symbol
+  const companyName = useMemo(() => {
+    // 1. selectedStock에서 company_name이 symbol과 다르면 사용
+    if (selectedStock?.company_name && selectedStock.company_name !== symbol) {
+      return selectedStock.company_name;
+    }
+    // 2. supportedStocks에서 name 찾기
+    const stockInfo = supportedStocks.find((s) => s.symbol === symbol);
+    if (stockInfo?.name && stockInfo.name !== symbol) {
+      return stockInfo.name;
+    }
+    // 3. fallback: symbol 그대로
+    return undefined;
+  }, [selectedStock?.company_name, supportedStocks, symbol]);
 
   // 설정 변경 시 저장 (디바이스 구분)
   const handleChartTypeChange = useCallback((type: ChartType) => {
@@ -213,7 +230,7 @@ export function DashboardChartContainer({
         {isMobile ? (
           <MobileChartHeader
             symbol={symbol}
-            companyName={selectedStock?.company_name}
+            companyName={companyName}
             currentPrice={priceInfo.currentPrice ?? undefined}
             priceChange={priceInfo.priceChange}
             priceChangePercent={priceInfo.priceChangePercent}
@@ -225,7 +242,7 @@ export function DashboardChartContainer({
           /* 데스크탑 헤더 */
           <DashboardChartHeader
             symbol={symbol}
-            companyName={selectedStock?.company_name}
+            companyName={companyName}
             currentPrice={priceInfo.currentPrice ?? undefined}
             priceChange={priceInfo.priceChange}
             priceChangePercent={priceInfo.priceChangePercent}
